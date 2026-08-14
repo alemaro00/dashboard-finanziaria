@@ -1,0 +1,2697 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Operations | Planner React</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      :root{
+        --bg:#080a0f;
+        --panel:#10151d;
+        --panel-2:#151c26;
+        --panel-3:#0c1118;
+        --text:#e8edf5;
+        --muted:#7f8b9c;
+        --line:#263141;
+        --line-soft:rgba(255,255,255,.06);
+        --accent:#d7b46a;
+        --accent-2:#6fb2d2;
+        --good:#42d392;
+        --bad:#ff5f63;
+        --warn:#e9b949;
+        --shadow:0 18px 48px rgba(0,0,0,.34);
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family:"Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        color:var(--text);
+        background:
+          radial-gradient(circle at 18% 0%, rgba(58,78,104,.38), transparent 30%),
+          radial-gradient(circle at 84% 12%, rgba(31,48,68,.48), transparent 34%),
+          linear-gradient(135deg, #131a24 0%, #0b1017 46%, #151923 100%);
+      }
+      .app{min-height:100vh;padding:18px}
+      .shell{max-width:1580px;margin:0 auto}
+      .hero{
+        display:flex;justify-content:space-between;gap:20px;align-items:flex-end;
+        padding:20px 22px;border:1px solid var(--line);border-radius:8px;
+        background:linear-gradient(180deg, #141b25 0%, #0d1219 100%);
+        box-shadow:var(--shadow);
+      }
+      h1{margin:8px 0 10px;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:0}
+      .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+      .sub{max-width:860px;color:var(--muted);line-height:1.5;font-size:13px}
+      .pill{
+        display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border-radius:4px;
+        background:#0b1017;border:1px solid var(--line);color:#b5c0cf;font-size:12px;
+        text-transform:uppercase;letter-spacing:.08em;
+      }
+      .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:12px}
+      .card{
+        background:linear-gradient(180deg, var(--panel) 0%, var(--panel-3) 100%);
+        border:1px solid var(--line);border-radius:8px;padding:16px;box-shadow:0 10px 28px rgba(0,0,0,.24);
+      }
+      .metric{grid-column:span 3}
+      .wide{grid-column:span 8}
+      .side{grid-column:span 4}
+      .full{grid-column:span 12}
+      .label{font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+      .value{font-size:30px;font-weight:700;letter-spacing:0;font-variant-numeric:tabular-nums}
+      .delta{margin-top:7px;font-size:12px;color:var(--good)}
+      .delta.bad{color:var(--bad)}
+      .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+      .title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+      .small{font-size:12px;color:var(--muted);line-height:1.45}
+      .form{
+        display:grid;grid-template-columns:repeat(12,1fr);gap:10px;
+      }
+      .field{grid-column:span 6}
+      .field.full-field{grid-column:span 12}
+      .field.third{grid-column:span 4}
+      .field.quarter{grid-column:span 3}
+      label{display:block;font-size:11px;color:var(--muted);margin:0 0 5px;text-transform:uppercase;letter-spacing:.07em}
+      input, select{
+        width:100%;padding:9px 10px;border-radius:4px;border:1px solid #2d3849;
+        background:#0a0f16;color:var(--text);outline:none;font-size:13px;
+      }
+      input:focus, select:focus{border-color:var(--accent-2);box-shadow:0 0 0 2px rgba(111,178,210,.14)}
+      .actions{display:flex;gap:8px;flex-wrap:wrap}
+      button{
+        border:1px solid #c0a25e;border-radius:4px;padding:9px 12px;font-weight:700;cursor:pointer;
+        color:#080a0f;background:linear-gradient(180deg,#e2c67f,#b99448);font-size:12px;text-transform:uppercase;letter-spacing:.04em;
+      }
+      button.secondary{
+        color:#c9d3df;background:#101722;border:1px solid #344155;
+      }
+      button.toggle{
+        color:#c9d3df;background:#0a0f16;border:1px solid #344155;min-width:112px;
+      }
+      .rows{display:grid;gap:8px}
+      .row{
+        display:grid;grid-template-columns:1.2fr .8fr .8fr .6fr;gap:10px;align-items:center;
+        padding:10px 12px;border-radius:6px;background:#0c1118;border:1px solid #202a38;
+      }
+      .row strong{display:block}
+      .bar{
+        height:5px;border-radius:999px;background:#202a38;overflow:hidden;margin-top:8px
+      }
+      .fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+      .badge{
+        display:inline-flex;align-items:center;padding:6px 8px;border-radius:4px;font-size:11px;
+        background:#0a0f16;border:1px solid var(--line);color:#bfcaD8;text-transform:uppercase;letter-spacing:.06em;
+      }
+      .decision-box{
+        padding:12px;border-radius:6px;background:#0c1118;border:1px solid #202a38
+      }
+      .decision-box.good{border-color:rgba(99,230,167,.32);background:rgba(99,230,167,.08)}
+      .decision-box.warn{border-color:rgba(255,204,102,.35);background:rgba(255,204,102,.08)}
+      .decision-box.bad{border-color:rgba(255,123,123,.32);background:rgba(255,123,123,.08)}
+      .muted{color:var(--muted)}
+      .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .mini{
+        display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+        padding:10px 12px;border-radius:6px;background:#0c1118;border:1px solid #202a38;
+      }
+      .readout{
+        padding:14px;border:1px solid rgba(215,180,106,.55);border-radius:6px;
+        background:linear-gradient(180deg, rgba(215,180,106,.16), rgba(215,180,106,.06));
+      }
+      .readout .value{font-size:34px;color:#f3d48d}
+      .allocation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .stack-form{grid-template-columns:1fr}
+      .stack-form .field,.stack-form .field.third,.stack-form .field.quarter{grid-column:span 1}
+      .meter{
+        height:18px;border-radius:4px;background:#0a0f16;border:1px solid #2b3646;
+        overflow:hidden;position:relative;
+      }
+      .meter-fill{height:100%;background:linear-gradient(90deg,var(--good),var(--accent-2));}
+      .meter-line{
+        display:flex;justify-content:space-between;gap:12px;margin-top:8px;color:var(--muted);
+        font-size:12px;font-variant-numeric:tabular-nums;
+      }
+      .allocation-warning{color:var(--bad)}
+      .allocation-ok{color:var(--good)}
+      .allocation-pending{color:var(--warn)}
+      .monthly-input-card{border-color:rgba(215,180,106,.42);box-shadow:0 16px 40px rgba(0,0,0,.28)}
+      .monthly-input-block + .monthly-input-block{margin-top:22px;padding-top:22px;border-top:1px solid rgba(215,180,106,.18)}
+      .monthly-save-bar{
+        display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:22px;padding:14px;
+        border-radius:6px;border:1px solid rgba(215,180,106,.34);background:rgba(215,180,106,.07);
+      }
+      .entry-category-grid{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+      .entry-category-chip{
+        display:grid;align-content:start;gap:7px;min-height:92px;padding:10px;
+        color:#e8d39e;background:rgba(215,180,106,.07);border:1px solid rgba(215,180,106,.28);
+        text-transform:none;letter-spacing:0;text-align:left;font-weight:600;
+      }
+      .entry-category-head,.entry-category-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+      .entry-category-title{font-size:11px;white-space:nowrap}
+      .entry-category-head strong{font-size:14px;font-variant-numeric:tabular-nums}
+      .entry-category-meta{color:#a99b78;font-size:10px;font-weight:600}
+      .entry-category-gap{color:var(--warn);text-align:right}
+      .entry-category-gap.complete{color:var(--good)}
+      .entry-category-gap.over{color:var(--bad)}
+      .entry-category-progress{height:4px;border-radius:999px;background:rgba(215,180,106,.14);overflow:hidden}
+      .entry-category-fill{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),#f2d58e)}
+      .entry-category-chip.detail-complete .entry-category-fill{background:var(--good)}
+      .entry-category-chip.detail-over .entry-category-fill{background:var(--bad)}
+      .entry-category-chip.active{
+        color:#171107;background:linear-gradient(180deg,#ead28f,#caa95e);border-color:#f0d996;
+        box-shadow:0 0 0 2px rgba(215,180,106,.12);
+      }
+      .entry-category-chip.active .entry-category-meta{color:rgba(23,17,7,.72)}
+      .entry-category-chip.active .entry-category-gap{
+        color:#101722;background:rgba(8,10,15,.12);border:1px solid rgba(8,10,15,.22);
+        border-radius:3px;padding:2px 5px;font-weight:800;
+      }
+      .entry-category-chip.active .entry-category-gap.complete{color:#07543a}
+      .entry-category-chip.active .entry-category-gap.over{color:#7a2024}
+      .entry-category-chip.active .entry-category-progress{background:rgba(23,17,7,.16)}
+      .detail-gap-preview{padding:11px 12px;border-radius:6px;border:1px solid rgba(233,185,73,.34);background:rgba(233,185,73,.07)}
+      .detail-gap-preview.complete{border-color:rgba(66,211,146,.36);background:rgba(66,211,146,.07)}
+      .detail-gap-preview.over{border-color:rgba(255,95,99,.36);background:rgba(255,95,99,.07)}
+      .detail-gap-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .detail-gap-preview-grid span{display:grid;gap:3px}
+      .detail-gap-preview-grid small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+      .detail-gap-preview-grid strong{font-size:14px;font-variant-numeric:tabular-nums}
+      .detail-gap-status{margin-top:8px;font-size:12px;color:var(--warn)}
+      .detail-gap-preview.complete .detail-gap-status{color:var(--good)}
+      .detail-gap-preview.over .detail-gap-status{color:var(--bad)}
+      .allocation-patrimony{height:100%;min-height:94px}
+      .allocation-patrimony .value{font-size:28px}
+      .history-list{display:grid;gap:10px}
+      .history-item{border:1px solid #263141;border-radius:7px;background:#0c1118;overflow:hidden}
+      .history-item[open]{border-color:rgba(111,178,210,.46);box-shadow:0 10px 26px rgba(0,0,0,.2)}
+      .history-summary{
+        display:grid;grid-template-columns:1.25fr repeat(5,.72fr) auto;gap:12px;align-items:center;
+        padding:13px 14px;cursor:pointer;list-style:none;background:linear-gradient(180deg,#101722,#0c1118);
+      }
+      .history-summary::-webkit-details-marker{display:none}
+      .history-summary:hover{background:#121a25}
+      .history-summary strong{display:block;font-variant-numeric:tabular-nums}
+      .history-chevron{font-size:18px;color:var(--accent);transition:transform .18s ease}
+      .history-item[open] .history-chevron{transform:rotate(180deg)}
+      .history-details{padding:16px;border-top:1px solid #263141}
+      .history-detail-grid{display:grid;grid-template-columns:repeat(5,minmax(135px,1fr));gap:9px}
+      .history-detail-card{padding:11px;border-radius:6px;background:#111823;border:1px solid #222d3c}
+      .history-detail-card strong{font-size:16px;font-variant-numeric:tabular-nums}
+      .history-notes{display:grid;gap:8px;margin-top:12px}
+      .history-note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 12px;border-radius:6px;background:#111823;border:1px solid #222d3c}
+      .history-note strong{font-variant-numeric:tabular-nums}
+      .history-actions{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid #222d3c}
+      .performance-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+      .performance-card{padding:14px;border-radius:6px;background:#0c1118;border:1px solid #202a38}
+      .performance-card .value{font-size:24px}
+      .positive{color:var(--good)!important}
+      .negative{color:var(--bad)!important}
+      .neutral{color:var(--text)!important}
+      .table-wrap{overflow-x:auto;border:1px solid #202a38;border-radius:6px}
+      table{width:100%;border-collapse:collapse;min-width:980px;background:#0c1118}
+      th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #202a38;font-size:12px;vertical-align:middle}
+      th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;background:#0a0f16}
+      td.numeric,th.numeric{text-align:right;font-variant-numeric:tabular-nums}
+      tr:last-child td{border-bottom:0}
+      .quote-input{width:110px;min-width:110px;text-align:right}
+      .status-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      .dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+      .dot.good{background:var(--good)}
+      .dot.bad{background:var(--bad)}
+      .pending-panel{padding:14px;border:1px solid rgba(233,185,73,.28);background:rgba(233,185,73,.06);border-radius:6px}
+      .archive-card{
+        border-color:rgba(111,178,210,.52);background:linear-gradient(145deg,#13202b,#0c1219 58%,#111827);
+        box-shadow:0 0 0 1px rgba(111,178,210,.07),0 14px 32px rgba(0,0,0,.24);
+      }
+      .archive-card .title{color:#dff5ff}
+      .archive-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+      .archive-summary{display:flex;gap:9px;flex-wrap:wrap}
+      .archive-notice{margin-top:12px;padding:10px 12px;border-radius:6px;border:1px solid rgba(111,178,210,.28);background:rgba(111,178,210,.07);color:#bfe9fb;font-size:12px}
+      .archive-notice.good{border-color:rgba(66,211,146,.36);background:rgba(66,211,146,.08);color:#98efc8}
+      .archive-notice.bad{border-color:rgba(255,95,99,.38);background:rgba(255,95,99,.08);color:#ffb5b8}
+      .monthly-history-card{order:100}
+      .emergency-fund-card{
+        order:101;border-color:rgba(255,72,86,.9);
+        background:linear-gradient(145deg,#4d0c17 0%,#2a090f 50%,#14080c 100%);
+        box-shadow:0 0 0 1px rgba(255,72,86,.2),0 16px 38px rgba(70,0,10,.42),0 0 28px rgba(255,45,65,.16);
+      }
+      .emergency-fund-card .section-head{border-bottom-color:rgba(255,128,138,.3)}
+      .emergency-fund-card .title{color:#fff2f3;text-shadow:0 0 16px rgba(255,90,103,.55)}
+      .emergency-fund-card .small,.emergency-fund-card .meter-line{color:#ffc4c9}
+      .emergency-fund-card .badge{
+        color:var(--emergency-contrast,#fff);
+        background:linear-gradient(180deg,var(--emergency-bright,#ff4960),var(--emergency-dark,#c9122b));
+        border-color:var(--emergency-bright,#ff8190);
+        box-shadow:0 0 18px var(--emergency-glow,rgba(255,56,78,.34));
+        transition:color .35s ease,background .35s ease,border-color .35s ease,box-shadow .35s ease;
+      }
+      .emergency-fund-card .meter{background:#21060b;border-color:var(--emergency-bright,#ff6575);box-shadow:inset 0 0 12px rgba(0,0,0,.45);transition:border-color .35s ease}
+      .emergency-fund-card .meter-fill{
+        background:linear-gradient(90deg,var(--emergency-dark,#ff173c),var(--emergency-color,#ff5368) 58%,var(--emergency-bright,#ff9ba5));
+        box-shadow:0 0 18px var(--emergency-glow,rgba(255,48,72,.7));
+        transition:width .35s ease,background .35s ease,box-shadow .35s ease;
+      }
+      .ibkr-card{background:linear-gradient(145deg,#151a23,#0c1118 58%,#111925)}
+      .ibkr-paper-card{order:102;border-color:rgba(139,126,255,.58);background:linear-gradient(145deg,#19172a,#0c1118 58%,#15182a);box-shadow:0 0 0 1px rgba(139,126,255,.08),0 14px 32px rgba(0,0,0,.25)}
+      .ibkr-live-card{order:103;border-color:rgba(66,211,146,.56);background:linear-gradient(145deg,#10201d,#0c1118 58%,#101c22);box-shadow:0 0 0 1px rgba(66,211,146,.08),0 14px 32px rgba(0,0,0,.25)}
+      .ibkr-live-card .title{color:#d9ffeb}
+      .monthly-history-card ~ *{order:104}
+      .monthly-history-card + .emergency-fund-card{order:101}
+      .ibkr-strip{
+        display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 14px;margin-bottom:12px;
+        border-radius:6px
+      }
+      .paper-strip{
+        border:1px solid rgba(139,126,255,.48);border-radius:6px;background:rgba(139,126,255,.09)
+      }
+      .paper-strip strong{color:#b9b1ff;text-transform:uppercase;letter-spacing:.08em}
+      .paper-strip .badge{border-color:rgba(139,126,255,.42);color:#c8c2ff;background:rgba(139,126,255,.08)}
+      .live-strip{border:1px solid rgba(66,211,146,.48);background:rgba(66,211,146,.09)}
+      .live-strip strong{color:#79e7b5;text-transform:uppercase;letter-spacing:.08em}
+      .live-strip .badge{border-color:rgba(66,211,146,.42);color:#9af0c7;background:rgba(66,211,146,.08)}
+      .ibkr-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}
+      .ibkr-kpi{padding:13px;border-radius:6px;background:#0b1119;border:1px solid #283344;min-width:0}
+      .ibkr-kpi .value{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ibkr-meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:5px}
+      .ibkr-table table{min-width:1050px}
+      .ibkr-empty{padding:18px;text-align:center;border:1px dashed #344155;border-radius:6px;color:var(--muted)}
+      .wealth-section{grid-column:span 12;margin-top:12px;padding-top:26px;border-top:1px solid rgba(111,178,210,.22)}
+      .wealth-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:14px}
+      .wealth-heading h2{margin:6px 0 0;font-size:24px;letter-spacing:.01em}
+      .wealth-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+      .wealth-kpi{padding:18px 20px;border-radius:10px;border:1px solid #273243;background:linear-gradient(145deg,#121a26,#0b111a);box-shadow:0 16px 38px rgba(0,0,0,.2)}
+      .wealth-kpi .value{font-size:36px;margin-top:14px}
+      .wealth-kpi .delta{line-height:1.4}
+      .wealth-layout{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:12px}
+      .wealth-panel{grid-column:span 12;padding:22px;border-radius:12px;border:1px solid #273243;background:linear-gradient(145deg,#121a26,#0b111a);box-shadow:0 16px 38px rgba(0,0,0,.2)}
+      .wealth-half{grid-column:span 6}
+      .wealth-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+      .wealth-panel-head h3{font-size:17px;margin:0 0 4px}
+      .wealth-chip{padding:8px 12px;border-radius:999px;background:#192231;border:1px solid #303c4e;color:#a9c8ff;font-size:12px;white-space:nowrap}
+      .donut-layout{display:grid;grid-template-columns:minmax(260px,.8fr) 1.2fr;gap:28px;align-items:center}
+      .donut-wrap{display:flex;justify-content:center;align-items:center;min-height:300px}
+      .donut{width:270px;height:270px;border-radius:50%;position:relative;display:grid;place-items:center;box-shadow:0 0 45px rgba(70,136,191,.08)}
+      .donut::after{content:"";position:absolute;inset:49px;border-radius:50%;background:#0b121d;border:1px solid #253247;box-shadow:inset 0 0 22px rgba(0,0,0,.35)}
+      .donut-center{position:relative;z-index:1;text-align:center;max-width:165px}
+      .donut-center strong{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+      .donut-center span{display:block;margin-top:6px;color:#93a5bf;font-size:11px}
+      .exposure-list{display:grid;gap:9px}
+      .exposure-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border-radius:8px;background:#161f2b;border:1px solid #283344}
+      .exposure-name{display:flex;align-items:center;gap:10px;font-weight:700}
+      .exposure-dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+      .exposure-value{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+      .geo-row{grid-template-columns:minmax(0,1fr) auto auto}
+      .geo-rank{color:#8faeff;font-size:11px;white-space:nowrap}
+      .geo-track{height:7px;border-radius:999px;background:#2a3442;overflow:hidden;margin-top:7px;max-width:110px}
+      .geo-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#75d7f6,#8979ff)}
+      .indicator-list{display:grid;gap:10px}
+      .indicator-row{display:grid;grid-template-columns:minmax(0,1.2fr) .7fr .7fr;gap:14px;align-items:center;padding:16px;border-radius:9px;background:#161f2b;border:1px solid #283344}
+      .indicator-row strong{font-size:15px}
+      .indicator-value{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+      .indicator-status{font-size:11px;color:#8faeff}
+      button:disabled{opacity:.45;cursor:not-allowed}
+      @media (max-width:1100px){
+        .metric,.wide,.side{grid-column:span 12}
+        .field,.field.third,.field.quarter{grid-column:span 12}
+        .split{grid-template-columns:1fr}
+        .allocation-grid{grid-template-columns:1fr}
+        .performance-grid{grid-template-columns:repeat(2,1fr)}
+        .ibkr-kpis{grid-template-columns:repeat(3,1fr)}
+        .wealth-kpis{grid-template-columns:1fr}
+        .wealth-half{grid-column:span 12}
+        .row{grid-template-columns:1fr}
+        .entry-category-grid{grid-template-columns:repeat(2,1fr)}
+        .history-summary{grid-template-columns:1fr repeat(2,.7fr) auto}
+        .history-summary .history-optional{display:none}
+        .history-detail-grid{grid-template-columns:repeat(2,1fr)}
+      }
+      @media (max-width:700px){
+        .app{padding:16px}
+        .hero{flex-direction:column;align-items:flex-start}
+        .value{font-size:32px}
+        .performance-grid{grid-template-columns:1fr}
+        .ibkr-kpis{grid-template-columns:1fr}
+        .ibkr-strip{align-items:flex-start;flex-direction:column}
+        .wealth-heading{align-items:flex-start;flex-direction:column}
+        .donut-layout{grid-template-columns:1fr}
+        .donut{width:230px;height:230px}
+        .donut::after{inset:42px}
+        .indicator-row{grid-template-columns:1fr}
+        .entry-category-grid{grid-template-columns:1fr}
+        .monthly-save-bar,.history-actions{align-items:flex-start;flex-direction:column}
+        .history-summary{grid-template-columns:1fr auto}
+        .history-summary .history-kpi{display:none}
+        .history-detail-grid{grid-template-columns:1fr}
+        .detail-gap-preview-grid{grid-template-columns:1fr}
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useEffect, useMemo, useRef, useState } = React;
+
+      const storageKey = "salary-planner-react-v1";
+      const ibkrBridgeBaseUrl = /^https?:$/.test(window.location.protocol)
+        ? window.location.origin
+        : "http://127.0.0.1:8765";
+
+      const defaultState = {
+        budgetModelVersion: 4,
+        income: 0,
+        decemberBonusNet: 0,
+        fixedCosts: 0,
+        variableCosts: 0,
+        emergencyFundTarget: 0,
+        emergencyFundAllocation: 0,
+        investedCapital: 0,
+        flexibleCashFunds: 0,
+        grossSalary: 0,
+        paychecks: 13,
+        employeeContributionPct: 0,
+        regionalTaxPct: 0,
+        municipalTaxPct: 0,
+        workDays: 365,
+        superminimoAbsorbability: "",
+        monthName: "Agosto",
+        year: 2026,
+        monthlyHistory: [],
+        notes: []
+      };
+
+      function money(value) {
+        return new Intl.NumberFormat("it-IT", {
+          style: "currency",
+          currency: "EUR",
+          maximumFractionDigits: 0
+        }).format(value || 0);
+      }
+
+      function detailGapTone(value) {
+        const gap = Number(value) || 0;
+        if (Math.abs(gap) < 0.01) return "complete";
+        return gap < 0 ? "over" : "pending";
+      }
+
+      function detailGapLabel(value) {
+        const gap = Number(value) || 0;
+        if (Math.abs(gap) < 0.01) return "Dettaglio completo";
+        return gap > 0 ? `Mancano ${money(gap)}` : `Oltre target di ${money(Math.abs(gap))}`;
+      }
+
+      function detailProgress(target, detailed) {
+        const safeTarget = Math.max(0, Number(target) || 0);
+        const safeDetailed = Math.max(0, Number(detailed) || 0);
+        if (safeTarget <= 0) return safeDetailed > 0 ? 100 : 0;
+        return Math.min(100, (safeDetailed / safeTarget) * 100);
+      }
+
+      function accountMoney(value, currency = "USD") {
+        const safeCurrency = /^[A-Z]{3}$/.test(String(currency || "").toUpperCase()) ? String(currency).toUpperCase() : "USD";
+        return new Intl.NumberFormat("it-IT", {
+          style: "currency",
+          currency: safeCurrency,
+          maximumFractionDigits: 2
+        }).format(Number(value) || 0);
+      }
+
+      function pct(value) {
+        return new Intl.NumberFormat("it-IT", {
+          maximumFractionDigits: 1,
+          signDisplay: "always"
+        }).format(value || 0) + "%";
+      }
+
+      function plainPct(value) {
+        return new Intl.NumberFormat("it-IT", {
+          maximumFractionDigits: 1
+        }).format(value || 0) + "%";
+      }
+
+      function precise(value, maximumFractionDigits = 4) {
+        return new Intl.NumberFormat("it-IT", { maximumFractionDigits }).format(Number(value) || 0);
+      }
+
+      function numberOrFallback(value, fallback = 0) {
+        if (value === "" || value === null || value === undefined) return Number(fallback) || 0;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : Number(fallback) || 0;
+      }
+
+      function normalizeCategory(category) {
+        if (category === "Fisso") return "Costo Fisso";
+        if (category === "Variabile") return "Costo Variabile";
+        if (["Flexible cash", "Flexible cash fund", "Flexible cash funds"].includes(category)) return "Flexible Cash";
+        return category || "Costo Variabile";
+      }
+
+      const continentByCountry = {
+        "Italia": "Europa", "Spagna": "Europa", "Francia": "Europa", "Germania": "Europa",
+        "Regno Unito": "Europa", "Svizzera": "Europa", "Paesi Bassi": "Europa",
+        "Irlanda": "Europa", "Lussemburgo": "Europa", "Europa": "Europa",
+        "USA": "Nord America (USA e Canada)", "Stati Uniti": "Nord America (USA e Canada)",
+        "Canada": "Nord America (USA e Canada)", "Messico": "Resto dell'America",
+        "Brasile": "Resto dell'America", "Argentina": "Resto dell'America",
+        "Cina": "Asia", "Hong Kong": "Asia", "Giappone": "Asia", "India": "Asia",
+        "Corea del Sud": "Asia", "Singapore": "Asia", "Emirati Arabi Uniti": "Asia",
+        "Arabia Saudita": "Asia", "Sudafrica": "Africa", "Australia": "Oceania",
+        "Nuova Zelanda": "Oceania", "Globale": "Globale", "Mercati Emergenti": "Globale",
+        "Altro": "Non classificato", "Non classificato": "Non classificato"
+      };
+
+      const countryDisplayNames = typeof Intl.DisplayNames === "function"
+        ? new Intl.DisplayNames(["it"], { type: "region" })
+        : null;
+
+      function countryName(countryCode, fallback = "") {
+        const normalizedCode = String(countryCode || "").trim().toUpperCase();
+        if (!normalizedCode) return fallback;
+        if (normalizedCode === "US") return "USA";
+        if (["XS", "EU", "UN"].includes(normalizedCode)) return "Globale";
+        try {
+          return countryDisplayNames?.of(normalizedCode) || fallback || normalizedCode;
+        } catch {
+          return fallback || normalizedCode;
+        }
+      }
+
+      function continentForCountry(country) {
+        return continentByCountry[country] || "Non classificato";
+      }
+
+      function fallbackInvestmentType(position) {
+        if (position.assetClass) return position.assetClass;
+        const mapping = {
+          STK: "Azioni", OPT: "Opzioni", FUT: "Derivati", FOP: "Derivati",
+          CASH: "Forex", CFD: "Derivati", BOND: "Obbligazioni", FUND: "Fondi",
+          WAR: "Derivati", CMDTY: "Commodities", CRYPTO: "Crypto", BAG: "Derivati",
+          IOPT: "Opzioni", CONTFUT: "Derivati", IND: "Indici"
+        };
+        return mapping[position.securityType] || position.securityTypeLabel || "Altro";
+      }
+
+      function assetKeyFor(item) {
+        const ticker = String(item.ticker || "").trim().toUpperCase();
+        if (ticker) return `ticker:${ticker}`;
+        return `asset:${[item.label, item.investmentType, item.investmentDetail].map((value) => String(value || "").trim().toLowerCase()).join("|")}`;
+      }
+
+      function normalizeNote(note, index = 0) {
+        const normalized = {
+          ...note,
+          id: note.id || `legacy-${Date.now()}-${index}`,
+          category: normalizeCategory(note.category)
+        };
+        if (normalized.category === "Investimento") {
+          normalized.managementSource = normalized.managementSource || (normalized.ticker ? "IBKR" : "Manuale");
+          if (normalized.managementSource === "IBKR") {
+            normalized.label = "Capitale versato su IBKR";
+            normalized.currentValue = 0;
+            normalized.investmentType = "";
+            normalized.investmentDetail = "";
+            normalized.ticker = "";
+            normalized.purchaseDate = "";
+            normalized.entryPrice = 0;
+            normalized.quantity = 0;
+            normalized.marketPrice = 0;
+            normalized.marketCurrency = "";
+            normalized.geography = "";
+            normalized.continent = "";
+            normalized.assetKey = "";
+            return normalized;
+          }
+          const entryPrice = Number(normalized.entryPrice) || 0;
+          const amount = Number(normalized.amount) || 0;
+          normalized.quantity = Number(normalized.quantity) || (entryPrice > 0 ? amount / entryPrice : 1);
+          normalized.marketPrice = Number(normalized.marketPrice) || entryPrice || amount;
+          normalized.currentValue = Math.max(0, numberOrFallback(normalized.currentValue, amount));
+          normalized.marketCurrency = normalized.marketCurrency || "EUR";
+          normalized.geography = normalized.geography || "Globale";
+          normalized.continent = normalized.continent || continentForCountry(normalized.geography);
+          normalized.assetKey = normalized.assetKey || assetKeyFor(normalized);
+        }
+        return normalized;
+      }
+
+      function summarizeNotes(notes) {
+        return (notes || []).map(normalizeNote).reduce((summary, note) => {
+          const amount = Math.max(0, Number(note.amount) || 0);
+          summary.total += amount;
+          if (note.category === "Costo Fisso") summary.fixedCosts += amount;
+          if (note.category === "Costo Variabile") summary.variableCosts += amount;
+          if (note.category === "Investimento") summary.investments += amount;
+          if (note.category === "Flexible Cash") summary.flexibleCash += amount;
+          return summary;
+        }, { fixedCosts: 0, variableCosts: 0, investments: 0, flexibleCash: 0, total: 0 });
+      }
+
+      function mergeValueMaps(...maps) {
+        return maps.reduce((merged, values) => {
+          Object.entries(values || {}).forEach(([label, value]) => {
+            merged[label] = (merged[label] || 0) + Math.max(0, Number(value) || 0);
+          });
+          return merged;
+        }, {});
+      }
+
+      function calculateIrpef(income) {
+        if (income <= 28000) return income * 0.23;
+        if (income <= 50000) return 6440 + ((income - 28000) * 0.33);
+        return 13700 + ((income - 50000) * 0.43);
+      }
+
+      function calculateEmployeeDeduction(income, days) {
+        const dayRatio = Math.min(365, Math.max(0, Number(days) || 0)) / 365;
+        let deduction = 0;
+
+        if (income <= 15000) deduction = 1955;
+        else if (income <= 28000) deduction = 1910 + (1190 * ((28000 - income) / 13000));
+        else if (income <= 50000) deduction = 1910 * ((50000 - income) / 22000);
+
+        if (income > 25000 && income <= 35000) deduction += 65;
+        return Math.max(0, deduction * dayRatio);
+      }
+
+      function calculateWageSupport(income, days) {
+        const dayRatio = Math.min(365, Math.max(0, Number(days) || 0)) / 365;
+        if (income <= 0) return 0;
+        if (income <= 8500) return income * 0.071;
+        if (income <= 15000) return income * 0.053;
+        if (income <= 20000) return income * 0.048;
+        if (income <= 32000) return 1000 * dayRatio;
+        if (income <= 40000) return 1000 * ((40000 - income) / 8000) * dayRatio;
+        return 0;
+      }
+
+      const months = [
+        "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+        "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
+      ];
+
+      const investmentTypes = [
+        "Liquidita'",
+        "Titoli di Stato",
+        "Azioni",
+        "Obbligazioni",
+        "Crypto",
+        "Derivati",
+        "Real Estate",
+        "ETF",
+        "Fondi",
+        "Indici",
+        "Opzioni",
+        "Commodities",
+        "Forex",
+        "Equity",
+        "Passion Assets"
+      ];
+
+      const geographies = [
+        "Globale", "Italia", "USA", "Spagna", "Francia", "Germania", "Regno Unito",
+        "Svizzera", "Paesi Bassi", "Irlanda", "Lussemburgo", "Canada", "Messico",
+        "Brasile", "Argentina", "Cina", "Hong Kong", "Giappone", "India", "Corea del Sud",
+        "Singapore", "Australia", "Nuova Zelanda", "Sudafrica", "Emirati Arabi Uniti",
+        "Arabia Saudita", "Europa", "Mercati Emergenti", "Altro", "Non classificato"
+      ];
+
+      const continents = [
+        "Globale", "Europa", "Nord America (USA e Canada)", "Resto dell'America",
+        "Asia", "Africa", "Oceania", "Antartide", "Non classificato"
+      ];
+
+      const wealthColors = ["#74d4f5", "#8876ff", "#59e49a", "#ffca5b", "#ff858b", "#4ba8ff", "#c58cff", "#5fd1c8", "#e9a85d", "#9cb0c9"];
+
+      function buildDonutGradient(entries) {
+        const total = entries.reduce((sum, item) => sum + Number(item.value || 0), 0);
+        if (total <= 0) return "conic-gradient(#202a38 0 100%)";
+        let cursor = 0;
+        const stops = entries.map((item, index) => {
+          const start = cursor;
+          cursor += (Number(item.value || 0) / total) * 100;
+          return `${wealthColors[index % wealthColors.length]} ${start}% ${cursor}%`;
+        });
+        return `conic-gradient(${stops.join(", ")})`;
+      }
+
+      function nextMonth(monthName, year) {
+        const index = months.findIndex((month) => month.toLowerCase() === String(monthName).toLowerCase());
+        const currentIndex = index >= 0 ? index : 0;
+        const nextIndex = (currentIndex + 1) % months.length;
+        return {
+          monthName: months[nextIndex],
+          year: nextIndex === 0 ? (Number(year) || 2026) + 1 : Number(year) || 2026
+        };
+      }
+
+      function sortMonthlyHistory(history) {
+        return [...(history || [])].sort((a, b) => {
+          const yearDelta = (Number(a.year) || 0) - (Number(b.year) || 0);
+          if (yearDelta !== 0) return yearDelta;
+          const aMonth = months.findIndex((month) => month === a.monthName);
+          const bMonth = months.findIndex((month) => month === b.monthName);
+          return aMonth - bMonth;
+        });
+      }
+
+      function recalibrateMonthlyHistory(history) {
+        let cumulativeEmergencyFund = 0;
+        let cumulativeFlexibleCash = 0;
+        let cumulativeManualPortfolioValue = 0;
+        return sortMonthlyHistory(history).map((month) => {
+          const normalizedNotes = (month.notes || []).map(normalizeNote);
+          const noteTotals = summarizeNotes(normalizedNotes);
+          const monthModelVersion = Number(month.budgetModelVersion || 0);
+          const usesMacroTargets = monthModelVersion >= 4;
+          const legacyBaseFixedCosts = Math.max(0, Number(month.baseFixedCosts ?? (Number(month.fixedCosts || 0) - noteTotals.fixedCosts)) || 0);
+          const legacyBaseVariableCosts = Math.max(0, Number(month.baseVariableCosts ?? (Number(month.variableCosts || 0) - noteTotals.variableCosts)) || 0);
+          const legacyUnclassifiedInvestments = Math.max(0, Number(month.unclassifiedInvestmentAllocation ?? (Number(month.investmentAllocation ?? month.investedCapital ?? 0) - noteTotals.investments)) || 0);
+          const fixedCosts = usesMacroTargets
+            ? Math.max(0, numberOrFallback(month.fixedCosts, legacyBaseFixedCosts + noteTotals.fixedCosts))
+            : legacyBaseFixedCosts + noteTotals.fixedCosts;
+          const variableCosts = usesMacroTargets
+            ? Math.max(0, numberOrFallback(month.variableCosts, legacyBaseVariableCosts + noteTotals.variableCosts))
+            : legacyBaseVariableCosts + noteTotals.variableCosts;
+          const investmentAllocation = usesMacroTargets
+            ? Math.max(0, numberOrFallback(month.investmentAllocation ?? month.investedCapital, legacyUnclassifiedInvestments + noteTotals.investments))
+            : legacyUnclassifiedInvestments + noteTotals.investments;
+          const availableAfterEmergency = Number(month.currentNetWorth ?? ((Number(month.freeCash) || 0) - (Number(month.emergencyFundAllocation) || 0))) || 0;
+          const legacyFlexibleCash = Math.max(0, numberOrFallback(month.flexibleCashAllocation, availableAfterEmergency - investmentAllocation));
+          const legacyBaseFlexibleCash = Math.max(0, numberOrFallback(month.baseFlexibleCashAllocation, legacyFlexibleCash - noteTotals.flexibleCash));
+          const flexibleCashAllocation = usesMacroTargets
+            ? Math.max(0, numberOrFallback(month.flexibleCashAllocation, legacyFlexibleCash))
+            : legacyBaseFlexibleCash + noteTotals.flexibleCash;
+          const fixedCostDetailGap = fixedCosts - noteTotals.fixedCosts;
+          const variableCostDetailGap = variableCosts - noteTotals.variableCosts;
+          const investmentDetailGap = investmentAllocation - noteTotals.investments;
+          const flexibleCashDetailGap = flexibleCashAllocation - noteTotals.flexibleCash;
+          const baseFixedCosts = Math.max(0, fixedCostDetailGap);
+          const baseVariableCosts = Math.max(0, variableCostDetailGap);
+          const unclassifiedInvestmentAllocation = Math.max(0, investmentDetailGap);
+          const baseFlexibleCashAllocation = Math.max(0, flexibleCashDetailGap);
+          const manualInvestmentValue = normalizedNotes
+            .filter((note) => note.category === "Investimento" && note.managementSource === "Manuale")
+            .reduce((sum, note) => sum + Math.max(0, numberOrFallback(note.currentValue, note.amount)), 0);
+          cumulativeEmergencyFund += Math.max(0, Number(month.emergencyFundAllocation) || 0);
+          cumulativeFlexibleCash += flexibleCashAllocation;
+          cumulativeManualPortfolioValue += manualInvestmentValue;
+          const savedPortfolioValue = Number(month.portfolioMarketValue) || 0;
+          const legacyEmergencyFund = Math.max(0, Number(month.projectedEmergencyFund) || cumulativeEmergencyFund);
+          const legacyCumulativeFlexibleCash = Math.max(0, Number(month.cumulativeFlexibleCash) || cumulativeFlexibleCash);
+          const storedIbkrCash = Number(month.ibkrCash);
+          const inferredIbkrCash = Math.max(0, (Number(month.liquidityAvailable) || 0) - legacyEmergencyFund - legacyCumulativeFlexibleCash);
+          const ibkrCash = Number.isFinite(storedIbkrCash) ? Math.max(0, storedIbkrCash) : inferredIbkrCash;
+          return {
+            ...month,
+            budgetModelVersion: 4,
+            notes: normalizedNotes,
+            baseFixedCosts,
+            baseVariableCosts,
+            fixedCosts,
+            variableCosts,
+            unclassifiedInvestmentAllocation,
+            investmentAllocation,
+            investedCapital: investmentAllocation,
+            baseFlexibleCashAllocation,
+            flexibleCashAllocation,
+            fixedCostDetailGap,
+            variableCostDetailGap,
+            investmentDetailGap,
+            flexibleCashDetailGap,
+            allocatedCapital: investmentAllocation + flexibleCashAllocation,
+            unallocatedCapital: availableAfterEmergency - investmentAllocation - flexibleCashAllocation,
+            manualInvestmentValue,
+            cumulativeManualPortfolioValue,
+            ibkrCash,
+            projectedEmergencyFund: cumulativeEmergencyFund,
+            cumulativeEmergencyFund,
+            cumulativeFlexibleCash,
+            wealthTotal: savedPortfolioValue + cumulativeEmergencyFund + cumulativeFlexibleCash + cumulativeManualPortfolioValue,
+            liquidityAvailable: ibkrCash + cumulativeEmergencyFund + cumulativeFlexibleCash
+          };
+        });
+      }
+
+      function normalizeStoredState(parsed) {
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Archivio dati non valido");
+        const savedState = { ...parsed };
+        delete savedState.pendingSales;
+        delete savedState.marketQuotes;
+        const normalizedCurrentNotes = (parsed.notes || defaultState.notes).map(normalizeNote);
+        const currentNoteTotals = summarizeNotes(normalizedCurrentNotes);
+        const budgetModelVersion = Number(parsed.budgetModelVersion || 0);
+        const usesMacroTargets = budgetModelVersion >= 4;
+        const usesAdditiveDetails = budgetModelVersion >= 2 && budgetModelVersion < 4;
+        savedState.fixedCosts = Math.max(0, Number(parsed.fixedCosts) || 0) + (usesAdditiveDetails ? currentNoteTotals.fixedCosts : 0);
+        savedState.variableCosts = Math.max(0, Number(parsed.variableCosts) || 0) + (usesAdditiveDetails ? currentNoteTotals.variableCosts : 0);
+        savedState.investedCapital = Math.max(0, Number(parsed.investedCapital) || 0) + (usesAdditiveDetails ? currentNoteTotals.investments : 0);
+        const isDecember = String(parsed.monthName || defaultState.monthName).toLowerCase() === "dicembre";
+        const currentIncome = (Number(parsed.income) || 0) + (isDecember ? Math.min(2000, Math.max(0, Number(parsed.decemberBonusNet) || 0)) : 0);
+        const currentAvailableAfterEmergency = currentIncome
+          - savedState.fixedCosts
+          - savedState.variableCosts
+          - Math.max(0, Number(parsed.emergencyFundAllocation) || 0);
+        const currentInvestmentAllocation = savedState.investedCapital;
+        const inferredFlexibleCash = Math.max(0, currentAvailableAfterEmergency - currentInvestmentAllocation);
+        savedState.flexibleCashFunds = usesMacroTargets
+          ? Math.max(0, Number(parsed.flexibleCashFunds) || 0)
+          : budgetModelVersion >= 3
+            ? Math.max(0, Number(parsed.flexibleCashFunds) || 0) + currentNoteTotals.flexibleCash
+            : inferredFlexibleCash;
+        savedState.budgetModelVersion = 4;
+        const monthlyHistory = recalibrateMonthlyHistory((parsed.monthlyHistory || []).map((month) => {
+          const savedMonth = { ...month };
+          delete savedMonth.sales;
+          return {
+            ...savedMonth,
+            notes: (month.notes || []).map(normalizeNote)
+          };
+        }));
+        return {
+          ...defaultState,
+          ...savedState,
+          notes: normalizedCurrentNotes,
+          monthlyHistory
+        };
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          return raw ? normalizeStoredState(JSON.parse(raw)) : defaultState;
+        } catch {
+          return defaultState;
+        }
+      }
+
+      function IbkrAccountPanel({ mode, connection, isOpen, onToggle, onRefresh }) {
+        const isPaper = mode === "paper";
+        const label = isPaper ? "Paper" : "Live";
+        const port = isPaper ? 7497 : 7496;
+        const data = connection.data;
+        const metrics = data?.metrics || {};
+        const currency = data?.baseCurrency || "USD";
+        const connected = connection.reachable && data?.status === "connected";
+        const lastUpdate = data?.lastUpdate
+          ? new Date(data.lastUpdate).toLocaleString("it-IT")
+          : "Non disponibile";
+        const positions = data?.positions || [];
+
+        return (
+          <div className={`card full ibkr-card ibkr-${mode}-card`}>
+            <div className="section-head">
+              <div>
+                <div className="title">Interactive Brokers | {isPaper ? "Paper Trading" : "Live Account"}</div>
+                <div className="small">
+                  {isPaper
+                    ? "Monitoraggio locale di conto, liquidita', posizioni e P/L simulato tramite TWS Socket API"
+                    : "Monitoraggio locale in sola lettura di liquidita', posizioni e P/L del conto reale tramite TWS Socket API"}
+                </div>
+                <div className="ibkr-meta">
+                  <span>Endpoint: 127.0.0.1:{port}</span>
+                  <span>Account: {data?.account || "In attesa"}</span>
+                  <span>Ultimo dato: {lastUpdate}</span>
+                </div>
+              </div>
+              <div className="actions">
+                <span className="badge status-line">
+                  <span className={`dot ${connected ? "good" : "bad"}`}></span>
+                  {connected ? `${label} collegato` : connection.loading ? "Verifica..." : `${label} offline`}
+                </span>
+                <button className="secondary" onClick={onRefresh} disabled={connection.loading}>Aggiorna</button>
+                <button className="toggle" onClick={onToggle}>{isOpen ? "Chiudi" : "Apri"}</button>
+              </div>
+            </div>
+
+            {isOpen && (
+              <>
+                <div className={`ibkr-strip ${isPaper ? "paper-strip" : "live-strip"}`}>
+                  <div>
+                    <strong>Ambiente {label} | Capitale {isPaper ? "simulato" : "reale"}</strong>
+                    <div className="small" style={{ marginTop: 5 }}>
+                      {isPaper
+                        ? "Questi valori non confluiscono nel patrimonio reale o nello storico mensile."
+                        : "Il Net Liquidation alimenta il patrimonio consolidato; posizioni e P/L restano separati dal budget mensile."}
+                    </div>
+                  </div>
+                  <span className="badge">Bridge locale senza funzioni ordine</span>
+                </div>
+
+                {!connection.reachable && (
+                  <div className="decision-box warn">
+                    <strong>Collegamento locale non avviato</strong>
+                    <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
+                      Avvia il file avvia-dashboard-ibkr.bat nella cartella outputs e lascia aperta la relativa finestra.
+                    </div>
+                  </div>
+                )}
+
+                {connection.reachable && !connected && (
+                  <div className="decision-box bad">
+                    <strong>Bridge attivo, ma TWS {label} non collegata</strong>
+                    <div className="muted" style={{ marginTop: 8 }}>
+                      {data?.message || connection.error || `Controlla che TWS ${label} sia aperta sulla porta ${port}.`}
+                    </div>
+                  </div>
+                )}
+
+                {connected && (
+                  <>
+                    <div className="ibkr-kpis">
+                      <div className="ibkr-kpi">
+                        <div className="label">Net liquidation value</div>
+                        <div className="value">{accountMoney(metrics.netLiquidation, currency)}</div>
+                      </div>
+                      <div className="ibkr-kpi">
+                        <div className="label">Liquidita' totale</div>
+                        <div className="value">{accountMoney(metrics.totalCash, currency)}</div>
+                      </div>
+                      <div className="ibkr-kpi">
+                        <div className="label">Fondi disponibili</div>
+                        <div className="value">{accountMoney(metrics.availableFunds, currency)}</div>
+                      </div>
+                      <div className="ibkr-kpi">
+                        <div className="label">Buying power</div>
+                        <div className="value">{accountMoney(metrics.buyingPower, currency)}</div>
+                      </div>
+                      <div className="ibkr-kpi">
+                        <div className="label">P/L non realizzato</div>
+                        <div className={`value ${metrics.unrealizedPnl > 0 ? "positive" : metrics.unrealizedPnl < 0 ? "negative" : ""}`}>
+                          {accountMoney(metrics.unrealizedPnl, currency)}
+                        </div>
+                      </div>
+                      <div className="ibkr-kpi">
+                        <div className="label">P/L realizzato</div>
+                        <div className={`value ${metrics.realizedPnl > 0 ? "positive" : metrics.realizedPnl < 0 ? "negative" : ""}`}>
+                          {accountMoney(metrics.realizedPnl, currency)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="table-wrap ibkr-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Strumento</th>
+                            <th>Asset class</th>
+                            <th className="numeric">Quantita'</th>
+                            <th className="numeric">Costo medio</th>
+                            <th className="numeric">Prezzo mercato</th>
+                            <th className="numeric">Valore mercato</th>
+                            <th className="numeric">P/L latente</th>
+                            <th>Mercato</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {positions.map((position) => (
+                            <tr key={`${position.account}-${position.conId}`}>
+                              <td>
+                                <strong>{position.symbol}</strong>
+                                <div className="small">{position.description}{position.expiry ? ` | ${position.expiry}` : ""}</div>
+                              </td>
+                              <td>{position.securityTypeLabel}</td>
+                              <td className="numeric">{precise(position.quantity, 6)}</td>
+                              <td className="numeric">{accountMoney(position.averageCost, position.currency || currency)}</td>
+                              <td className="numeric">{accountMoney(position.marketPrice, position.currency || currency)}</td>
+                              <td className="numeric">{accountMoney(position.marketValue, position.currency || currency)}</td>
+                              <td className={`numeric ${position.unrealizedPnl > 0 ? "positive" : position.unrealizedPnl < 0 ? "negative" : ""}`}>
+                                <strong>{accountMoney(position.unrealizedPnl, position.currency || currency)}</strong>
+                              </td>
+                              <td>
+                                <strong>{position.exchange || "SMART"}</strong>
+                                <div className="small">{position.currency || currency}</div>
+                              </td>
+                            </tr>
+                          ))}
+                          {positions.length === 0 && (
+                            <tr>
+                              <td colSpan="8">
+                                <div className="ibkr-empty">
+                                  {isPaper
+                                    ? "Nessuna posizione Paper aperta. Il conto e' pronto per i test simulati."
+                                    : "Nessuna posizione Live aperta sul conto collegato."}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        );
+      }
+
+      function createEmptyEntry() {
+        return {
+          id: "",
+          label: "",
+          amount: "",
+          category: "Costo Variabile",
+          managementSource: "Manuale",
+          currentValue: "",
+          investmentType: "Liquidita'",
+          investmentDetail: "",
+          ticker: "",
+          purchaseDate: new Date().toISOString().slice(0, 10),
+          entryPrice: "",
+          quantity: "",
+          marketCurrency: "EUR",
+          geography: "Globale",
+          continent: "Globale"
+        };
+      }
+
+      function App() {
+        const [state, setState] = useState(loadState);
+        const [isSalaryPanelOpen, setIsSalaryPanelOpen] = useState(() => localStorage.getItem("salary-estimate-panel-open") !== "false");
+        const [entry, setEntry] = useState(createEmptyEntry);
+        const [isIbkrPanelOpen, setIsIbkrPanelOpen] = useState(true);
+        const [isIbkrLivePanelOpen, setIsIbkrLivePanelOpen] = useState(true);
+        const [editingMonthId, setEditingMonthId] = useState("");
+        const [archiveNotice, setArchiveNotice] = useState({ tone: "", text: "" });
+        const archiveFileInputRef = useRef(null);
+        const [ibkrPaper, setIbkrPaper] = useState({ reachable: false, loading: true, data: null, error: "" });
+        const [ibkrLive, setIbkrLive] = useState({ reachable: false, loading: true, data: null, error: "" });
+
+        useEffect(() => {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        }, [state]);
+
+        useEffect(() => {
+          localStorage.setItem("salary-estimate-panel-open", String(isSalaryPanelOpen));
+        }, [isSalaryPanelOpen]);
+
+        useEffect(() => {
+          let active = true;
+          const loadSnapshot = async (mode, setConnection) => {
+            try {
+              const response = await fetch(`${ibkrBridgeBaseUrl}/api/${mode}/snapshot`, { cache: "no-store" });
+              if (!response.ok) throw new Error(`Servizio locale non disponibile (${response.status})`);
+              const data = await response.json();
+              if (active) setConnection({ reachable: true, loading: false, data, error: "" });
+            } catch (error) {
+              if (active) setConnection((current) => ({ ...current, reachable: false, loading: false, error: error.message }));
+            }
+          };
+          const loadAllSnapshots = () => {
+            loadSnapshot("paper", setIbkrPaper);
+            loadSnapshot("live", setIbkrLive);
+          };
+          loadAllSnapshots();
+          const interval = setInterval(loadAllSnapshots, 5000);
+          return () => {
+            active = false;
+            clearInterval(interval);
+          };
+        }, []);
+
+        async function refreshIbkr(mode, setConnection) {
+          setConnection((current) => ({ ...current, loading: true }));
+          try {
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/${mode}/snapshot`, { cache: "no-store" });
+            if (!response.ok) throw new Error(`Servizio locale non disponibile (${response.status})`);
+            const data = await response.json();
+            setConnection({ reachable: true, loading: false, data, error: "" });
+          } catch (error) {
+            setConnection((current) => ({ ...current, reachable: false, loading: false, error: error.message }));
+          }
+        }
+
+        const totals = useMemo(() => {
+          const baseIncome = Number(state.income) || 0;
+          const isDecember = String(state.monthName).toLowerCase() === "dicembre";
+          const decemberBonusNet = isDecember ? Math.min(2000, Math.max(0, Number(state.decemberBonusNet) || 0)) : 0;
+          const income = baseIncome + decemberBonusNet;
+          const noteTotals = summarizeNotes(state.notes);
+          const fixedCosts = Math.max(0, Number(state.fixedCosts) || 0);
+          const variableCosts = Math.max(0, Number(state.variableCosts) || 0);
+          const fixedCostDetailGap = fixedCosts - noteTotals.fixedCosts;
+          const variableCostDetailGap = variableCosts - noteTotals.variableCosts;
+          const baseFixedCosts = Math.max(0, fixedCostDetailGap);
+          const baseVariableCosts = Math.max(0, variableCostDetailGap);
+          const essential = fixedCosts + variableCosts;
+          const freeCash = income - essential;
+          const emergencyFundAllocation = Math.max(0, Number(state.emergencyFundAllocation) || 0);
+          const currentNetWorth = freeCash - emergencyFundAllocation;
+          const investmentAllocation = Math.max(0, Number(state.investedCapital) || 0);
+          const flexibleCashAllocation = Math.max(0, Number(state.flexibleCashFunds) || 0);
+          const investmentDetailGap = investmentAllocation - noteTotals.investments;
+          const flexibleCashDetailGap = flexibleCashAllocation - noteTotals.flexibleCash;
+          const unclassifiedInvestmentAllocation = Math.max(0, investmentDetailGap);
+          const baseFlexibleCashAllocation = Math.max(0, flexibleCashDetailGap);
+          const allocatedCapital = investmentAllocation + flexibleCashAllocation;
+          const investable = Math.max(0, currentNetWorth);
+          const emergencyFundTarget = 6000;
+          const currentPeriodId = `${state.year}-${state.monthName}`.toLowerCase().trim();
+          const historicalEmergencyFund = (state.monthlyHistory || [])
+            .filter((month) => month.id !== currentPeriodId && month.id !== editingMonthId)
+            .reduce((sum, month) => sum + Math.max(0, Number(month.emergencyFundAllocation) || 0), 0);
+          const projectedEmergencyFund = historicalEmergencyFund + emergencyFundAllocation;
+          const emergencyGap = Math.max(0, emergencyFundTarget - projectedEmergencyFund);
+          const emergencyProgress = emergencyFundTarget > 0 ? Math.min(100, (projectedEmergencyFund / emergencyFundTarget) * 100) : 0;
+          const spendable = currentNetWorth;
+          const ratio = income > 0 ? (currentNetWorth / income) * 100 : 0;
+          const unallocatedCapital = currentNetWorth - allocatedCapital;
+
+          return {
+            income,
+            baseIncome,
+            decemberBonusNet,
+            noteTotals,
+            baseFixedCosts,
+            baseVariableCosts,
+            fixedCosts,
+            variableCosts,
+            essential,
+            freeCash,
+            currentNetWorth,
+            investable,
+            emergencyFundAllocation,
+            unclassifiedInvestmentAllocation,
+            investmentAllocation,
+            baseFlexibleCashAllocation,
+            flexibleCashAllocation,
+            fixedCostDetailGap,
+            variableCostDetailGap,
+            investmentDetailGap,
+            flexibleCashDetailGap,
+            allocatedCapital,
+            emergencyFundTarget,
+            historicalEmergencyFund,
+            projectedEmergencyFund,
+            emergencyGap,
+            emergencyProgress,
+            spendable,
+            ratio,
+            unallocatedCapital
+          };
+        }, [state, editingMonthId]);
+
+        function updateField(field, value) {
+          setState((current) => ({ ...current, [field]: value }));
+        }
+
+        function buildDashboardArchive() {
+          const normalizedHistory = recalibrateMonthlyHistory(state.monthlyHistory || []);
+          const monthPart = String(state.monthName || "periodo")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9]+/g, "-")
+            .replace(/^-|-$/g, "")
+            .toLowerCase();
+          return {
+            fileName: `patrimonio-${state.year || new Date().getFullYear()}-${monthPart || "periodo"}.json`,
+            archive: {
+              format: "portfolio-operations-archive",
+              formatVersion: 1,
+              exportedAt: new Date().toISOString(),
+              summary: {
+                savedMonths: normalizedHistory.length,
+                currentPeriod: `${state.monthName} ${state.year}`
+              },
+              state: {
+                ...state,
+                budgetModelVersion: 4,
+                notes: (state.notes || []).map(normalizeNote),
+                monthlyHistory: normalizedHistory
+              }
+            }
+          };
+        }
+
+        async function exportDashboardArchive() {
+          try {
+            const exportPayload = buildDashboardArchive();
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/archive/export`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(exportPayload)
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || "Servizio archivio non disponibile");
+            setArchiveNotice({
+              tone: "good",
+              text: `Archivio ${result.fileName} salvato direttamente nella cartella outputs del progetto.`
+            });
+          } catch (error) {
+            setArchiveNotice({ tone: "bad", text: `Esportazione non riuscita: ${error.message}. Riavvia avvia-dashboard-ibkr.bat e riprova.` });
+          }
+        }
+
+        function importDashboardArchive() {
+          setArchiveNotice({ tone: "", text: "Seleziona un archivio JSON dal computer..." });
+          archiveFileInputRef.current?.click();
+        }
+
+        async function handleDashboardArchiveFile(event) {
+          const file = event.target.files?.[0];
+          if (!file) {
+            setArchiveNotice({ tone: "", text: "Importazione annullata: nessun file selezionato." });
+            return;
+          }
+          try {
+            if (file.size > 10 * 1024 * 1024) throw new Error("Il file supera il limite di 10 MB");
+            let payload;
+            try {
+              payload = JSON.parse(await file.text());
+            } catch {
+              throw new Error("Il file selezionato non contiene JSON valido");
+            }
+            if (payload?.format && payload.format !== "portfolio-operations-archive") {
+              throw new Error("Il file non è un archivio della dashboard");
+            }
+            if (Number(payload?.formatVersion || 1) > 1) {
+              throw new Error("Il file è stato creato da una versione più recente della dashboard");
+            }
+            const importedState = payload?.state || payload?.data || payload;
+            if (!importedState || typeof importedState !== "object" || !Array.isArray(importedState.monthlyHistory)) {
+              throw new Error("Lo storico mensile non è presente nel file");
+            }
+            const normalizedState = normalizeStoredState(importedState);
+            const savedMonths = normalizedState.monthlyHistory.length;
+            const confirmed = window.confirm(
+              `Importare ${file.name} con ${savedMonths} ${savedMonths === 1 ? "mese salvato" : "mesi salvati"}? I dati attualmente aperti verranno sostituiti.`
+            );
+            if (!confirmed) {
+              setArchiveNotice({ tone: "", text: "Importazione annullata: i dati aperti non sono stati modificati." });
+              return;
+            }
+            setEditingMonthId("");
+            setEntry(createEmptyEntry());
+            setState(normalizedState);
+            setArchiveNotice({
+              tone: "good",
+              text: `Archivio ${file.name} importato correttamente: ${savedMonths} ${savedMonths === 1 ? "mese disponibile" : "mesi disponibili"}. Ora puoi aggiungere il nuovo mese ed esportare un archivio aggiornato.`
+            });
+          } catch (error) {
+            setArchiveNotice({ tone: "bad", text: `Importazione non riuscita: ${error.message}. Controlla il file JSON e riprova.` });
+          } finally {
+            event.target.value = "";
+          }
+        }
+
+        function addEntry() {
+          const isInvestment = entry.category === "Investimento";
+          const isIbkrInvestment = isInvestment && entry.managementSource === "IBKR";
+          if ((!isIbkrInvestment && !entry.label.trim()) || !entry.amount) return;
+          const isManualInvestment = isInvestment && entry.managementSource === "Manuale";
+          const entryPrice = Number(entry.entryPrice) || 0;
+          const amount = Number(entry.amount) || 0;
+          const quantity = Number(entry.quantity) || (entryPrice > 0 ? amount / entryPrice : 1);
+          const item = normalizeNote({
+            id: entry.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            label: isIbkrInvestment ? "Capitale versato su IBKR" : entry.label.trim(),
+            amount,
+            category: entry.category,
+            managementSource: isInvestment ? entry.managementSource : "",
+            currentValue: isManualInvestment ? Math.max(0, numberOrFallback(entry.currentValue, amount)) : 0,
+            investmentType: isManualInvestment ? entry.investmentType : "",
+            investmentDetail: isManualInvestment ? entry.investmentDetail.trim() : "",
+            ticker: isManualInvestment ? entry.ticker.trim().toUpperCase() : "",
+            purchaseDate: isManualInvestment ? entry.purchaseDate : "",
+            entryPrice: isManualInvestment ? entryPrice : 0,
+            quantity: isManualInvestment ? quantity : 0,
+            marketCurrency: isManualInvestment ? entry.marketCurrency : "",
+            geography: isManualInvestment ? entry.geography : "",
+            continent: isManualInvestment ? entry.continent : ""
+          });
+          setState((current) => ({
+            ...current,
+            notes: entry.id
+              ? current.notes.map((note) => note.id === entry.id ? item : note)
+              : [...current.notes, item]
+          }));
+          setEntry(createEmptyEntry());
+        }
+
+        function editEntry(item) {
+          const normalized = normalizeNote(item);
+          setEntry({
+            id: normalized.id,
+            label: normalized.managementSource === "IBKR" ? "Capitale versato su IBKR" : normalized.label || "",
+            amount: normalized.amount || "",
+            category: normalized.category || "Costo Variabile",
+            managementSource: normalized.managementSource || "Manuale",
+            currentValue: normalized.currentValue ?? normalized.amount ?? "",
+            investmentType: normalized.investmentType || "Liquidita'",
+            investmentDetail: normalized.investmentDetail || "",
+            ticker: normalized.ticker || "",
+            purchaseDate: normalized.purchaseDate || new Date().toISOString().slice(0, 10),
+            entryPrice: normalized.entryPrice || "",
+            quantity: normalized.quantity || "",
+            marketCurrency: normalized.marketCurrency || "EUR",
+            geography: normalized.geography || "Globale",
+            continent: normalized.continent || continentForCountry(normalized.geography || "Globale")
+          });
+        }
+
+        function removeEntry(index) {
+          setState((current) => ({ ...current, notes: current.notes.filter((_, i) => i !== index) }));
+        }
+
+        function resetCustomEntries() {
+          if (!window.confirm("Eliminare soltanto le voci dettagliate del mese corrente? Lo storico mensile non verra' modificato.")) return;
+          setState((current) => ({ ...current, notes: [] }));
+          setEntry(createEmptyEntry());
+        }
+
+        function buildSnapshot() {
+          return {
+            budgetModelVersion: 4,
+            id: `${state.year}-${state.monthName}`.toLowerCase().trim() || String(Date.now()),
+            monthName: state.monthName,
+            year: Number(state.year) || 2026,
+            income: totals.income,
+            baseIncome: totals.baseIncome,
+            decemberBonusNet: totals.decemberBonusNet,
+            baseFixedCosts: totals.baseFixedCosts,
+            baseVariableCosts: totals.baseVariableCosts,
+            fixedCosts: totals.fixedCosts,
+            variableCosts: totals.variableCosts,
+            freeCash: totals.freeCash,
+            investable: totals.investable,
+            emergencyFundAllocation: totals.emergencyFundAllocation,
+            unclassifiedInvestmentAllocation: totals.unclassifiedInvestmentAllocation,
+            investmentAllocation: totals.investmentAllocation,
+            baseFlexibleCashAllocation: totals.baseFlexibleCashAllocation,
+            flexibleCashAllocation: totals.flexibleCashAllocation,
+            fixedCostDetailGap: totals.fixedCostDetailGap,
+            variableCostDetailGap: totals.variableCostDetailGap,
+            investmentDetailGap: totals.investmentDetailGap,
+            flexibleCashDetailGap: totals.flexibleCashDetailGap,
+            allocatedCapital: totals.allocatedCapital,
+            unallocatedCapital: totals.unallocatedCapital,
+            emergencyFundTarget: totals.emergencyFundTarget,
+            projectedEmergencyFund: totals.projectedEmergencyFund,
+            currentNetWorth: totals.currentNetWorth,
+            investedCapital: totals.investmentAllocation,
+            annualNetSalary: salaryEstimate.annualNet,
+            monthlyNetSalary: salaryEstimate.monthlyNet,
+            wealthTotal: livePortfolio.netLiquidation,
+            portfolioMarketValue: livePortfolio.netLiquidation,
+            ibkrCash: livePortfolio.positiveCash,
+            liquidityAvailable: livePortfolio.positiveCash,
+            notes: state.notes,
+            savedAt: new Date().toISOString()
+          };
+        }
+
+        function persistMonthSnapshot(snapshot, sourceId = "") {
+          setState((current) => {
+            const existing = current.monthlyHistory || [];
+            const withoutSameMonth = existing.filter((item) => item.id !== snapshot.id && item.id !== sourceId);
+            return { ...current, monthlyHistory: recalibrateMonthlyHistory([...withoutSameMonth, snapshot]) };
+          });
+        }
+
+        function saveMonthSnapshot() {
+          const snapshot = buildSnapshot();
+          persistMonthSnapshot(snapshot, editingMonthId);
+          setEditingMonthId(snapshot.id);
+        }
+
+        function startNextMonth() {
+          const nextPeriod = nextMonth(state.monthName, state.year);
+          persistMonthSnapshot(buildSnapshot(), editingMonthId);
+          setEditingMonthId("");
+          setState((current) => ({
+            ...current,
+            monthName: nextPeriod.monthName,
+            year: nextPeriod.year,
+            emergencyFundAllocation: 0,
+            investedCapital: 0,
+            flexibleCashFunds: 0,
+            variableCosts: 0,
+            decemberBonusNet: 0,
+            notes: current.notes.filter((item) => item.category === "Costo Fisso")
+          }));
+        }
+
+        function loadSnapshot(snapshot) {
+          setEditingMonthId(snapshot.id);
+          setEntry(createEmptyEntry());
+          setState((current) => ({
+            ...current,
+            monthName: snapshot.monthName,
+            year: snapshot.year || current.year,
+            income: snapshot.baseIncome ?? (Number(snapshot.income || 0) - Number(snapshot.decemberBonusNet || 0)),
+            decemberBonusNet: snapshot.decemberBonusNet || 0,
+            fixedCosts: Math.max(0, Number(snapshot.fixedCosts) || 0),
+            variableCosts: Math.max(0, Number(snapshot.variableCosts) || 0),
+            investedCapital: Math.max(0, Number(snapshot.investmentAllocation ?? snapshot.investedCapital) || 0),
+            flexibleCashFunds: Math.max(0, Number(snapshot.flexibleCashAllocation) || 0),
+            emergencyFundAllocation: snapshot.emergencyFundAllocation || 0,
+            notes: (snapshot.notes || current.notes).map(normalizeNote)
+          }));
+          requestAnimationFrame(() => document.getElementById("monthly-input")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+        }
+
+        function deleteSnapshot(id) {
+          setEditingMonthId((current) => current === id ? "" : current);
+          setState((current) => {
+            const currentPeriodId = `${current.year}-${current.monthName}`.toLowerCase().trim();
+            return {
+              ...current,
+              emergencyFundAllocation: id === currentPeriodId ? 0 : current.emergencyFundAllocation,
+              monthlyHistory: recalibrateMonthlyHistory((current.monthlyHistory || []).filter((item) => item.id !== id))
+            };
+          });
+        }
+
+        const investRatio = totals.income > 0 ? (totals.investmentAllocation / totals.income) * 100 : 0;
+        const detailCategories = [
+          { value: "Costo Fisso", label: "Costo fisso", target: totals.fixedCosts, detailed: totals.noteTotals.fixedCosts, gap: totals.fixedCostDetailGap },
+          { value: "Costo Variabile", label: "Costo variabile", target: totals.variableCosts, detailed: totals.noteTotals.variableCosts, gap: totals.variableCostDetailGap },
+          { value: "Investimento", label: "Investimento", target: totals.investmentAllocation, detailed: totals.noteTotals.investments, gap: totals.investmentDetailGap },
+          { value: "Flexible Cash", label: "Flexible cash", target: totals.flexibleCashAllocation, detailed: totals.noteTotals.flexibleCash, gap: totals.flexibleCashDetailGap }
+        ];
+        const selectedDetailCategory = detailCategories.find((category) => category.value === entry.category) || detailCategories[1];
+        const originalEditedEntry = entry.id ? state.notes.find((note) => note.id === entry.id) : null;
+        const originalAmountInSelectedCategory = originalEditedEntry?.category === entry.category
+          ? Math.max(0, Number(originalEditedEntry.amount) || 0)
+          : 0;
+        const pendingEntryAmount = Math.max(0, Number(entry.amount) || 0);
+        const projectedDetailedAmount = selectedDetailCategory.detailed - originalAmountInSelectedCategory + pendingEntryAmount;
+        const projectedDetailGap = selectedDetailCategory.target - projectedDetailedAmount;
+        const emergencyProgressValue = Math.min(100, Math.max(0, Number(totals.emergencyProgress) || 0));
+        const emergencyHue = emergencyProgressValue <= 50
+          ? (emergencyProgressValue / 50) * 50
+          : 50 + ((emergencyProgressValue - 50) / 50) * 82;
+        const emergencyStatusStyle = {
+          "--emergency-color": `hsl(${emergencyHue} 90% 54%)`,
+          "--emergency-bright": `hsl(${emergencyHue} 94% 68%)`,
+          "--emergency-dark": `hsl(${emergencyHue} 82% 36%)`,
+          "--emergency-glow": `hsla(${emergencyHue},95%,56%,.58)`,
+          "--emergency-contrast": emergencyProgressValue >= 40 ? "#11150b" : "#ffffff"
+        };
+        const salaryEstimate = useMemo(() => {
+          const grossSalary = Number(state.grossSalary) || 0;
+          const paychecks = Math.max(1, Number(state.paychecks) || 13);
+          const employeeContribution = grossSalary * ((Number(state.employeeContributionPct) || 0) / 100);
+          const taxableIncome = Math.max(0, grossSalary - employeeContribution);
+          const grossIrpef = calculateIrpef(taxableIncome);
+          const employeeDeduction = calculateEmployeeDeduction(taxableIncome, state.workDays);
+          const wageSupport = calculateWageSupport(taxableIncome, state.workDays);
+          const netIrpef = Math.max(0, grossIrpef - employeeDeduction);
+          const localTaxes = taxableIncome * (((Number(state.regionalTaxPct) || 0) + (Number(state.municipalTaxPct) || 0)) / 100);
+          const annualNet = Math.max(0, grossSalary - employeeContribution - netIrpef - localTaxes + wageSupport);
+
+          return {
+            grossSalary,
+            paychecks,
+            employeeContribution,
+            taxableIncome,
+            grossIrpef,
+            employeeDeduction,
+            wageSupport,
+            netIrpef,
+            localTaxes,
+            annualNet,
+            monthlyNet: annualNet / paychecks,
+            taxAndContribPct: grossSalary > 0 ? ((grossSalary - annualNet) / grossSalary) * 100 : 0
+          };
+        }, [state.grossSalary, state.paychecks, state.employeeContributionPct, state.regionalTaxPct, state.municipalTaxPct, state.workDays]);
+        const monthlyHistory = useMemo(() => {
+          return sortMonthlyHistory(state.monthlyHistory);
+        }, [state.monthlyHistory]);
+        const allInvestmentNotes = useMemo(() => {
+          return monthlyHistory.flatMap((month) => (month.notes || [])
+            .map(normalizeNote)
+            .filter((note) => note.category === "Investimento")
+            .map((note) => ({ ...note, period: `${month.monthName} ${month.year}`, periodId: month.id })));
+        }, [monthlyHistory]);
+        const manualPortfolio = useMemo(() => {
+          const positions = allInvestmentNotes
+            .filter((note) => note.managementSource === "Manuale")
+            .map((note) => {
+              const costBasis = Math.max(0, Number(note.amount) || 0);
+              const currentValue = Math.max(0, numberOrFallback(note.currentValue, costBasis));
+              return {
+                ...note,
+                costBasis,
+                currentValue,
+                unrealizedPnl: currentValue - costBasis,
+                country: note.geography || "Non classificato",
+                continent: note.continent || continentForCountry(note.geography)
+              };
+            });
+          const byType = positions.reduce((totalsByType, position) => {
+            const type = position.investmentType || "Altro";
+            totalsByType[type] = (totalsByType[type] || 0) + position.currentValue;
+            return totalsByType;
+          }, {});
+          const geographicPositions = positions.filter((position) => !String(position.investmentType || "").toLowerCase().includes("liquid"));
+          const byContinent = geographicPositions.reduce((totalsByContinent, position) => {
+            totalsByContinent[position.continent] = (totalsByContinent[position.continent] || 0) + position.currentValue;
+            return totalsByContinent;
+          }, {});
+          const byCountry = geographicPositions.reduce((totalsByCountry, position) => {
+            totalsByCountry[position.country] = (totalsByCountry[position.country] || 0) + position.currentValue;
+            return totalsByCountry;
+          }, {});
+          const total = positions.reduce((sum, position) => sum + position.currentValue, 0);
+          const costBasis = positions.reduce((sum, position) => sum + position.costBasis, 0);
+          const liquidValue = positions
+            .filter((position) => String(position.investmentType || "").toLowerCase().includes("liquid"))
+            .reduce((sum, position) => sum + position.currentValue, 0);
+          return {
+            positions,
+            byType,
+            byContinent,
+            byCountry,
+            total,
+            geographyTotal: geographicPositions.reduce((sum, position) => sum + position.currentValue, 0),
+            costBasis,
+            liquidValue,
+            unrealizedPnl: total - costBasis,
+            unrealizedPct: costBasis > 0 ? ((total - costBasis) / costBasis) * 100 : 0
+          };
+        }, [allInvestmentNotes]);
+        const liveData = ibkrLive.data;
+        const liveMetrics = liveData?.metrics || {};
+        const liveCurrency = liveData?.baseCurrency || "EUR";
+        const liveConnected = ibkrLive.reachable && liveData?.status === "connected";
+        const liveContractMetadataReady = Number(liveData?.contractMetadataVersion || 0) >= 1;
+        const livePortfolio = useMemo(() => {
+          const sourcePositions = liveConnected ? (liveData?.positions || []) : [];
+          const preparedPositions = sourcePositions.map((position) => {
+            const ibkrCountry = countryName(position.issuerCountryCode, position.issuerCountry || "");
+            const country = ibkrCountry || "Non classificato";
+            const continent = position.issuerContinent || continentForCountry(country);
+            const nativeMarketValue = Number(position.marketValue) || 0;
+            const rawExposure = Math.abs(nativeMarketValue || ((Number(position.quantity) || 0) * (Number(position.marketPrice) || 0)));
+            return {
+              ...position,
+              investmentType: position.assetClass || fallbackInvestmentType(position),
+              investmentDetail: position.securityTypeLabel || "",
+              country,
+              continent,
+              classificationSource: position.assetClass ? `IBKR ${position.securityType || "security type"}` : "Classificazione IBKR",
+              geographySource: position.issuerCountrySource || (position.metadataStatus === "pending" ? "Metadati IBKR in caricamento" : "Paese non disponibile"),
+              geographyEligible: position.securityType !== "CASH",
+              rawExposure
+            };
+          });
+          const rawGrossExposure = preparedPositions.reduce((sum, position) => sum + position.rawExposure, 0);
+          const apiGrossExposure = Math.abs(Number(liveMetrics.grossPositionValue) || 0);
+          const grossPositionValue = apiGrossExposure || rawGrossExposure;
+          const exposureScale = rawGrossExposure > 0 && apiGrossExposure > 0 ? apiGrossExposure / rawGrossExposure : 1;
+          const positions = preparedPositions.map((position) => ({
+            ...position,
+            baseMarketValue: position.rawExposure * exposureScale
+          }));
+          const investmentPositions = positions.filter((position) => position.securityType !== "CASH");
+          const geographicPositions = positions.filter((position) => position.geographyEligible);
+          const byType = investmentPositions.reduce((totalsByType, position) => {
+            totalsByType[position.investmentType] = (totalsByType[position.investmentType] || 0) + position.baseMarketValue;
+            return totalsByType;
+          }, {});
+          const byContinent = geographicPositions.reduce((totalsByContinent, position) => {
+            totalsByContinent[position.continent] = (totalsByContinent[position.continent] || 0) + position.baseMarketValue;
+            return totalsByContinent;
+          }, {});
+          const byCountry = geographicPositions.reduce((totalsByCountry, position) => {
+            totalsByCountry[position.country] = (totalsByCountry[position.country] || 0) + position.baseMarketValue;
+            return totalsByCountry;
+          }, {});
+          const geographyPositionValue = geographicPositions.reduce((sum, position) => sum + position.baseMarketValue, 0);
+          const totalCash = liveConnected ? Number(liveMetrics.totalCash) || 0 : 0;
+          const positiveCash = Math.max(0, totalCash);
+          const byAssetClass = { ...byType };
+          if (positiveCash > 0) byAssetClass["Liquidita'"] = (byAssetClass["Liquidita'"] || 0) + positiveCash;
+          const netLiquidation = liveConnected ? Number(liveMetrics.netLiquidation) || 0 : 0;
+          const unrealizedPnl = liveConnected ? Number(liveMetrics.unrealizedPnl) || 0 : 0;
+          const realizedPnl = liveConnected ? Number(liveMetrics.realizedPnl) || 0 : 0;
+          const activeCostBasis = Math.max(0, grossPositionValue - unrealizedPnl);
+
+          return {
+            connected: liveConnected,
+            positions,
+            netLiquidation,
+            grossPositionValue,
+            totalCash,
+            positiveCash,
+            unrealizedPnl,
+            realizedPnl,
+            unrealizedPct: activeCostBasis > 0 ? (unrealizedPnl / activeCostBasis) * 100 : 0,
+            activeCostBasis,
+            byType,
+            byAssetClass,
+            byContinent,
+            byCountry,
+            geographyPositionValue,
+            assetClassTotal: Object.values(byAssetClass).reduce((sum, value) => sum + value, 0)
+          };
+        }, [liveConnected, liveData, liveMetrics]);
+        const historicalInvestmentTotals = useMemo(() => {
+          return mergeValueMaps(livePortfolio.byType, manualPortfolio.byType);
+        }, [livePortfolio.byType, manualPortfolio.byType]);
+        const historicalInvestmentTotal = Object.values(historicalInvestmentTotals).reduce((sum, value) => sum + Number(value || 0), 0);
+        const historyStats = useMemo(() => {
+          const totalFreeCash = monthlyHistory.reduce((sum, item) => sum + Number(item.freeCash || 0), 0);
+          const totalInvestable = monthlyHistory.reduce((sum, item) => sum + Number(item.investmentAllocation ?? item.investable ?? 0), 0);
+          const first = monthlyHistory[0];
+          const last = monthlyHistory[monthlyHistory.length - 1];
+          const netWorthChange = first && last ? Number(last.currentNetWorth || 0) - Number(first.currentNetWorth || 0) : 0;
+          const investedChange = first && last ? Number(last.investedCapital || 0) - Number(first.investedCapital || 0) : 0;
+
+          return { totalFreeCash, totalInvestable, netWorthChange, investedChange };
+        }, [monthlyHistory]);
+        const wealthOverview = useMemo(() => {
+          const savedFlexibleCash = monthlyHistory.reduce((sum, month) => sum + Math.max(0, Number(month.flexibleCashAllocation) || 0), 0);
+          const flexibleCash = savedFlexibleCash;
+          const emergencyFund = monthlyHistory.reduce((sum, month) => sum + Math.max(0, Number(month.emergencyFundAllocation) || 0), 0);
+          const total = livePortfolio.netLiquidation + manualPortfolio.total + emergencyFund + flexibleCash;
+          const liquidityAvailable = emergencyFund + flexibleCash + livePortfolio.positiveCash + manualPortfolio.liquidValue;
+          const combinedInvestmentsByType = mergeValueMaps(livePortfolio.byType, manualPortfolio.byType);
+          const defensiveInvestments = Object.entries(combinedInvestmentsByType)
+            .filter(([type]) => {
+              const normalizedType = String(type).toLowerCase();
+              return normalizedType.includes("titoli di stato") || normalizedType.includes("obblig") || normalizedType.includes("liquid");
+            })
+            .reduce((sum, [, value]) => sum + value, 0);
+          const defensiveValue = defensiveInvestments + livePortfolio.positiveCash + emergencyFund + flexibleCash;
+          const defensivePct = total > 0 ? (defensiveValue / total) * 100 : 0;
+
+          const combinedAssetClasses = mergeValueMaps(livePortfolio.byAssetClass, manualPortfolio.byType);
+          const combinedContinents = mergeValueMaps(livePortfolio.byContinent, manualPortfolio.byContinent);
+          const combinedCountries = mergeValueMaps(livePortfolio.byCountry, manualPortfolio.byCountry);
+          const productEntries = Object.entries(combinedAssetClasses)
+            .map(([label, value]) => ({ label, value }))
+            .filter((item) => item.value > 0)
+            .sort((a, b) => b.value - a.value);
+          const continentEntries = Object.entries(combinedContinents)
+            .map(([label, value]) => ({ label, value }))
+            .filter((item) => item.value > 0)
+            .sort((a, b) => b.value - a.value);
+          const countryEntries = Object.entries(combinedCountries)
+            .map(([label, value]) => ({ label, value }))
+            .filter((item) => item.value > 0)
+            .sort((a, b) => b.value - a.value);
+
+          const validSnapshots = monthlyHistory.filter((month) => Number(month.wealthTotal) > 0);
+          const latestSnapshot = validSnapshots[validSnapshots.length - 1];
+          const previousTotal = Number(latestSnapshot?.wealthTotal) || 0;
+          const currentGrowthPct = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
+          const lastTwelve = validSnapshots.slice(-12);
+          const twelveMonthBase = Number(lastTwelve[0]?.wealthTotal) || 0;
+          const twelveMonthGrowthPct = twelveMonthBase > 0 ? ((total - twelveMonthBase) / twelveMonthBase) * 100 : 0;
+          const referenceYear = Number(latestSnapshot?.year) || new Date().getFullYear();
+          const yearSnapshots = validSnapshots.filter((month) => Number(month.year) === referenceYear);
+          const yearBase = Number(yearSnapshots[0]?.wealthTotal) || 0;
+          const ytdPct = yearBase > 0 ? ((total - yearBase) / yearBase) * 100 : 0;
+          const riskLabel = defensivePct >= 60 ? "Prudente" : defensivePct >= 35 ? "Moderato" : "Dinamico";
+
+          return {
+            total,
+            emergencyFund,
+            flexibleCash,
+            liquidityAvailable,
+            liquidityPct: total > 0 ? (liquidityAvailable / total) * 100 : 0,
+            defensivePct,
+            currentGrowthPct,
+            twelveMonthGrowthPct,
+            ytdPct,
+            riskLabel,
+            productEntries,
+            productTotal: Object.values(combinedAssetClasses).reduce((sum, value) => sum + value, 0),
+            continentEntries,
+            countryEntries,
+            geographyTotal: livePortfolio.geographyPositionValue + manualPortfolio.geographyTotal,
+            productGradient: buildDonutGradient(productEntries),
+            continentGradient: buildDonutGradient(continentEntries),
+            countryGradient: buildDonutGradient(countryEntries),
+            liveConnected
+          };
+        }, [liveConnected, livePortfolio, manualPortfolio, monthlyHistory]);
+
+        return (
+          <div className="app">
+            <div className="shell">
+              <section className="hero">
+                <div>
+                  <div className="pill">Portfolio operations console</div>
+                  <h1>Controllo mensile di cash flow e allocazione capitale.</h1>
+                  <div className="sub">
+                    Inserisci stipendio, costi fissi, costi variabili e investimenti. La dashboard calcola il margine reale,
+                    la quota disponibile da allocare e la pressione sul budget mese per mese.
+                  </div>
+                </div>
+                <div className="pill">{state.monthName} {state.year} • stato salvato in locale</div>
+              </section>
+
+              <section className="grid">
+                <div className="card full archive-card">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Archivio dati e continuità mensile</div>
+                      <div className="small">Esporta direttamente nella cartella outputs e importa tramite il selettore file del computer.</div>
+                    </div>
+                    <div className="archive-summary">
+                      <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
+                      <span className="badge">Periodo aperto: {state.monthName} {state.year}</span>
+                    </div>
+                  </div>
+                  <div className="archive-toolbar">
+                    <div className="small">
+                      Prima dell'esportazione premi <strong>Salva mese</strong>. Il file cumulativo viene salvato accanto alla dashboard; con Importa seleziona il JSON dalla cartella outputs.
+                    </div>
+                    <div className="actions">
+                      <button onClick={exportDashboardArchive}>Esporta archivio JSON</button>
+                      <button className="secondary" onClick={importDashboardArchive}>Importa archivio JSON</button>
+                      <input
+                        ref={archiveFileInputRef}
+                        type="file"
+                        accept=".json,application/json"
+                        hidden
+                        onChange={handleDashboardArchiveFile}
+                      />
+                    </div>
+                  </div>
+                  {archiveNotice.text && <div className={`archive-notice ${archiveNotice.tone}`}>{archiveNotice.text}</div>}
+                </div>
+
+                <div className="card full">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Stima Stipendio netto da RAL</div>
+                      <div className="small">Pannello opzionale per stimare lo stipendio netto mensile partendo dalla RAL</div>
+                    </div>
+                    <div className="actions">
+                      <span className="badge">Netto stimato: {money(salaryEstimate.monthlyNet)} x {salaryEstimate.paychecks}</span>
+                      <button className="toggle" onClick={() => setIsSalaryPanelOpen((open) => !open)}>
+                        {isSalaryPanelOpen ? "Chiudi" : "Apri"}
+                      </button>
+                    </div>
+                  </div>
+                  {isSalaryPanelOpen && (
+                    <div className="split">
+                      <div className="form">
+                        <div className="field third">
+                          <label>RAL annua</label>
+                          <input type="number" value={state.grossSalary} onChange={(e) => updateField("grossSalary", e.target.value)} />
+                        </div>
+                        <div className="field third">
+                          <label>Mensilita'</label>
+                          <input type="number" value={state.paychecks} onChange={(e) => updateField("paychecks", e.target.value)} />
+                        </div>
+                        <div className="field third">
+                          <label>Giorni lavoro</label>
+                          <input type="number" value={state.workDays} onChange={(e) => updateField("workDays", e.target.value)} />
+                        </div>
+                        <div className="field third">
+                          <label>Superminimo (promemoria)</label>
+                          <select value={state.superminimoAbsorbability} onChange={(e) => updateField("superminimoAbsorbability", e.target.value)}>
+                            <option>Assorbibile</option>
+                            <option>Non assorbibile</option>
+                          </select>
+                          <div className="small" style={{ marginTop: 6 }}>Informazione contrattuale: non modifica la stima del netto quando la RAL è già nota.</div>
+                        </div>
+                        <div className="field third">
+                          <label>Contributi lavoratore %</label>
+                          <input type="number" step="0.01" value={state.employeeContributionPct} onChange={(e) => updateField("employeeContributionPct", e.target.value)} />
+                        </div>
+                        <div className="field third">
+                          <label>Addizionale regionale %</label>
+                          <input type="number" step="0.01" value={state.regionalTaxPct} onChange={(e) => updateField("regionalTaxPct", e.target.value)} />
+                        </div>
+                        <div className="field third">
+                          <label>Addizionale comunale %</label>
+                          <input type="number" step="0.01" value={state.municipalTaxPct} onChange={(e) => updateField("municipalTaxPct", e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="rows">
+                        <div className="mini">
+                          <div>
+                            <strong>Netto annuo stimato</strong>
+                            <div className="small">Dopo contributi, IRPEF netta e addizionali</div>
+                          </div>
+                          <strong>{money(salaryEstimate.annualNet)}</strong>
+                        </div>
+                        <div className="mini">
+                          <div>
+                            <strong>Imponibile fiscale</strong>
+                            <div className="small">RAL meno contributi previdenziali stimati</div>
+                          </div>
+                          <strong>{money(salaryEstimate.taxableIncome)}</strong>
+                        </div>
+                        <div className="mini">
+                          <div>
+                            <strong>Trattenute e imposte</strong>
+                            <div className="small">{plainPct(salaryEstimate.taxAndContribPct)} della RAL</div>
+                          </div>
+                          <strong>{money(salaryEstimate.grossSalary - salaryEstimate.annualNet)}</strong>
+                        </div>
+                        <div className="mini">
+                          <div>
+                            <strong>Detrazioni e bonus lavoro</strong>
+                            <div className="small">Detrazione dipendente + riduzione cuneo se spettante</div>
+                          </div>
+                          <strong>{money(salaryEstimate.employeeDeduction + salaryEstimate.wageSupport)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <IbkrAccountPanel
+                  mode="paper"
+                  connection={ibkrPaper}
+                  isOpen={isIbkrPanelOpen}
+                  onToggle={() => setIsIbkrPanelOpen((open) => !open)}
+                  onRefresh={() => refreshIbkr("paper", setIbkrPaper)}
+                />
+
+                <IbkrAccountPanel
+                  mode="live"
+                  connection={ibkrLive}
+                  isOpen={isIbkrLivePanelOpen}
+                  onToggle={() => setIsIbkrLivePanelOpen((open) => !open)}
+                  onRefresh={() => refreshIbkr("live", setIbkrLive)}
+                />
+
+                <div className="card metric">
+                  <div className="label">Entrate mensili</div>
+                  <div className="value">{money(totals.income)}</div>
+                  <div className="delta">Stipendio netto + eventuale bonus di dicembre</div>
+                </div>
+                <div className="card metric">
+                  <div className="label">Uscite totali</div>
+                  <div className="value">{money(totals.essential)}</div>
+                  <div className="delta bad">Importi base + voci di costo dettagliate</div>
+                </div>
+                <div className="card metric">
+                  <div className="label">Disponibile allocabile</div>
+                  <div className="value">{money(totals.currentNetWorth)}</div>
+                  <div className="delta">Dopo costi e fondo emergenza | {pct(totals.ratio)} del reddito</div>
+                </div>
+                <div className="card metric">
+                  <div className="label">Capitale investito del mese</div>
+                  <div className="value">{money(totals.investmentAllocation)}</div>
+                  <div className="delta">Non dettagliato + investimenti dettagliati | {pct(investRatio)}</div>
+                </div>
+
+                <div className="card full monthly-input-card" id="monthly-input">
+                  <section className="monthly-input-block">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Input del mese</div>
+                      <div className="small">Dati generali, allocazione del capitale e voci dettagliate vengono salvati insieme nello stesso mese.</div>
+                    </div>
+                    <div className="actions">
+                      {editingMonthId && <span className="badge allocation-pending">Modifica di un mese salvato</span>}
+                      <span className="badge">Disponibile da allocare: {money(totals.currentNetWorth)}</span>
+                    </div>
+                  </div>
+                  <div className="form">
+                    <div className="field third">
+                      <label>Mese</label>
+                      <select value={state.monthName} onChange={(e) => updateField("monthName", e.target.value)}>
+                        {months.map((month) => (
+                          <option key={month} value={month}>{month}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field third">
+                      <label>Anno</label>
+                      <input type="number" value={state.year} onChange={(e) => updateField("year", e.target.value)} />
+                    </div>
+                    <div className="field third">
+                      <label>Stipendio netto (€)</label>
+                      <input type="number" value={state.income} onChange={(e) => updateField("income", e.target.value)} />
+                    </div>
+                    {String(state.monthName).toLowerCase() === "dicembre" && (
+                      <div className="field full-field">
+                        <div className="decision-box warn">
+                          <strong>Bonus annuale di dicembre</strong>
+                          <div className="small" style={{ marginTop: 6, marginBottom: 12 }}>
+                            Il bonus massimo previsto e' 2.000 euro lordi. Inserisci qui soltanto il netto realmente ricevuto nel cedolino.
+                          </div>
+                          <label>Bonus netto ricevuto (euro)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="2000"
+                            step="0.01"
+                            value={state.decemberBonusNet}
+                            onChange={(e) => updateField("decemberBonusNet", e.target.value)}
+                            placeholder="es. 1.250"
+                          />
+                          <div className="small" style={{ marginTop: 8 }}>
+                            Reddito totale del mese: {money(totals.income)}. Il netto non puo' superare il lordo massimo di 2.000 euro.
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="field third">
+                      <label>Costi fissi totali del mese (€)</label>
+                      <input type="number" min="0" value={state.fixedCosts} onChange={(e) => updateField("fixedCosts", e.target.value)} />
+                      <div className="small" style={{ marginTop: 6 }}>Target macro del mese: le singole voci lo dettagliano senza aumentare le uscite.</div>
+                    </div>
+                    <div className="field third">
+                      <label>Costi variabili totali del mese (€)</label>
+                      <input type="number" min="0" value={state.variableCosts} onChange={(e) => updateField("variableCosts", e.target.value)} />
+                      <div className="small" style={{ marginTop: 6 }}>Target macro del mese: le singole voci servono a riconciliare questo totale.</div>
+                    </div>
+                    <div className="field third">
+                      <label>Stato fondo cumulato (€)</label>
+                      <input value={money(totals.historicalEmergencyFund)} readOnly />
+                      <div className="small" style={{ marginTop: 6 }}>Somma automatica delle quote fondo emergenza presenti nello storico.</div>
+                    </div>
+                    <div className="field third">
+                      <label>Quota fondo emergenza del mese (€)</label>
+                      <input type="number" min="0" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} />
+                      <div className="small" style={{ marginTop: 6 }}>Viene aggiunta al fondo e registrata quando salvi il mese.</div>
+                    </div>
+                    <div className="field full-field">
+                      <div className="readout">
+                        <div className="label">Somma disponibile dopo costi e fondo emergenza</div>
+                        <div className="value">{money(totals.spendable)}</div>
+                        <div className="small">Stipendio netto + eventuale bonus − costi fissi − costi variabili − quota fondo emergenza del mese. Questo valore non si modifica manualmente.</div>
+                      </div>
+                    </div>
+                  </div>
+                  </section>
+
+                  <section className="monthly-input-block">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Capital allocation</div>
+                      <div className="small">Divide il patrimonio a fine mese tra investimenti e flexible cash funds</div>
+                    </div>
+                    <span className={Math.abs(totals.unallocatedCapital) < 0.01 ? "badge allocation-ok" : totals.unallocatedCapital > 0 ? "badge allocation-pending" : "badge allocation-warning"}>
+                      {Math.abs(totals.unallocatedCapital) < 0.01
+                        ? "Patrimonio completamente allocato"
+                        : totals.unallocatedCapital > 0
+                          ? `Da allocare: ${money(totals.unallocatedCapital)}`
+                          : `Sovra-allocato: ${money(Math.abs(totals.unallocatedCapital))}`}
+                    </span>
+                  </div>
+                  <div className="form" style={{ marginTop: 12 }}>
+                    <div className="field third">
+                      <div className="readout allocation-patrimony">
+                        <div className="label">Patrimonio a fine mese</div>
+                        <div className="value">{money(totals.currentNetWorth)}</div>
+                        <div className="small">Uguale alla somma disponibile calcolata nell'Input del mese.</div>
+                      </div>
+                    </div>
+                    <div className="field third">
+                      <label>Investimenti totali del mese (€)</label>
+                      <input type="number" min="0" value={state.investedCapital} onChange={(e) => updateField("investedCapital", e.target.value)} />
+                      <div className="small" style={{ marginTop: 6 }}>Target macro: le singole voci Investimento spiegano come viene distribuito.</div>
+                    </div>
+                    <div className="field third">
+                      <label>Flexible cash funds a fine mese (€)</label>
+                      <input type="number" min="0" value={state.flexibleCashFunds} onChange={(e) => updateField("flexibleCashFunds", e.target.value)} />
+                      <div className="small" style={{ marginTop: 6 }}>Target macro: le singole voci Flexible Cash spiegano dove resta la liquidita'.</div>
+                    </div>
+                    <div className="field full-field">
+                      <div className="decision-box">
+                        <strong>Formula del mese</strong>
+                        <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
+                          Patrimonio {money(totals.currentNetWorth)} = target investimenti {money(totals.investmentAllocation)} + target flexible cash {money(totals.flexibleCashAllocation)} + differenza {money(totals.unallocatedCapital)}. Dettaglio investimenti: {money(totals.noteTotals.investments)} ({detailGapLabel(totals.investmentDetailGap)}). Dettaglio flexible cash: {money(totals.noteTotals.flexibleCash)} ({detailGapLabel(totals.flexibleCashDetailGap)}).
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  </section>
+
+                  <section className="monthly-input-block">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Voci dettagliate</div>
+                      <div className="small">Scomponi i quattro target macro in singole voci: ogni voce riduce il gap della categoria senza aumentare il budget.</div>
+                    </div>
+                  </div>
+                  <div className="entry-category-grid" aria-label="Categoria della voce dettagliata">
+                    {detailCategories.map((category) => (
+                      <button
+                        type="button"
+                        key={category.value}
+                        className={`entry-category-chip detail-${detailGapTone(category.gap)} ${entry.category === category.value ? "active" : ""}`}
+                        onClick={() => setEntry((current) => ({ ...current, category: category.value }))}
+                      >
+                        <div className="entry-category-head">
+                          <span className="entry-category-title">{category.label}</span>
+                          <strong>{money(category.target)}</strong>
+                        </div>
+                        <div className="entry-category-meta">
+                          <span>Dettagliato {money(category.detailed)}</span>
+                          <span className={`entry-category-gap ${detailGapTone(category.gap)}`}>{detailGapLabel(category.gap)}</span>
+                        </div>
+                        <div className="entry-category-progress" aria-hidden="true">
+                          <span className="entry-category-fill" style={{ width: `${detailProgress(category.target, category.detailed)}%` }} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="split">
+                    <div className="form stack-form">
+                      {entry.category === "Investimento" && (
+                        <div className="field">
+                          <label>Gestione e valorizzazione</label>
+                          <select value={entry.managementSource} onChange={(e) => setEntry((current) => ({
+                            ...current,
+                            managementSource: e.target.value,
+                            label: e.target.value === "IBKR"
+                              ? "Capitale versato su IBKR"
+                              : current.label === "Capitale versato su IBKR" ? "" : current.label
+                          }))}>
+                            <option value="Manuale">Investimento illiquido / non presente su IBKR</option>
+                            <option value="IBKR">Collegato a IBKR Live</option>
+                          </select>
+                          <div className="small" style={{ marginTop: 6 }}>
+                            L'investimento illiquido crea un asset patrimoniale completo. IBKR registra soltanto la quota investita nel mese: posizioni e valori successivi arrivano dal conto Live.
+                          </div>
+                        </div>
+                      )}
+                      <div className="field">
+                        <label>{entry.category === "Investimento" ? entry.managementSource === "IBKR" ? "Descrizione quota IBKR" : "Nome asset / societa'" : entry.category === "Flexible Cash" ? "Nome fondo / liquidita'" : "Nome voce"}</label>
+                        <input
+                          value={entry.category === "Investimento" && entry.managementSource === "IBKR" ? "Capitale versato su IBKR" : entry.label}
+                          onChange={(e) => setEntry((c) => ({ ...c, label: e.target.value }))}
+                          readOnly={entry.category === "Investimento" && entry.managementSource === "IBKR"}
+                          placeholder={entry.category === "Investimento"
+                            ? entry.managementSource === "IBKR"
+                              ? "es. Capitale versato su IBKR"
+                              : "es. Bending Spoons, CLO AAA, BTC, Rolex Daytona"
+                            : entry.category === "Flexible Cash"
+                              ? "es. Conto deposito svincolabile, liquidita' Revolut"
+                              : "es. Cene fuori"}
+                        />
+                      </div>
+                      <div className="field quarter">
+                        <label>{["Investimento", "Flexible Cash"].includes(entry.category) ? "Capitale allocato nel mese (€)" : "Importo mensile (€)"}</label>
+                        <input type="number" min="0" value={entry.amount} onChange={(e) => setEntry((c) => ({ ...c, amount: e.target.value }))} />
+                      </div>
+                      <div className="field">
+                        <div className={`detail-gap-preview ${detailGapTone(projectedDetailGap)}`}>
+                          <div className="detail-gap-preview-grid">
+                            <span><small>Target {selectedDetailCategory.label}</small><strong>{money(selectedDetailCategory.target)}</strong></span>
+                            <span><small>Gia' dettagliato</small><strong>{money(selectedDetailCategory.detailed)}</strong></span>
+                            <span><small>Dopo questa voce</small><strong>{money(projectedDetailedAmount)}</strong></span>
+                          </div>
+                          <div className="detail-gap-status">
+                            {pendingEntryAmount > 0 ? "Proiezione: " : "Stato attuale: "}{detailGapLabel(projectedDetailGap)}.
+                          </div>
+                        </div>
+                      </div>
+                      {entry.category === "Investimento" && entry.managementSource === "IBKR" && (
+                        <div className="field">
+                          <div className="decision-box good">
+                            <strong>Solo riconciliazione del mese</strong>
+                            <div className="small" style={{ marginTop: 7 }}>
+                              Questa voce riduce il gap del target Investimenti, ma non crea un asset, non aumenta il portafoglio e non entra nei grafici. Le sezioni successive useranno esclusivamente saldo, posizioni, Security Type e Paese emittente ricevuti da IBKR Live.
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field">
+                          <label>Valore attuale stimato (€)</label>
+                          <input type="number" step="0.01" value={entry.currentValue} onChange={(e) => setEntry((c) => ({ ...c, currentValue: e.target.value }))} placeholder={entry.amount || "uguale al capitale se lasciato vuoto"} />
+                          <div className="small" style={{ marginTop: 6 }}>Dopo il salvataggio del mese entra nel portafoglio degli investimenti illiquidi e nel patrimonio complessivo.</div>
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field">
+                          <label>Categoria investimento</label>
+                          <select value={entry.investmentType} onChange={(e) => setEntry((c) => ({ ...c, investmentType: e.target.value }))}>
+                            {investmentTypes.map((type) => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field">
+                          <label>Dettaglio strumento</label>
+                          <input value={entry.investmentDetail} onChange={(e) => setEntry((c) => ({ ...c, investmentDetail: e.target.value }))} placeholder="es. CLO, private equity, BTP, azione ordinaria, carta Pokemon, orologio" />
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Ticker (facoltativo)</label>
+                          <input value={entry.ticker} onChange={(e) => setEntry((c) => ({ ...c, ticker: e.target.value }))} placeholder="es. AAPL, VWCE.DE, BTC-EUR" />
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Data acquisto</label>
+                          <input type="date" value={entry.purchaseDate} onChange={(e) => setEntry((c) => ({ ...c, purchaseDate: e.target.value }))} />
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Prezzo ingresso unitario</label>
+                          <input type="number" step="0.0001" value={entry.entryPrice} onChange={(e) => setEntry((c) => ({ ...c, entryPrice: e.target.value }))} placeholder="es. 127,10" />
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Quantita' acquistata</label>
+                          <input type="number" step="0.000001" value={entry.quantity} onChange={(e) => setEntry((c) => ({ ...c, quantity: e.target.value }))} placeholder="calcolata se vuota" />
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Valuta quotazione</label>
+                          <select value={entry.marketCurrency} onChange={(e) => setEntry((c) => ({ ...c, marketCurrency: e.target.value }))}>
+                            {['EUR','USD','GBP','CHF','JPY'].map((currency) => <option key={currency}>{currency}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Paese / area dell'asset</label>
+                          <select value={entry.geography} onChange={(e) => setEntry((current) => ({
+                            ...current,
+                            geography: e.target.value,
+                            continent: continentForCountry(e.target.value)
+                          }))}>
+                            {geographies.map((geography) => <option key={geography}>{geography}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      {entry.category === "Investimento" && entry.managementSource === "Manuale" && (
+                        <div className="field quarter">
+                          <label>Continente dell'asset</label>
+                          <select value={entry.continent} onChange={(e) => setEntry((current) => ({ ...current, continent: e.target.value }))}>
+                            {continents.map((continent) => <option key={continent}>{continent}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      <div className="field">
+                        <div className="actions">
+                          <button onClick={addEntry}>
+                            {entry.id
+                              ? "Salva modifica"
+                              : entry.category === "Investimento"
+                                ? entry.managementSource === "IBKR"
+                                  ? "Registra quota IBKR"
+                                  : "Aggiungi investimento illiquido"
+                                : entry.category === "Flexible Cash"
+                                  ? "Aggiungi flexible cash"
+                                  : "Aggiungi costo"}
+                          </button>
+                          {entry.id && <button className="secondary" onClick={() => setEntry(createEmptyEntry())}>Annulla modifica</button>}
+                          <button className="secondary" onClick={resetCustomEntries}>Reset voci</button>
+                        </div>
+                        <div className="small" style={{ marginTop: 7 }}>Cancella solo le voci dettagliate del mese corrente. Lo storico mensile resta invariato.</div>
+                      </div>
+                    </div>
+                    <div className="rows">
+                      {state.notes.map((item, index) => (
+                        <div className="mini" key={`${item.label}-${index}`}>
+                          <div>
+                            <strong>{item.label}</strong>
+                            <div className="small">
+                              {item.category}
+                              {item.category === "Investimento" && item.ticker ? ` | ${item.ticker}` : ""}
+                              {item.category === "Investimento" && item.investmentType ? ` | ${item.investmentType}` : ""}
+                              {item.category === "Investimento" && item.investmentDetail ? ` | ${item.investmentDetail}` : ""}
+                              {item.category === "Investimento" && item.purchaseDate ? ` | ${new Date(item.purchaseDate).toLocaleDateString("it-IT")}` : ""}
+                              {item.category === "Investimento" && item.geography ? ` | ${item.geography}` : ""}
+                              {item.category === "Investimento" && item.continent ? ` | ${item.continent}` : ""}
+                            </div>
+                            {item.category === "Investimento" && (
+                              <div className="small">
+                                {item.managementSource === "Manuale" ? `Valore attuale: ${money(item.currentValue)} | Investimento illiquido incluso nel portafoglio` : "Quota mensile IBKR | non crea una posizione patrimoniale"}
+                                {item.managementSource === "Manuale" && item.entryPrice ? ` | Quantita': ${precise(item.quantity)} | Carico: ${precise(item.entryPrice, 2)} ${item.marketCurrency || "EUR"}` : ""}
+                              </div>
+                            )}
+                            <div className="bar"><div className="fill" style={{ width: `${Math.min(100, (item.amount / Math.max(1, totals.income)) * 100)}%` }} /></div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <strong>{money(item.amount)}</strong>
+                            <div style={{ marginTop: 8 }}>
+                              <button className="secondary" onClick={() => editEntry(item)} style={{ marginRight: 6 }}>Modifica</button>
+                              <button className="secondary" onClick={() => removeEntry(index)}>Rimuovi</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  </section>
+                  <div className="monthly-save-bar">
+                    <div>
+                      <strong>{editingMonthId ? `Salva le modifiche di ${state.monthName} ${state.year}` : `Salva tutti gli input di ${state.monthName} ${state.year}`}</strong>
+                      <div className="small" style={{ marginTop: 5 }}>Il salvataggio comprende dati generali, costi, fondo emergenza, capital allocation e tutte le voci dettagliate.</div>
+                    </div>
+                    <div className="actions">
+                      <button onClick={saveMonthSnapshot}>{editingMonthId ? "Salva modifiche" : "Salva mese"}</button>
+                      <button className="secondary" onClick={startNextMonth}>Salva e apri mese dopo</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card full monthly-history-card">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Storico mensile</div>
+                      <div className="small">Apri un mese per vedere tutti gli input e le voci dettagliate; usa Modifica mese per caricarlo nella sezione superiore.</div>
+                    </div>
+                    <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
+                  </div>
+                  <div className="grid" style={{ marginTop: 0, marginBottom: 18 }}>
+                    <div className="card metric" style={{ boxShadow: "none" }}>
+                      <div className="label">Margine cumulato</div>
+                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.totalFreeCash)}</div>
+                    </div>
+                    <div className="card metric" style={{ boxShadow: "none" }}>
+                      <div className="label">Investimenti cumulati</div>
+                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.totalInvestable)}</div>
+                    </div>
+                    <div className="card metric" style={{ boxShadow: "none" }}>
+                      <div className="label">Variazione patrimonio</div>
+                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.netWorthChange)}</div>
+                    </div>
+                    <div className="card metric" style={{ boxShadow: "none" }}>
+                      <div className="label">Variazione investito</div>
+                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.investedChange)}</div>
+                    </div>
+                  </div>
+                  <div className="history-list">
+                    {monthlyHistory.length === 0 && (
+                      <div className="decision-box">
+                        <strong>Nessun mese salvato</strong>
+                        <div className="muted" style={{ marginTop: 8 }}>Compila il mese corrente e premi Salva mese per iniziare lo storico.</div>
+                      </div>
+                    )}
+                    {monthlyHistory.map((item) => {
+                      const itemNotes = (item.notes || []).map(normalizeNote);
+                      const itemNoteTotals = summarizeNotes(itemNotes);
+                      return (
+                        <details className="history-item" key={item.id}>
+                          <summary className="history-summary">
+                            <div>
+                              <strong>{item.monthName} {item.year}</strong>
+                              <div className="small">
+                                {editingMonthId === item.id
+                                  ? "In modifica"
+                                  : `${itemNotes.length === 1 ? "1 voce dettagliata" : `${itemNotes.length} voci dettagliate`}${item.savedAt ? ` | salvato il ${new Date(item.savedAt).toLocaleDateString("it-IT")}` : ""}`}
+                              </div>
+                            </div>
+                            <div className="history-kpi history-optional">
+                              <strong>{money(item.freeCash)}</strong>
+                              <div className="small">Margine</div>
+                            </div>
+                            <div className="history-kpi history-optional">
+                              <strong>{money(item.emergencyFundAllocation)}</strong>
+                              <div className="small">Quota fondo</div>
+                            </div>
+                            <div className="history-kpi">
+                              <strong>{money(item.investmentAllocation ?? item.investable)}</strong>
+                              <div className="small">Investimenti</div>
+                            </div>
+                            <div className="history-kpi">
+                              <strong>{money(item.currentNetWorth)}</strong>
+                              <div className="small">Patrimonio</div>
+                            </div>
+                            <div className="history-kpi history-optional">
+                              <strong>{money(item.flexibleCashAllocation)}</strong>
+                              <div className="small">Flexible cash</div>
+                            </div>
+                            <span className="history-chevron">⌄</span>
+                          </summary>
+                          <div className="history-details">
+                            <div className="history-detail-grid">
+                              <div className="history-detail-card">
+                                <div className="label">Stipendio netto</div>
+                                <strong>{money(item.baseIncome ?? item.income)}</strong>
+                                {Number(item.decemberBonusNet) > 0 && <div className="small">+ bonus netto {money(item.decemberBonusNet)}</div>}
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Target costi fissi</div>
+                                <strong>{money(item.fixedCosts)}</strong>
+                                <div className="small">Dettagliati {money(itemNoteTotals.fixedCosts)} | {detailGapLabel(item.fixedCostDetailGap ?? (Number(item.fixedCosts) - itemNoteTotals.fixedCosts))}</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Target costi variabili</div>
+                                <strong>{money(item.variableCosts)}</strong>
+                                <div className="small">Dettagliati {money(itemNoteTotals.variableCosts)} | {detailGapLabel(item.variableCostDetailGap ?? (Number(item.variableCosts) - itemNoteTotals.variableCosts))}</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Quota fondo emergenza</div>
+                                <strong>{money(item.emergencyFundAllocation)}</strong>
+                                <div className="small">Fondo cumulato {money(item.cumulativeEmergencyFund ?? item.projectedEmergencyFund)}</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Patrimonio a fine mese</div>
+                                <strong>{money(item.currentNetWorth)}</strong>
+                                <div className="small">Dopo costi e quota fondo</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Target investimenti</div>
+                                <strong>{money(item.investmentAllocation)}</strong>
+                                <div className="small">Dettagliati {money(itemNoteTotals.investments)} | {detailGapLabel(item.investmentDetailGap ?? (Number(item.investmentAllocation) - itemNoteTotals.investments))}</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Target flexible cash</div>
+                                <strong>{money(item.flexibleCashAllocation)}</strong>
+                                <div className="small">Dettagliati {money(itemNoteTotals.flexibleCash)} | {detailGapLabel(item.flexibleCashDetailGap ?? (Number(item.flexibleCashAllocation) - itemNoteTotals.flexibleCash))}</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Differenza allocazione</div>
+                                <strong className={Math.abs(Number(item.unallocatedCapital) || 0) < 0.01 ? "positive" : "negative"}>{money(item.unallocatedCapital)}</strong>
+                                <div className="small">Zero indica allocazione completa</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Voci dettagliate</div>
+                                <strong>{itemNotes.length}</strong>
+                                <div className="small">Totale {money(itemNoteTotals.total)}</div>
+                              </div>
+                              <div className="history-detail-card">
+                                <div className="label">Ultimo salvataggio</div>
+                                <strong>{item.savedAt ? new Date(item.savedAt).toLocaleDateString("it-IT") : "—"}</strong>
+                              </div>
+                            </div>
+                            <div className="history-notes">
+                              {itemNotes.length === 0 && <div className="small">Nessuna voce dettagliata salvata per questo mese.</div>}
+                              {itemNotes.map((note) => (
+                                <div className="history-note" key={note.id}>
+                                  <div>
+                                    <strong>{note.label}</strong>
+                                    <div className="small">
+                                      {note.category}
+                                      {note.category === "Investimento" && note.investmentType ? ` | ${note.investmentType}` : ""}
+                                      {note.category === "Investimento" && note.ticker ? ` | ${note.ticker}` : ""}
+                                      {note.category === "Investimento" && note.investmentDetail ? ` | ${note.investmentDetail}` : ""}
+                                      {note.category === "Investimento" && note.geography ? ` | ${note.geography}` : ""}
+                                    </div>
+                                    {note.category === "Investimento" && (
+                                      <div className="small">
+                                        {note.managementSource === "Manuale" ? `Investimento illiquido | valore attuale ${money(note.currentValue)}` : "Quota mensile IBKR | esclusa da portafoglio e grafici"}
+                                        {note.managementSource === "Manuale" && note.purchaseDate ? ` | acquisto ${new Date(note.purchaseDate).toLocaleDateString("it-IT")}` : ""}
+                                        {note.managementSource === "Manuale" && note.entryPrice ? ` | prezzo ingresso ${precise(note.entryPrice, 2)} ${note.marketCurrency || "EUR"}` : ""}
+                                        {note.managementSource === "Manuale" && note.quantity ? ` | quantita' ${precise(note.quantity)}` : ""}
+                                        {note.managementSource === "Manuale" && note.continent ? ` | ${note.continent}` : ""}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <strong>{money(note.amount)}</strong>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="history-actions">
+                              <div className="small">Modificando e salvando, questo mese viene aggiornato senza duplicarlo, anche se cambi mese o anno.</div>
+                              <div className="actions">
+                                <button onClick={() => loadSnapshot(item)}>Modifica mese</button>
+                                <button className="secondary" onClick={() => deleteSnapshot(item.id)}>Elimina</button>
+                              </div>
+                            </div>
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="card full emergency-fund-card" style={emergencyStatusStyle}>
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Fondo emergenza</div>
+                      <div className="small">La barra usa le quote dei mesi salvati e, durante la modifica, sostituisce correttamente la quota del mese selezionato.</div>
+                    </div>
+                    <span className="badge">{plainPct(totals.emergencyProgress)} completato</span>
+                  </div>
+                  <div className="meter">
+                    <div className="meter-fill" style={{ width: `${totals.emergencyProgress}%` }} />
+                  </div>
+                  <div className="meter-line">
+                    <span>Fondo aggiornato: {money(totals.projectedEmergencyFund)} (storico {money(totals.historicalEmergencyFund)} + mese selezionato {money(totals.emergencyFundAllocation)})</span>
+                    <span>Target: {money(totals.emergencyFundTarget)}</span>
+                  </div>
+                </div>
+
+                <div className="card full">
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Portafoglio investimenti | IBKR Live + investimenti illiquidi</div>
+                      <div className="small">IBKR valorizza esclusivamente le posizioni Live; gli investimenti illiquidi salvati nello storico usano il valore attuale stimato. Le quote mensili destinate a IBKR non vengono sommate.</div>
+                    </div>
+                    <div className="actions">
+                      <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : "Live offline"}</span>
+                      <button className="secondary" onClick={() => refreshIbkr("live", setIbkrLive)} disabled={ibkrLive.loading}>Aggiorna da IBKR</button>
+                    </div>
+                  </div>
+                  {!liveConnected && (
+                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
+                      <strong>Conto Live non disponibile</strong>
+                      <div className="muted" style={{ marginTop: 8 }}>Apri TWS Live sulla porta 7496 e avvia la dashboard tramite avvia-dashboard-ibkr.bat.</div>
+                    </div>
+                  )}
+                  {liveConnected && livePortfolio.positions.length > 0 && !liveContractMetadataReady && (
+                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
+                      <strong>Riavvio del bridge necessario</strong>
+                      <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri avvia-dashboard-ibkr.bat una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
+                    </div>
+                  )}
+                  <div className="performance-grid">
+                    <div className="performance-card">
+                      <div className="label">Valore posizioni IBKR</div>
+                      <div className="value">{accountMoney(livePortfolio.grossPositionValue, liveCurrency)}</div>
+                    </div>
+                    <div className="performance-card">
+                      <div className="label">Investimenti illiquidi / non IBKR</div>
+                      <div className="value">{money(manualPortfolio.total)}</div>
+                      <div className="small">Solo investimenti presenti nei mesi salvati</div>
+                    </div>
+                    <div className="performance-card">
+                      <div className="label">P/L investimenti illiquidi</div>
+                      <div className={`value ${manualPortfolio.unrealizedPnl > 0 ? "positive" : manualPortfolio.unrealizedPnl < 0 ? "negative" : "neutral"}`}>{money(manualPortfolio.unrealizedPnl)}</div>
+                      <div className={`delta ${manualPortfolio.unrealizedPnl < 0 ? "bad" : ""}`}>{pct(manualPortfolio.unrealizedPct)} rispetto al capitale allocato</div>
+                    </div>
+                    <div className="performance-card">
+                      <div className="label">Liquidita' IBKR</div>
+                      <div className="value">{accountMoney(livePortfolio.totalCash, liveCurrency)}</div>
+                    </div>
+                    <div className="performance-card">
+                      <div className="label">P/L non realizzato</div>
+                      <div className={`value ${livePortfolio.unrealizedPnl > 0 ? "positive" : livePortfolio.unrealizedPnl < 0 ? "negative" : "neutral"}`}>{accountMoney(livePortfolio.unrealizedPnl, liveCurrency)}</div>
+                      <div className={`delta ${livePortfolio.unrealizedPnl < 0 ? "bad" : ""}`}>{pct(livePortfolio.unrealizedPct)} sul costo stimato</div>
+                    </div>
+                    <div className="performance-card">
+                      <div className="label">P/L realizzato</div>
+                      <div className={`value ${livePortfolio.realizedPnl > 0 ? "positive" : livePortfolio.realizedPnl < 0 ? "negative" : "neutral"}`}>{accountMoney(livePortfolio.realizedPnl, liveCurrency)}</div>
+                      <div className="small">Dato fornito direttamente da IBKR</div>
+                    </div>
+                  </div>
+                  <div className="split" style={{ marginBottom: 14 }}>
+                    <div className="rows">
+                      <div className="title">Allocazione investimenti per asset class</div>
+                      {Object.keys(historicalInvestmentTotals).length === 0 && (
+                        <div className="decision-box">
+                          <strong>Nessun investimento contabilizzato</strong>
+                          <div className="muted" style={{ marginTop: 8 }}>Non risultano posizioni IBKR né investimenti illiquidi nei mesi salvati.</div>
+                        </div>
+                      )}
+                      {Object.entries(historicalInvestmentTotals).map(([type, amount]) => (
+                        <div className="mini" key={type}>
+                          <div>
+                            <strong>{type}</strong>
+                            <div className="small">{plainPct(historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0)} del valore attuale</div>
+                            <div className="bar"><div className="fill" style={{ width: `${historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0}%` }} /></div>
+                          </div>
+                          <strong>{money(amount)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="decision-box">
+                      <strong>Logica di classificazione</strong>
+                      <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
+                        Le posizioni IBKR usano security type e Contract Details. Gli investimenti illiquidi usano categoria, Paese, continente e valore stimato inseriti nelle voci dettagliate. Una quota collegata a IBKR non viene sommata una seconda volta, evitando duplicazioni.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="table-wrap">
+                    <div className="title" style={{ marginBottom: 10 }}>Posizioni IBKR Live</div>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Asset</th>
+                          <th>Asset class</th>
+                          <th>Continente emittente</th>
+                          <th>Paese emittente</th>
+                          <th className="numeric">Quantita'</th>
+                          <th className="numeric">Costo medio</th>
+                          <th className="numeric">Prezzo mercato</th>
+                          <th className="numeric">Esposizione {liveCurrency}</th>
+                          <th className="numeric">P/L latente</th>
+                          <th>Mercato</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {livePortfolio.positions.map((position) => (
+                          <tr key={`${position.account}-${position.conId}`}>
+                            <td>
+                              <strong>{position.symbol}</strong>
+                              <div className="small">{position.description}{position.investmentDetail ? ` | ${position.investmentDetail}` : ""}</div>
+                            </td>
+                            <td>{position.investmentType}</td>
+                            <td>{position.continent}</td>
+                            <td>{position.country}</td>
+                            <td className="numeric">{precise(position.quantity, 6)}</td>
+                            <td className="numeric">{accountMoney(position.averageCost, position.currency || liveCurrency)}</td>
+                            <td className="numeric">{accountMoney(position.marketPrice, position.currency || liveCurrency)}</td>
+                            <td className="numeric">{accountMoney(position.baseMarketValue, liveCurrency)}</td>
+                            <td className={`numeric ${position.unrealizedPnl > 0 ? "positive" : position.unrealizedPnl < 0 ? "negative" : ""}`}>
+                              <strong>{accountMoney(position.unrealizedPnl, position.currency || liveCurrency)}</strong>
+                            </td>
+                            <td>
+                              <strong>{position.exchange || "SMART"}</strong>
+                              <div className="small">{position.currency || liveCurrency} | {position.classificationSource}</div>
+                              <div className="small">Geografia: {position.geographySource}</div>
+                            </td>
+                          </tr>
+                        ))}
+                        {livePortfolio.positions.length === 0 && (
+                          <tr><td colSpan="10" className="small">Nessuna posizione aperta rilevata nel conto IBKR Live.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="table-wrap" style={{ marginTop: 18 }}>
+                    <div className="section-head">
+                      <div>
+                        <div className="title">Investimenti illiquidi</div>
+                        <div className="small">Creati nelle voci dettagliate e contabilizzati dopo il salvataggio del mese.</div>
+                      </div>
+                      <span className="badge">{manualPortfolio.positions.length} {manualPortfolio.positions.length === 1 ? "posizione illiquida" : "posizioni illiquide"}</span>
+                    </div>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Asset</th>
+                          <th>Asset class</th>
+                          <th>Periodo</th>
+                          <th>Continente</th>
+                          <th>Paese</th>
+                          <th className="numeric">Capitale allocato</th>
+                          <th className="numeric">Valore attuale</th>
+                          <th className="numeric">P/L stimato</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {manualPortfolio.positions.map((position) => (
+                          <tr key={`${position.periodId}-${position.id}`}>
+                            <td>
+                              <strong>{position.label}</strong>
+                              <div className="small">{position.investmentDetail || "Valorizzazione stimata"}</div>
+                            </td>
+                            <td>{position.investmentType || "Altro"}</td>
+                            <td>{position.period}</td>
+                            <td>{position.continent}</td>
+                            <td>{position.country}</td>
+                            <td className="numeric">{money(position.costBasis)}</td>
+                            <td className="numeric"><strong>{money(position.currentValue)}</strong></td>
+                            <td className={`numeric ${position.unrealizedPnl > 0 ? "positive" : position.unrealizedPnl < 0 ? "negative" : ""}`}>{money(position.unrealizedPnl)}</td>
+                          </tr>
+                        ))}
+                        {manualPortfolio.positions.length === 0 && (
+                          <tr><td colSpan="8" className="small">Nessun investimento illiquido presente nei mesi salvati.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <section className="wealth-section">
+                  <div className="wealth-heading">
+                    <div>
+                      <div className="eyebrow">Consolidated wealth intelligence</div>
+                      <h2>Patrimonio complessivo</h2>
+                      <div className="small">Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza e flexible cash dei soli mesi salvati.</div>
+                    </div>
+                    <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? "Patrimonio collegato a IBKR Live" : "Dati Live non disponibili"}</span>
+                  </div>
+
+                  {!liveConnected && (
+                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
+                      <strong>Patrimonio parziale</strong>
+                      <div className="muted" style={{ marginTop: 8 }}>Finche' il conto Live e' offline, il totale mostra investimenti illiquidi, fondo emergenza e flexible cash dei mesi salvati. Lo storico non viene sovrascritto.</div>
+                    </div>
+                  )}
+
+                  <div className="wealth-kpis">
+                    <div className="wealth-kpi">
+                      <div className="label">Patrimonio complessivo</div>
+                      <div className="value">{money(wealthOverview.total)}</div>
+                      <div className={`delta ${wealthOverview.twelveMonthGrowthPct < 0 ? "bad" : ""}`}>
+                        {pct(wealthOverview.twelveMonthGrowthPct)} rispetto al primo dato disponibile degli ultimi 12 mesi
+                      </div>
+                    </div>
+                    <div className="wealth-kpi">
+                      <div className="label">Crescita mese corrente</div>
+                      <div className={`value ${wealthOverview.currentGrowthPct > 0 ? "positive" : wealthOverview.currentGrowthPct < 0 ? "negative" : ""}`}>
+                        {pct(wealthOverview.currentGrowthPct)}
+                      </div>
+                      <div className="delta">Variazione patrimoniale complessiva, inclusi nuovi versamenti</div>
+                    </div>
+                    <div className="wealth-kpi">
+                      <div className="label">Allocazione difensiva</div>
+                      <div className="value">{plainPct(wealthOverview.defensivePct)}</div>
+                      <div className="delta bad">Titoli di Stato, obbligazioni, liquidita', fondo emergenza e flexible cash</div>
+                    </div>
+                  </div>
+
+                  <div className="wealth-layout">
+                    <div className="wealth-panel">
+                      <div className="wealth-panel-head">
+                        <div>
+                          <h3>Esposizione per asset class | IBKR + investimenti illiquidi</h3>
+                          <div className="small">Posizioni IBKR, cash IBKR e investimenti illiquidi dei mesi salvati.</div>
+                        </div>
+                        <span className="wealth-chip">Totale: {accountMoney(wealthOverview.productTotal, liveCurrency)}</span>
+                      </div>
+                      <div className="donut-layout">
+                        <div className="donut-wrap">
+                          <div className="donut" style={{ background: wealthOverview.productGradient }} role="img" aria-label="Grafico esposizione per asset class del conto IBKR Live">
+                            <div className="donut-center">
+                              <strong>{accountMoney(wealthOverview.productTotal, liveCurrency)}</strong>
+                              <span>Portafoglio investimenti</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="exposure-list">
+                          {wealthOverview.productEntries.map((item, index) => (
+                            <div className="exposure-row" key={item.label}>
+                              <div>
+                                <div className="exposure-name">
+                                  <span className="exposure-dot" style={{ background: wealthColors[index % wealthColors.length] }}></span>
+                                  <span>{item.label}</span>
+                                </div>
+                                <div className="small" style={{ marginLeft: 22 }}>{plainPct(wealthOverview.productTotal ? (item.value / wealthOverview.productTotal) * 100 : 0)} del portafoglio</div>
+                              </div>
+                              <div className="exposure-value">{accountMoney(item.value, liveCurrency)}</div>
+                            </div>
+                          ))}
+                          {wealthOverview.productEntries.length === 0 && <div className="decision-box">Nessuna esposizione IBKR o illiquida contabilizzata.</div>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="wealth-panel wealth-half">
+                      <div className="wealth-panel-head">
+                        <div>
+                          <h3>Esposizione per Continente</h3>
+                          <div className="small">Posizioni IBKR e investimenti illiquidi; USA e Canada sono separati dal resto delle Americhe. Liquidita' esclusa.</div>
+                        </div>
+                      </div>
+                      <div className="donut-layout">
+                        <div className="donut-wrap">
+                          <div className="donut" style={{ background: wealthOverview.continentGradient }} role="img" aria-label="Grafico Esposizione per Continente del conto IBKR Live">
+                            <div className="donut-center">
+                              <strong>Continenti</strong>
+                              <span>{accountMoney(wealthOverview.geographyTotal, liveCurrency)} esposti</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="exposure-list">
+                          {wealthOverview.continentEntries.map((item, index) => {
+                            const share = wealthOverview.geographyTotal ? (item.value / wealthOverview.geographyTotal) * 100 : 0;
+                            return (
+                              <div className="exposure-row geo-row" key={item.label}>
+                                <div>
+                                  <strong>{item.label}</strong>
+                                  <div className="small">{plainPct(share)} del portafoglio</div>
+                                  <div className="geo-track"><span style={{ width: `${share}%` }}></span></div>
+                                </div>
+                                <div className="exposure-value">{accountMoney(item.value, liveCurrency)}</div>
+                                <div className="geo-rank">#{index + 1} continente</div>
+                              </div>
+                            );
+                          })}
+                          {wealthOverview.continentEntries.length === 0 && <div className="decision-box">Nessuna posizione geografica disponibile oppure metadati IBKR ancora in caricamento.</div>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="wealth-panel wealth-half">
+                      <div className="wealth-panel-head">
+                        <div>
+                          <h3>Esposizione per Paese</h3>
+                          <div className="small">Paese emittente IBKR oppure Paese impostato per gli investimenti illiquidi. Liquidita' esclusa.</div>
+                        </div>
+                      </div>
+                      <div className="donut-layout">
+                        <div className="donut-wrap">
+                          <div className="donut" style={{ background: wealthOverview.countryGradient }} role="img" aria-label="Grafico esposizione per Paese del conto IBKR Live">
+                            <div className="donut-center">
+                              <strong>Paesi</strong>
+                              <span>{accountMoney(wealthOverview.geographyTotal, liveCurrency)} esposti</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="exposure-list">
+                          {wealthOverview.countryEntries.map((item, index) => {
+                            const share = wealthOverview.geographyTotal ? (item.value / wealthOverview.geographyTotal) * 100 : 0;
+                            return (
+                              <div className="exposure-row geo-row" key={item.label}>
+                                <div>
+                                  <strong>{item.label}</strong>
+                                  <div className="small">{plainPct(share)} del portafoglio</div>
+                                  <div className="geo-track"><span style={{ width: `${share}%` }}></span></div>
+                                </div>
+                                <div className="exposure-value">{accountMoney(item.value, liveCurrency)}</div>
+                                <div className="geo-rank">#{index + 1} Paese</div>
+                              </div>
+                            );
+                          })}
+                          {wealthOverview.countryEntries.length === 0 && <div className="decision-box">Nessun Paese emittente disponibile oppure metadati IBKR ancora in caricamento.</div>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="wealth-panel">
+                      <div className="wealth-panel-head">
+                        <div>
+                          <h3>Indicatori chiave</h3>
+                          <div className="small">Sintesi rapida del profilo patrimoniale</div>
+                        </div>
+                      </div>
+                      <div className="indicator-list">
+                        <div className="indicator-row">
+                          <div>
+                            <strong>Liquidita' disponibile contabilizzata</strong>
+                            <div className="small">Fondo emergenza e flexible cash dallo storico salvato + liquidita' IBKR Live</div>
+                          </div>
+                          <div className="indicator-value">{money(wealthOverview.liquidityAvailable)}</div>
+                          <div className="indicator-status">{plainPct(wealthOverview.liquidityPct)} del patrimonio</div>
+                        </div>
+                        <div className="indicator-row">
+                          <div>
+                            <strong>Profilo di rischio</strong>
+                            <div className="small">Stimato dalla quota di allocazione difensiva</div>
+                          </div>
+                          <div className="indicator-value">{wealthOverview.riskLabel}</div>
+                          <div className="indicator-status">{plainPct(wealthOverview.defensivePct)} difensivo</div>
+                        </div>
+                        <div className="indicator-row">
+                          <div>
+                            <strong>Performance YTD</strong>
+                            <div className="small">Variazione dall'inizio dell'anno sui dati salvati</div>
+                          </div>
+                          <div className={`indicator-value ${wealthOverview.ytdPct > 0 ? "positive" : wealthOverview.ytdPct < 0 ? "negative" : ""}`}>{pct(wealthOverview.ytdPct)}</div>
+                          <div className="indicator-status">Patrimonio consolidato</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </section>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
