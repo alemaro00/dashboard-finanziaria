@@ -42,6 +42,8 @@
         background:linear-gradient(180deg, #141b25 0%, #0d1219 100%);
         box-shadow:var(--shadow);
       }
+      .dashboard-title{padding:6px 2px 2px}
+      .dashboard-title h1{margin:0;font-size:28px}
       h1{margin:8px 0 10px;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:0}
       .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
       .sub{max-width:860px;color:var(--muted);line-height:1.5;font-size:13px}
@@ -88,8 +90,16 @@
         color:#c9d3df;background:#101722;border:1px solid #344155;
       }
       button.toggle{
-        color:#c9d3df;background:#0a0f16;border:1px solid #344155;min-width:112px;
+        display:inline-grid;place-items:center;width:40px;height:40px;min-width:40px;padding:0;
+        color:#c96770;background:rgba(64,22,29,.55);border:1px solid rgba(201,103,112,.65);line-height:1;text-transform:none;
+        box-shadow:none;
+        transition:color .2s ease,background .2s ease,box-shadow .2s ease,transform .2s ease;
       }
+      button.toggle:hover{color:#e18b93;background:rgba(88,29,39,.68);box-shadow:none;transform:translateY(-1px)}
+      .toggle-chevron{width:11px;height:11px;border-right:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(-45deg);transition:transform .22s ease}
+      button.toggle[aria-expanded="true"]{color:#62b991;background:rgba(18,65,49,.58);border-color:rgba(98,185,145,.68);box-shadow:none}
+      button.toggle[aria-expanded="true"]:hover{color:#88d1af;background:rgba(24,82,62,.68);box-shadow:none}
+      button.toggle[aria-expanded="true"] .toggle-chevron{transform:rotate(45deg) translate(-1px,-1px)}
       .rows{display:grid;gap:8px}
       .row{
         display:grid;grid-template-columns:1.2fr .8fr .8fr .6fr;gap:10px;align-items:center;
@@ -222,6 +232,7 @@
       .dot.bad{background:var(--bad)}
       .pending-panel{padding:14px;border:1px solid rgba(233,185,73,.28);background:rgba(233,185,73,.06);border-radius:6px}
       .archive-card{
+        order:999;
         border-color:rgba(111,178,210,.52);background:linear-gradient(145deg,#13202b,#0c1219 58%,#111827);
         box-shadow:0 0 0 1px rgba(111,178,210,.07),0 14px 32px rgba(0,0,0,.24);
       }
@@ -231,7 +242,18 @@
       .archive-notice{margin-top:12px;padding:10px 12px;border-radius:6px;border:1px solid rgba(111,178,210,.28);background:rgba(111,178,210,.07);color:#bfe9fb;font-size:12px}
       .archive-notice.good{border-color:rgba(66,211,146,.36);background:rgba(66,211,146,.08);color:#98efc8}
       .archive-notice.bad{border-color:rgba(255,95,99,.38);background:rgba(255,95,99,.08);color:#ffb5b8}
-      .monthly-history-card{order:100}
+      .finance-management-card{
+        order:100;border-color:rgba(233,185,73,.42);
+        background:linear-gradient(145deg,#171a20,#0d1219 58%,#15120c);
+      }
+      .finance-management-head .title{color:#f0d58d}
+      .finance-panel{padding:14px;border:1px solid #273244;border-radius:6px;background:#0b1118}
+      .finance-panel + .finance-panel{margin-top:12px}
+      .finance-panel > .section-head{margin-bottom:0}
+      .finance-panel.is-open > .section-head{margin-bottom:12px}
+      .finance-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+      .finance-summary-grid .metric{grid-column:auto;min-width:0;box-shadow:none}
+      .finance-management-card .emergency-fund-card{order:initial;background:#0b1118!important;border-color:#273244!important;box-shadow:none!important}
       .emergency-fund-card{
         order:101;border-color:rgba(255,72,86,.9);
         background:linear-gradient(145deg,#4d0c17 0%,#2a090f 50%,#14080c 100%);
@@ -257,8 +279,16 @@
       .ibkr-paper-card{order:102;border-color:rgba(139,126,255,.58);background:linear-gradient(145deg,#19172a,#0c1118 58%,#15182a);box-shadow:0 0 0 1px rgba(139,126,255,.08),0 14px 32px rgba(0,0,0,.25)}
       .ibkr-live-card{order:103;border-color:rgba(66,211,146,.56);background:linear-gradient(145deg,#10201d,#0c1118 58%,#101c22);box-shadow:0 0 0 1px rgba(66,211,146,.08),0 14px 32px rgba(0,0,0,.25)}
       .ibkr-live-card .title{color:#d9ffeb}
-      .monthly-history-card ~ *{order:104}
-      .monthly-history-card + .emergency-fund-card{order:101}
+      .ibkr-status-card{order:102;display:flex;align-items:center;gap:14px;padding:14px 16px;border-color:rgba(111,178,210,.4);background:#0b121a}
+      .ibkr-status-heading{margin-right:auto}
+      .ibkr-status-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dcecff}
+      .ibkr-account-status{display:flex;align-items:center;gap:8px;padding-left:14px;border-left:1px solid var(--line-soft)}
+      .ibkr-account-status .badge{min-width:118px;justify-content:center}
+      .ibkr-account-status.paper .badge{border-color:rgba(139,126,255,.46);color:#c8c2ff;background:rgba(139,126,255,.08)}
+      .ibkr-account-status.live .badge{border-color:rgba(66,211,146,.42);color:#9af0c7;background:rgba(66,211,146,.08)}
+      .wealth-ibkr-status{margin-bottom:14px;border:1px solid #273244;border-radius:7px;background:#0b1118}
+      .finance-management-card ~ *{order:104}
+      .finance-management-card + .emergency-fund-card{order:101}
       .ibkr-strip{
         display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 14px;margin-bottom:12px;
         border-radius:6px
@@ -284,6 +314,10 @@
       .wealth-kpi{padding:18px 20px;border-radius:10px;border:1px solid #273243;background:linear-gradient(145deg,#121a26,#0b111a);box-shadow:0 16px 38px rgba(0,0,0,.2)}
       .wealth-kpi .value{font-size:36px;margin-top:14px}
       .wealth-kpi .delta{line-height:1.4}
+      .wealth-performance-grid{grid-template-columns:repeat(6,minmax(0,1fr));margin-top:2px}
+      .wealth-performance-grid .performance-card{min-width:0}
+      .wealth-positions-table{margin-top:4px}
+      .wealth-illiquid-table{margin-bottom:18px}
       .wealth-layout{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:12px}
       .wealth-panel{grid-column:span 12;padding:22px;border-radius:12px;border:1px solid #273243;background:linear-gradient(145deg,#121a26,#0b111a);box-shadow:0 16px 38px rgba(0,0,0,.2)}
       .wealth-half{grid-column:span 6}
@@ -311,6 +345,18 @@
       .indicator-row strong{font-size:15px}
       .indicator-value{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
       .indicator-status{font-size:11px;color:#8faeff}
+      .risk-thresholds{display:flex;gap:6px;flex-wrap:wrap}
+      .risk-threshold{padding:5px 7px;border-radius:999px;border:1px solid #344155;color:#8fa2b7;background:#0d141e;font-size:10px;white-space:nowrap}
+      .risk-threshold.prudente.active{color:#bff7df;border-color:#42d392;background:rgba(66,211,146,.12)}
+      .risk-threshold.moderato.active{color:#ffd69a;border-color:#f0a84b;background:rgba(240,168,75,.12)}
+      .risk-threshold.dinamico.active{color:#ffb3b8;border-color:#ff5f63;background:rgba(255,95,99,.12)}
+      .section-surface{
+        border:1px solid rgba(71,151,181,.55)!important;
+        background:linear-gradient(145deg,#102532 0%,#0b1721 55%,#0b131b 100%)!important;
+        box-shadow:0 0 0 1px rgba(71,151,181,.07),0 14px 30px rgba(0,0,0,.22)!important;
+      }
+      .section-surface .title,.section-surface .finance-management-head .title{color:#d7f4ff;text-shadow:none}
+      .wealth-section.section-surface{padding:20px;border-radius:7px;margin-top:12px}
       button:disabled{opacity:.45;cursor:not-allowed}
       @media (max-width:1100px){
         .metric,.wide,.side{grid-column:span 12}
@@ -318,6 +364,7 @@
         .split{grid-template-columns:1fr}
         .allocation-grid{grid-template-columns:1fr}
         .performance-grid{grid-template-columns:repeat(2,1fr)}
+        .finance-summary-grid{grid-template-columns:repeat(2,1fr)}
         .ibkr-kpis{grid-template-columns:repeat(3,1fr)}
         .wealth-kpis{grid-template-columns:1fr}
         .wealth-half{grid-column:span 12}
@@ -330,8 +377,12 @@
       @media (max-width:700px){
         .app{padding:16px}
         .hero{flex-direction:column;align-items:flex-start}
+        .ibkr-status-card{align-items:stretch;flex-direction:column}
+        .ibkr-status-heading{margin-right:0}
+        .ibkr-account-status{justify-content:space-between;padding:10px 0 0;border-left:0;border-top:1px solid var(--line-soft)}
         .value{font-size:32px}
         .performance-grid{grid-template-columns:1fr}
+        .finance-summary-grid{grid-template-columns:1fr}
         .ibkr-kpis{grid-template-columns:1fr}
         .ibkr-strip{align-items:flex-start;flex-direction:column}
         .wealth-heading{align-items:flex-start;flex-direction:column}
@@ -785,6 +836,36 @@
         }
       }
 
+      function SectionToggle({ isOpen, onToggle, label, tone = "blue" }) {
+        const actionLabel = `${isOpen ? "Chiudi" : "Apri"} ${label}`;
+        return (
+          <button
+            type="button"
+            className={`toggle tone-${tone}`}
+            onClick={onToggle}
+            aria-expanded={isOpen}
+            aria-label={actionLabel}
+            title={actionLabel}
+          >
+            <span className="toggle-chevron" aria-hidden="true"></span>
+          </button>
+        );
+      }
+
+      function IbkrStatusItem({ mode, connection }) {
+        const label = mode === "paper" ? "Paper" : "Live";
+        const connected = connection.reachable && connection.data?.status === "connected";
+        const status = connection.loading ? "Verifica..." : connected ? "Collegato" : "Offline";
+        return (
+          <div className={`ibkr-account-status ${mode}`}>
+            <span className="badge status-line">
+              <span className={`dot ${connected ? "good" : "bad"}`}></span>
+              {label}: {status}
+            </span>
+          </div>
+        );
+      }
+
       function IbkrAccountPanel({ mode, connection, isOpen, onToggle, onRefresh }) {
         const isPaper = mode === "paper";
         const label = isPaper ? "Paper" : "Live";
@@ -820,7 +901,7 @@
                   {connected ? `${label} collegato` : connection.loading ? "Verifica..." : `${label} offline`}
                 </span>
                 <button className="secondary" onClick={onRefresh} disabled={connection.loading}>Aggiorna</button>
-                <button className="toggle" onClick={onToggle}>{isOpen ? "Chiudi" : "Apri"}</button>
+                <SectionToggle isOpen={isOpen} onToggle={onToggle} label={`pannello IBKR ${label}`} />
               </div>
             </div>
 
@@ -969,9 +1050,11 @@
       function App() {
         const [state, setState] = useState(loadState);
         const [isSalaryPanelOpen, setIsSalaryPanelOpen] = useState(() => localStorage.getItem("salary-estimate-panel-open") !== "false");
+        const [isMonthlyInputOpen, setIsMonthlyInputOpen] = useState(() => localStorage.getItem("monthly-input-panel-open") !== "false");
+        const [isMonthlyHistoryOpen, setIsMonthlyHistoryOpen] = useState(() => localStorage.getItem("monthly-history-panel-open") !== "false");
+        const [isMonthlySummaryOpen, setIsMonthlySummaryOpen] = useState(() => localStorage.getItem("monthly-summary-panel-open") !== "false");
+        const [isPortfolioPanelOpen, setIsPortfolioPanelOpen] = useState(() => localStorage.getItem("portfolio-panel-open") !== "false");
         const [entry, setEntry] = useState(createEmptyEntry);
-        const [isIbkrPanelOpen, setIsIbkrPanelOpen] = useState(true);
-        const [isIbkrLivePanelOpen, setIsIbkrLivePanelOpen] = useState(true);
         const [editingMonthId, setEditingMonthId] = useState("");
         const [archiveNotice, setArchiveNotice] = useState({ tone: "", text: "" });
         const archiveFileInputRef = useRef(null);
@@ -985,6 +1068,22 @@
         useEffect(() => {
           localStorage.setItem("salary-estimate-panel-open", String(isSalaryPanelOpen));
         }, [isSalaryPanelOpen]);
+
+        useEffect(() => {
+          localStorage.setItem("monthly-input-panel-open", String(isMonthlyInputOpen));
+        }, [isMonthlyInputOpen]);
+
+        useEffect(() => {
+          localStorage.setItem("monthly-history-panel-open", String(isMonthlyHistoryOpen));
+        }, [isMonthlyHistoryOpen]);
+
+        useEffect(() => {
+          localStorage.setItem("monthly-summary-panel-open", String(isMonthlySummaryOpen));
+        }, [isMonthlySummaryOpen]);
+
+        useEffect(() => {
+          localStorage.setItem("portfolio-panel-open", String(isPortfolioPanelOpen));
+        }, [isPortfolioPanelOpen]);
 
         useEffect(() => {
           let active = true;
@@ -1484,7 +1583,10 @@
             const country = ibkrCountry || "Non classificato";
             const continent = position.issuerContinent || continentForCountry(country);
             const nativeMarketValue = Number(position.marketValue) || 0;
-            const rawExposure = Math.abs(nativeMarketValue || ((Number(position.quantity) || 0) * (Number(position.marketPrice) || 0)));
+            const quantity = Number(position.quantity) || 0;
+            const marketPrice = Number(position.marketPrice) || 0;
+            const averageCost = Number(position.averageCost) || 0;
+            const rawExposure = Math.abs(nativeMarketValue || (quantity * marketPrice) || (quantity * averageCost));
             return {
               ...position,
               investmentType: position.assetClass || fallbackInvestmentType(position),
@@ -1595,16 +1697,26 @@
             .sort((a, b) => b.value - a.value);
 
           const validSnapshots = monthlyHistory.filter((month) => Number(month.wealthTotal) > 0);
-          const latestSnapshot = validSnapshots[validSnapshots.length - 1];
-          const previousTotal = Number(latestSnapshot?.wealthTotal) || 0;
-          const currentGrowthPct = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
           const lastTwelve = validSnapshots.slice(-12);
           const twelveMonthBase = Number(lastTwelve[0]?.wealthTotal) || 0;
           const twelveMonthGrowthPct = twelveMonthBase > 0 ? ((total - twelveMonthBase) / twelveMonthBase) * 100 : 0;
-          const referenceYear = Number(latestSnapshot?.year) || new Date().getFullYear();
-          const yearSnapshots = validSnapshots.filter((month) => Number(month.year) === referenceYear);
-          const yearBase = Number(yearSnapshots[0]?.wealthTotal) || 0;
-          const ytdPct = yearBase > 0 ? ((total - yearBase) / yearBase) * 100 : 0;
+          const referenceYear = Number(state.year) || new Date().getFullYear();
+          const referenceMonth = state.monthName;
+          const yearAgoSnapshot = validSnapshots.find((month) => Number(month.year) === referenceYear - 1 && month.monthName === referenceMonth);
+          const yearAgoTotal = Number(yearAgoSnapshot?.wealthTotal) || 0;
+          const yoyGrowthPct = yearAgoTotal > 0 ? ((total - yearAgoTotal) / yearAgoTotal) * 100 : null;
+
+          const wealthSeries = validSnapshots.map((month) => Number(month.wealthTotal)).filter((value) => value > 0);
+          if (total > 0 && wealthSeries[wealthSeries.length - 1] !== total) wealthSeries.push(total);
+          const monthlyReturns = wealthSeries.slice(1).map((value, index) => (value / wealthSeries[index]) - 1);
+          const meanReturn = monthlyReturns.length ? monthlyReturns.reduce((sum, value) => sum + value, 0) / monthlyReturns.length : 0;
+          const returnVariance = monthlyReturns.length > 1
+            ? monthlyReturns.reduce((sum, value) => sum + ((value - meanReturn) ** 2), 0) / (monthlyReturns.length - 1)
+            : 0;
+          const monthlyVolatility = Math.sqrt(returnVariance);
+          const hasVarData = monthlyReturns.length > 1;
+          const parametricVarAmount = hasVarData ? total * 2.32635 * monthlyVolatility : 0;
+          const parametricVarPct = hasVarData ? 2.32635 * monthlyVolatility * 100 : 0;
           const riskLabel = defensivePct >= 60 ? "Prudente" : defensivePct >= 35 ? "Moderato" : "Dinamico";
 
           return {
@@ -1614,9 +1726,12 @@
             liquidityAvailable,
             liquidityPct: total > 0 ? (liquidityAvailable / total) * 100 : 0,
             defensivePct,
-            currentGrowthPct,
             twelveMonthGrowthPct,
-            ytdPct,
+            yoyGrowthPct,
+            yearAgoTotal,
+            hasVarData,
+            parametricVarAmount,
+            parametricVarPct,
             riskLabel,
             productEntries,
             productTotal: Object.values(combinedAssetClasses).reduce((sum, value) => sum + value, 0),
@@ -1628,25 +1743,17 @@
             countryGradient: buildDonutGradient(countryEntries),
             liveConnected
           };
-        }, [liveConnected, livePortfolio, manualPortfolio, monthlyHistory]);
+        }, [liveConnected, livePortfolio, manualPortfolio, monthlyHistory, state.monthName, state.year]);
 
         return (
           <div className="app">
             <div className="shell">
-              <section className="hero">
-                <div>
-                  <div className="pill">Portfolio operations console</div>
-                  <h1>Controllo mensile di cash flow e allocazione capitale.</h1>
-                  <div className="sub">
-                    Inserisci stipendio, costi fissi, costi variabili e investimenti. La dashboard calcola il margine reale,
-                    la quota disponibile da allocare e la pressione sul budget mese per mese.
-                  </div>
-                </div>
-                <div className="pill">{state.monthName} {state.year} • stato salvato in locale</div>
-              </section>
+              <header className="dashboard-title">
+                <h1>Dashboard finanziaria</h1>
+              </header>
 
               <section className="grid">
-                <div className="card full archive-card">
+                <div className="card full archive-card section-surface">
                   <div className="section-head">
                     <div>
                       <div className="title">Archivio dati e continuità mensile</div>
@@ -1676,7 +1783,7 @@
                   {archiveNotice.text && <div className={`archive-notice ${archiveNotice.tone}`}>{archiveNotice.text}</div>}
                 </div>
 
-                <div className="card full">
+                <div className="card full section-surface">
                   <div className="section-head">
                     <div>
                       <div className="title">Stima Stipendio netto da RAL</div>
@@ -1684,9 +1791,12 @@
                     </div>
                     <div className="actions">
                       <span className="badge">Netto stimato: {money(salaryEstimate.monthlyNet)} x {salaryEstimate.paychecks}</span>
-                      <button className="toggle" onClick={() => setIsSalaryPanelOpen((open) => !open)}>
-                        {isSalaryPanelOpen ? "Chiudi" : "Apri"}
-                      </button>
+                      <SectionToggle
+                        isOpen={isSalaryPanelOpen}
+                        onToggle={() => setIsSalaryPanelOpen((open) => !open)}
+                        label="stima stipendio netto"
+                        tone="blue"
+                      />
                     </div>
                   </div>
                   {isSalaryPanelOpen && (
@@ -1759,45 +1869,32 @@
                   )}
                 </div>
 
-                <IbkrAccountPanel
-                  mode="paper"
-                  connection={ibkrPaper}
-                  isOpen={isIbkrPanelOpen}
-                  onToggle={() => setIsIbkrPanelOpen((open) => !open)}
-                  onRefresh={() => refreshIbkr("paper", setIbkrPaper)}
-                />
+                <div className="card full finance-management-card section-surface">
+                  <div className="section-head finance-management-head">
+                    <div>
+                      <div className="title">Gestione delle finanze</div>
+                      <div className="small">Input del mese e storico mensile raccolti in un unico spazio operativo.</div>
+                    </div>
+                  </div>
 
-                <IbkrAccountPanel
-                  mode="live"
-                  connection={ibkrLive}
-                  isOpen={isIbkrLivePanelOpen}
-                  onToggle={() => setIsIbkrLivePanelOpen((open) => !open)}
-                  onRefresh={() => refreshIbkr("live", setIbkrLive)}
-                />
+                <section className="finance-panel emergency-fund-card" style={emergencyStatusStyle}>
+                  <div className="section-head">
+                    <div>
+                      <div className="title">Fondo emergenza</div>
+                      <div className="small">La barra usa le quote dei mesi salvati e, durante la modifica, sostituisce correttamente la quota del mese selezionato.</div>
+                    </div>
+                    <span className="badge">{plainPct(totals.emergencyProgress)} completato</span>
+                  </div>
+                  <div className="meter">
+                    <div className="meter-fill" style={{ width: `${totals.emergencyProgress}%` }} />
+                  </div>
+                  <div className="meter-line">
+                    <span>Fondo aggiornato: {money(totals.projectedEmergencyFund)} (storico {money(totals.historicalEmergencyFund)} + mese selezionato {money(totals.emergencyFundAllocation)})</span>
+                    <span>Target: {money(totals.emergencyFundTarget)}</span>
+                  </div>
+                </section>
 
-                <div className="card metric">
-                  <div className="label">Entrate mensili</div>
-                  <div className="value">{money(totals.income)}</div>
-                  <div className="delta">Stipendio netto + eventuale bonus di dicembre</div>
-                </div>
-                <div className="card metric">
-                  <div className="label">Uscite totali</div>
-                  <div className="value">{money(totals.essential)}</div>
-                  <div className="delta bad">Importi base + voci di costo dettagliate</div>
-                </div>
-                <div className="card metric">
-                  <div className="label">Disponibile allocabile</div>
-                  <div className="value">{money(totals.currentNetWorth)}</div>
-                  <div className="delta">Dopo costi e fondo emergenza | {pct(totals.ratio)} del reddito</div>
-                </div>
-                <div className="card metric">
-                  <div className="label">Capitale investito del mese</div>
-                  <div className="value">{money(totals.investmentAllocation)}</div>
-                  <div className="delta">Non dettagliato + investimenti dettagliati | {pct(investRatio)}</div>
-                </div>
-
-                <div className="card full monthly-input-card" id="monthly-input">
-                  <section className="monthly-input-block">
+                <section className={`finance-panel monthly-input-card ${isMonthlyInputOpen ? "is-open" : ""}`} id="monthly-input">
                   <div className="section-head">
                     <div>
                       <div className="title">Input del mese</div>
@@ -1806,8 +1903,16 @@
                     <div className="actions">
                       {editingMonthId && <span className="badge allocation-pending">Modifica di un mese salvato</span>}
                       <span className="badge">Disponibile da allocare: {money(totals.currentNetWorth)}</span>
+                      <SectionToggle
+                        isOpen={isMonthlyInputOpen}
+                        onToggle={() => setIsMonthlyInputOpen((open) => !open)}
+                        label="input del mese"
+                        tone="gold"
+                      />
                     </div>
                   </div>
+                  {isMonthlyInputOpen && (
+                  <>
                   <div className="form">
                     <div className="field third">
                       <label>Mese</label>
@@ -1876,7 +1981,6 @@
                       </div>
                     </div>
                   </div>
-                  </section>
 
                   <section className="monthly-input-block">
                   <div className="section-head">
@@ -2149,16 +2253,28 @@
                       <button className="secondary" onClick={startNextMonth}>Salva e apri mese dopo</button>
                     </div>
                   </div>
-                </div>
+                  </>
+                  )}
+                </section>
 
-                <div className="card full monthly-history-card">
+                <section className={`finance-panel monthly-history-card ${isMonthlyHistoryOpen ? "is-open" : ""}`}>
                   <div className="section-head">
                     <div>
                       <div className="title">Storico mensile</div>
                       <div className="small">Apri un mese per vedere tutti gli input e le voci dettagliate; usa Modifica mese per caricarlo nella sezione superiore.</div>
                     </div>
-                    <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
+                    <div className="actions">
+                      <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
+                      <SectionToggle
+                        isOpen={isMonthlyHistoryOpen}
+                        onToggle={() => setIsMonthlyHistoryOpen((open) => !open)}
+                        label="storico mensile"
+                        tone="green"
+                      />
+                    </div>
                   </div>
+                  {isMonthlyHistoryOpen && (
+                  <>
                   <div className="grid" style={{ marginTop: 0, marginBottom: 18 }}>
                     <div className="card metric" style={{ boxShadow: "none" }}>
                       <div className="label">Margine cumulato</div>
@@ -2311,26 +2427,50 @@
                       );
                     })}
                   </div>
-                </div>
+                  </>
+                  )}
+                </section>
 
-                <div className="card full emergency-fund-card" style={emergencyStatusStyle}>
+                <section className={`finance-panel monthly-summary-card ${isMonthlySummaryOpen ? "is-open" : ""}`}>
                   <div className="section-head">
                     <div>
-                      <div className="title">Fondo emergenza</div>
-                      <div className="small">La barra usa le quote dei mesi salvati e, durante la modifica, sostituisce correttamente la quota del mese selezionato.</div>
+                      <div className="title">Riepilogo del mese</div>
+                      <div className="small">Entrate, uscite, capitale disponibile e investimenti del periodo selezionato.</div>
                     </div>
-                    <span className="badge">{plainPct(totals.emergencyProgress)} completato</span>
+                    <SectionToggle
+                      isOpen={isMonthlySummaryOpen}
+                      onToggle={() => setIsMonthlySummaryOpen((open) => !open)}
+                      label="riepilogo del mese"
+                    />
                   </div>
-                  <div className="meter">
-                    <div className="meter-fill" style={{ width: `${totals.emergencyProgress}%` }} />
-                  </div>
-                  <div className="meter-line">
-                    <span>Fondo aggiornato: {money(totals.projectedEmergencyFund)} (storico {money(totals.historicalEmergencyFund)} + mese selezionato {money(totals.emergencyFundAllocation)})</span>
-                    <span>Target: {money(totals.emergencyFundTarget)}</span>
-                  </div>
+                  {isMonthlySummaryOpen && (
+                    <div className="finance-summary-grid">
+                      <div className="card metric">
+                        <div className="label">Entrate mensili</div>
+                        <div className="value">{money(totals.income)}</div>
+                        <div className="delta">Stipendio netto + eventuale bonus di dicembre</div>
+                      </div>
+                      <div className="card metric">
+                        <div className="label">Uscite totali</div>
+                        <div className="value">{money(totals.essential)}</div>
+                        <div className="delta bad">Importi base + voci di costo dettagliate</div>
+                      </div>
+                      <div className="card metric">
+                        <div className="label">Disponibile allocabile</div>
+                        <div className="value">{money(totals.currentNetWorth)}</div>
+                        <div className="delta">Dopo costi e fondo emergenza | {pct(totals.ratio)} del reddito</div>
+                      </div>
+                      <div className="card metric">
+                        <div className="label">Capitale investito del mese</div>
+                        <div className="value">{money(totals.investmentAllocation)}</div>
+                        <div className="delta">Non dettagliato + investimenti dettagliati | {pct(investRatio)}</div>
+                      </div>
+                    </div>
+                  )}
+                </section>
                 </div>
 
-                <div className="card full">
+                <div className="card full portfolio-panel-card section-surface">
                   <div className="section-head">
                     <div>
                       <div className="title">Portafoglio investimenti | IBKR Live + investimenti illiquidi</div>
@@ -2339,8 +2479,16 @@
                     <div className="actions">
                       <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : "Live offline"}</span>
                       <button className="secondary" onClick={() => refreshIbkr("live", setIbkrLive)} disabled={ibkrLive.loading}>Aggiorna da IBKR</button>
+                      <SectionToggle
+                        isOpen={isPortfolioPanelOpen}
+                        onToggle={() => setIsPortfolioPanelOpen((open) => !open)}
+                        label="portafoglio investimenti"
+                        tone="violet"
+                      />
                     </div>
                   </div>
+                  {isPortfolioPanelOpen && (
+                  <>
                   {!liveConnected && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Conto Live non disponibile</strong>
@@ -2353,7 +2501,72 @@
                       <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri avvia-dashboard-ibkr.bat una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
                     </div>
                   )}
-                  <div className="performance-grid">
+                  <div className="split" style={{ marginBottom: 14 }}>
+                    <div className="rows">
+                      <div className="title">Allocazione investimenti per asset class</div>
+                      {Object.keys(historicalInvestmentTotals).length === 0 && (
+                        <div className="decision-box">
+                          <strong>Nessun investimento contabilizzato</strong>
+                          <div className="muted" style={{ marginTop: 8 }}>Non risultano posizioni IBKR né investimenti illiquidi nei mesi salvati.</div>
+                        </div>
+                      )}
+                      {Object.entries(historicalInvestmentTotals).map(([type, amount]) => (
+                        <div className="mini" key={type}>
+                          <div>
+                            <strong>{type}</strong>
+                            <div className="small">{plainPct(historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0)} del valore attuale</div>
+                            <div className="bar"><div className="fill" style={{ width: `${historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0}%` }} /></div>
+                          </div>
+                          <strong>{money(amount)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="decision-box">
+                      <strong>Logica di classificazione</strong>
+                      <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
+                        Le posizioni IBKR usano security type e Contract Details. Gli investimenti illiquidi usano categoria, Paese, continente e valore stimato inseriti nelle voci dettagliate. Una quota collegata a IBKR non viene sommata una seconda volta, evitando duplicazioni.
+                      </div>
+                    </div>
+                  </div>
+                  </>
+                  )}
+                </div>
+
+                <section className="wealth-section section-surface">
+                  <div className="wealth-heading">
+                    <div>
+                      <h2>Wealth management</h2>
+                      <div className="small">Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza e flexible cash dei soli mesi salvati.</div>
+                    </div>
+                  </div>
+
+                  <div className="ibkr-status-card wealth-ibkr-status">
+                    <div className="ibkr-status-heading">
+                      <div className="ibkr-status-title">Stato account IBKR</div>
+                      <div className="small">Account Live e Paper di Trader Workstation</div>
+                    </div>
+                    <IbkrStatusItem mode="paper" connection={ibkrPaper} />
+                    <IbkrStatusItem mode="live" connection={ibkrLive} />
+                    <button
+                      className="secondary"
+                      onClick={() => {
+                        refreshIbkr("paper", setIbkrPaper);
+                        refreshIbkr("live", setIbkrLive);
+                      }}
+                      disabled={ibkrPaper.loading || ibkrLive.loading}
+                    >
+                      Aggiorna
+                    </button>
+                  </div>
+
+                  {!liveConnected && (
+                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
+                      <strong>Patrimonio parziale</strong>
+                      <div className="muted" style={{ marginTop: 8 }}>Finche' il conto Live e' offline, il totale mostra investimenti illiquidi, fondo emergenza e flexible cash dei mesi salvati. Lo storico non viene sovrascritto.</div>
+                    </div>
+                  )}
+
+                  <div className="performance-grid wealth-performance-grid">
                     <div className="performance-card">
                       <div className="label">Valore posizioni IBKR</div>
                       <div className="value">{accountMoney(livePortfolio.grossPositionValue, liveCurrency)}</div>
@@ -2383,34 +2596,8 @@
                       <div className="small">Dato fornito direttamente da IBKR</div>
                     </div>
                   </div>
-                  <div className="split" style={{ marginBottom: 14 }}>
-                    <div className="rows">
-                      <div className="title">Allocazione investimenti per asset class</div>
-                      {Object.keys(historicalInvestmentTotals).length === 0 && (
-                        <div className="decision-box">
-                          <strong>Nessun investimento contabilizzato</strong>
-                          <div className="muted" style={{ marginTop: 8 }}>Non risultano posizioni IBKR né investimenti illiquidi nei mesi salvati.</div>
-                        </div>
-                      )}
-                      {Object.entries(historicalInvestmentTotals).map(([type, amount]) => (
-                        <div className="mini" key={type}>
-                          <div>
-                            <strong>{type}</strong>
-                            <div className="small">{plainPct(historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0)} del valore attuale</div>
-                            <div className="bar"><div className="fill" style={{ width: `${historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0}%` }} /></div>
-                          </div>
-                          <strong>{money(amount)}</strong>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="decision-box">
-                      <strong>Logica di classificazione</strong>
-                      <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-                        Le posizioni IBKR usano security type e Contract Details. Gli investimenti illiquidi usano categoria, Paese, continente e valore stimato inseriti nelle voci dettagliate. Una quota collegata a IBKR non viene sommata una seconda volta, evitando duplicazioni.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="table-wrap">
+
+                  <div className="table-wrap wealth-positions-table">
                     <div className="title" style={{ marginBottom: 10 }}>Posizioni IBKR Live</div>
                     <table>
                       <thead>
@@ -2457,7 +2644,8 @@
                       </tbody>
                     </table>
                   </div>
-                  <div className="table-wrap" style={{ marginTop: 18 }}>
+
+                  <div className="table-wrap wealth-illiquid-table" style={{ marginTop: 18 }}>
                     <div className="section-head">
                       <div>
                         <div className="title">Investimenti illiquidi</div>
@@ -2499,46 +2687,6 @@
                         )}
                       </tbody>
                     </table>
-                  </div>
-                </div>
-
-                <section className="wealth-section">
-                  <div className="wealth-heading">
-                    <div>
-                      <div className="eyebrow">Consolidated wealth intelligence</div>
-                      <h2>Patrimonio complessivo</h2>
-                      <div className="small">Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza e flexible cash dei soli mesi salvati.</div>
-                    </div>
-                    <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? "Patrimonio collegato a IBKR Live" : "Dati Live non disponibili"}</span>
-                  </div>
-
-                  {!liveConnected && (
-                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
-                      <strong>Patrimonio parziale</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Finche' il conto Live e' offline, il totale mostra investimenti illiquidi, fondo emergenza e flexible cash dei mesi salvati. Lo storico non viene sovrascritto.</div>
-                    </div>
-                  )}
-
-                  <div className="wealth-kpis">
-                    <div className="wealth-kpi">
-                      <div className="label">Patrimonio complessivo</div>
-                      <div className="value">{money(wealthOverview.total)}</div>
-                      <div className={`delta ${wealthOverview.twelveMonthGrowthPct < 0 ? "bad" : ""}`}>
-                        {pct(wealthOverview.twelveMonthGrowthPct)} rispetto al primo dato disponibile degli ultimi 12 mesi
-                      </div>
-                    </div>
-                    <div className="wealth-kpi">
-                      <div className="label">Crescita mese corrente</div>
-                      <div className={`value ${wealthOverview.currentGrowthPct > 0 ? "positive" : wealthOverview.currentGrowthPct < 0 ? "negative" : ""}`}>
-                        {pct(wealthOverview.currentGrowthPct)}
-                      </div>
-                      <div className="delta">Variazione patrimoniale complessiva, inclusi nuovi versamenti</div>
-                    </div>
-                    <div className="wealth-kpi">
-                      <div className="label">Allocazione difensiva</div>
-                      <div className="value">{plainPct(wealthOverview.defensivePct)}</div>
-                      <div className="delta bad">Titoli di Stato, obbligazioni, liquidita', fondo emergenza e flexible cash</div>
-                    </div>
                   </div>
 
                   <div className="wealth-layout">
@@ -2671,15 +2819,21 @@
                             <div className="small">Stimato dalla quota di allocazione difensiva</div>
                           </div>
                           <div className="indicator-value">{wealthOverview.riskLabel}</div>
-                          <div className="indicator-status">{plainPct(wealthOverview.defensivePct)} difensivo</div>
+                          <div className="risk-thresholds" aria-label={`Soglie del profilo di rischio; quota difensiva attuale ${plainPct(wealthOverview.defensivePct)}`}>
+                            <span className={`risk-threshold prudente ${wealthOverview.riskLabel === "Prudente" ? "active" : ""}`}>Prudente ≥ 60%</span>
+                            <span className={`risk-threshold moderato ${wealthOverview.riskLabel === "Moderato" ? "active" : ""}`}>Moderato 35–59,9%</span>
+                            <span className={`risk-threshold dinamico ${wealthOverview.riskLabel === "Dinamico" ? "active" : ""}`}>Dinamico &lt; 35%</span>
+                          </div>
                         </div>
                         <div className="indicator-row">
                           <div>
-                            <strong>Performance YTD</strong>
-                            <div className="small">Variazione dall'inizio dell'anno sui dati salvati</div>
+                            <strong>Value at Risk parametrico</strong>
+                            <div className="small">Stima a un mese, confidenza 99%, basata sulla volatilità dei rendimenti mensili salvati</div>
                           </div>
-                          <div className={`indicator-value ${wealthOverview.ytdPct > 0 ? "positive" : wealthOverview.ytdPct < 0 ? "negative" : ""}`}>{pct(wealthOverview.ytdPct)}</div>
-                          <div className="indicator-status">Patrimonio consolidato</div>
+                          <div className="indicator-value negative">{wealthOverview.hasVarData ? money(wealthOverview.parametricVarAmount) : "n/d"}</div>
+                          <div className="indicator-status">
+                            {wealthOverview.hasVarData ? `${plainPct(wealthOverview.parametricVarPct)} del patrimonio` : "Servono almeno 3 rilevazioni patrimoniali"}
+                          </div>
                         </div>
                       </div>
                     </div>
