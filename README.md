@@ -1,4 +1,20 @@
-DASHBOARD IBKR LIVE + PAPER - AVVIO RAPIDO
+# Dashboard finanziaria IBKR Live + Paper
+
+Dashboard locale in sola lettura per unire pianificazione finanziaria mensile,
+monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
+
+## Funzioni principali
+
+- Gestione mensile di entrate, costi, fondo emergenza, investimenti e flexible cash.
+- Storico modificabile con ricalcolo automatico dei cumulati.
+- Stato delle sessioni Trader Workstation Live e Paper in un'unica riga.
+- Portafoglio IBKR Live con posizioni, P/L, liquidita', asset class e geografia.
+- Investimenti illiquidi/non IBKR con valore attuale e P/L stimato.
+- Wealth management con sei indicatori operativi, esposizioni, crescita YoY,
+  profilo di rischio e Value at Risk parametrico.
+- Archivio JSON locale per esportazione, importazione e continuita' mensile.
+
+## Avvio rapido
 
 1. Apri Trader Workstation con il conto che vuoi monitorare.
 2. Per Live usa la porta 7496; per Paper usa la porta 7497.
@@ -43,16 +59,36 @@ BUDGET, VOCI DETTAGLIATE E CAPITAL ALLOCATION
   quanto risultera' dettagliato e il gap residuo dopo il salvataggio della voce.
 - Input del mese, Capital Allocation e Voci dettagliate formano un'unica sezione.
   Il pulsante Salva mese in fondo registra insieme tutti questi dati.
+- Il Fondo emergenza si trova nella sezione Gestione delle finanze, prima
+  dell'Input del mese, ed e' sempre visibile.
 - Nello Storico mensile ogni riga puo' essere aperta per visualizzare input, allocazioni
   e singole voci. Il pulsante Modifica mese ricarica tutto nella sezione Input del mese.
 - Salvando le modifiche, il mese selezionato viene sostituito senza duplicazioni anche
   quando vengono cambiati il mese o l'anno. Eliminando un mese si ricalcolano i cumulati.
-- Il Fondo emergenza e' visualizzato sotto lo Storico mensile.
 - Gli input del mese sono una simulazione finche' non viene premuto Salva mese.
+
+WEALTH MANAGEMENT E PORTAFOGLIO
+
+- Sotto il titolo Wealth management, la riga Stato account IBKR mostra in modo
+  compatto lo stato Live e Paper di Trader Workstation e il pulsante Aggiorna.
+- I sei indicatori principali sono: valore posizioni IBKR, investimenti illiquidi,
+  P/L degli investimenti illiquidi, liquidita' IBKR, P/L non realizzato e P/L realizzato.
+- Le tabelle Posizioni IBKR Live e Investimenti illiquidi sono raccolte nella stessa
+  sezione, immediatamente dopo gli indicatori.
+- I grafici mostrano esposizione per asset class, Continente e Paese; il cash IBKR
+  compare nell'asset allocation ma non nelle analisi geografiche.
+- La crescita YoY confronta il patrimonio con lo stesso mese dell'anno precedente,
+  quando il dato storico e' disponibile.
+- Il profilo di rischio usa la quota difensiva: Prudente almeno 60%, Moderato dal
+  35% al 59,9%, Dinamico sotto il 35%. Il livello attivo e' evidenziato rispettivamente
+  in verde, arancione o rosso.
+- Il Value at Risk parametrico e' una stima mensile al 99% basata sulla volatilita'
+  dei rendimenti patrimoniali salvati e richiede almeno tre rilevazioni.
 
 ARCHIVIO DATI JSON
 
-- Il pannello Archivio dati e continuita' mensile si trova all'inizio della dashboard.
+- Il pannello Archivio dati e continuita' mensile si trova alla fine della dashboard,
+  dopo la sezione Wealth management.
 - A fine mese premi prima Salva mese e poi Esporta archivio JSON. Il file viene
   scritto direttamente nella cartella outputs, accanto alla dashboard.
 - Il file scaricato contiene tutto lo stato della dashboard: storico mensile completo,
