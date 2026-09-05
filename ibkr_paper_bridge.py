@@ -23,6 +23,8 @@ from ibapi.wrapper import EWrapper
 SCRIPT_DIR = Path(__file__).resolve().parent
 DASHBOARD_FILE = SCRIPT_DIR / "salary-planner-react.html"
 ARCHIVE_FILE_PATTERN = re.compile(r"^patrimonio-[0-9]{4}-[a-z0-9-]+\.json$")
+# Account updates normally arrive every three minutes; allow a five-minute gap.
+STALE_AFTER_SECONDS = 300
 ACCOUNT_SUMMARY_TAGS = ",".join(
     [
         "AccountType",
@@ -265,6 +267,8 @@ class IbkrAccountClient(EWrapper, EClient):
         self.contract_detail_requests: dict[int, int] = {}
         self.contract_detail_queue = queue.Queue()
         self.recent_messages: list[dict[str, object]] = []
+        self.last_data_update = ""
+        self._last_data_monotonic: float | None = None
         self.last_update = ""
         self.last_account_time = ""
         self._next_contract_detail_request_id = 12000 if self.environment == "LIVE" else 22000
@@ -311,6 +315,15 @@ class IbkrAccountClient(EWrapper, EClient):
                 self.account_download_complete.clear()
                 self.account_summary_complete.clear()
                 self._subscribed_account = ""
+                # Rebuild financial data each session: absent positions must not survive reconnect.
+                self.accounts = []
+                self.active_account = ""
+                self.account_summary.clear()
+                self.account_values.clear()
+                self.positions.clear()
+                self.last_data_update = ""
+                self._last_data_monotonic = None
+                self.last_account_time = ""
             self.connect(self.tws_host, self.tws_port, self.tws_client_id)
             if self.isConnected():
                 self._reader_thread = threading.Thread(
@@ -340,6 +353,24 @@ class IbkrAccountClient(EWrapper, EClient):
 
     def _touch(self) -> None:
         self.last_update = utc_now()
+
+    def _touch_data(self, account: str) -> None:
+        if account and account == self.active_account and self.connection_state == "connected":
+            self.last_data_update = utc_now()
+            self._last_data_monotonic = time.monotonic()
+
+    def _data_status(self) -> tuple[str, float | None, bool]:
+        age = (max(0.0, time.monotonic() - self._last_data_monotonic)
+               if self._last_data_monotonic is not None else None)
+        complete = bool(self.active_account and self.account_summary_complete.is_set()
+                        and self.account_download_complete.is_set())
+        if self.connection_state == "connecting":
+            return "connecting", age, complete
+        if self.connection_state != "connected":
+            return "disconnected", age, complete
+        if not complete:
+            return "synchronizing", age, complete
+        return ("current" if age is not None and age < STALE_AFTER_SECONDS else "stale"), age, complete
 
     def _add_message(self, level: str, code: int, message: str) -> None:
         with self.lock:
@@ -493,7 +524,9 @@ class IbkrAccountClient(EWrapper, EClient):
             self._touch()
 
     def accountSummaryEnd(self, reqId: int):
-        self.account_summary_complete.set()
+        with self.lock:
+            if reqId == 9101 and self.connection_state == "connected":
+                self.account_summary_complete.set()
 
     def updateAccountValue(self, key: str, val: str, currency: str, accountName: str):
         with self.lock:
@@ -505,6 +538,7 @@ class IbkrAccountClient(EWrapper, EClient):
                 "currency": currency,
             }
             self._touch()
+            self._touch_data(accountName)
 
     def updatePortfolio(
         self,
@@ -546,6 +580,7 @@ class IbkrAccountClient(EWrapper, EClient):
                     "updatedAt": utc_now(),
                 }
             self._touch()
+            self._touch_data(accountName)
         if float(position) != 0:
             self._queue_contract_details(contract)
 
@@ -586,12 +621,15 @@ class IbkrAccountClient(EWrapper, EClient):
         with self.lock:
             self.last_account_time = timeStamp
             self._touch()
+            self._touch_data(self.active_account)
 
     def accountDownloadEnd(self, accountName: str):
         with self.lock:
-            self.connection_message = f"Dati {self.environment_label} sincronizzati"
+            if accountName != self.active_account or self.connection_state != "connected":
+                return
+            self.account_download_complete.set()
+            self._touch_data(accountName)
             self._touch()
-        self.account_download_complete.set()
 
     def connectionClosed(self):
         with self.lock:
@@ -599,6 +637,8 @@ class IbkrAccountClient(EWrapper, EClient):
             self.connection_message = f"Connessione TWS {self.environment_label} chiusa"
             self._subscribed_account = ""
         self.ready.clear()
+        self.account_download_complete.clear()
+        self.account_summary_complete.clear()
 
     def error(self, reqId: int, errorCode: int, errorString: str, *args):
         level = "info" if errorCode in INFORMATION_CODES else "error"
@@ -612,6 +652,11 @@ class IbkrAccountClient(EWrapper, EClient):
             with self.lock:
                 self.connection_state = "error"
                 self.connection_message = errorString
+                self.account_download_complete.clear()
+                self.account_summary_complete.clear()
+                self.ready.clear()
+            # A fresh socket/session rebuilds subscriptions after connectivity loss.
+            self.disconnect()
 
     def _metric(self, account: str, tag: str, default=0.0):
         summary = self.account_summary.get(account, {}).get(tag)
@@ -708,11 +753,17 @@ class IbkrAccountClient(EWrapper, EClient):
                 "unrealizedPnl": self._metric(account, "UnrealizedPnL"),
                 "realizedPnl": self._metric(account, "RealizedPnL"),
             }
+            data_status, data_age, sync_complete = self._data_status()
             return {
                 "environment": self.environment,
                 "readOnlyBridge": True,
                 "contractMetadataVersion": 1,
                 "status": self.connection_state,
+                "dataStatus": data_status,
+                "lastDataUpdate": self.last_data_update,
+                "dataAgeSeconds": data_age,
+                "staleAfterSeconds": STALE_AFTER_SECONDS,
+                "initialSyncComplete": sync_complete,
                 "message": self.connection_message,
                 "host": self.tws_host,
                 "port": self.tws_port,
@@ -865,6 +916,9 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     "connections": {
                         environment: {
                             "status": item["status"],
+                            "dataStatus": item["dataStatus"],
+                            "lastDataUpdate": item["lastDataUpdate"],
+                            "dataAgeSeconds": item["dataAgeSeconds"],
                             "port": item["port"],
                             "account": item["account"],
                         }
@@ -890,14 +944,11 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 
 
 def wait_for_snapshot(client: IbkrAccountClient, timeout: float) -> dict[str, object]:
-    deadline = time.time() + timeout
-    while time.time() < deadline:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
         snapshot = client.snapshot()
-        if snapshot["status"] == "connected" and snapshot["account"]:
-            account_ready = client.account_download_complete.wait(timeout=1.0)
-            summary_ready = client.account_summary_complete.wait(timeout=1.0)
-            if account_ready and summary_ready:
-                return client.snapshot()
+        if snapshot["dataStatus"] == "current":
+            return snapshot
         time.sleep(0.25)
     return client.snapshot()
 
@@ -951,7 +1002,7 @@ def main() -> int:
         for client in selected.values():
             client.stop()
         return 0 if all(
-            snapshot["status"] == "connected" and snapshot["account"]
+            snapshot["dataStatus"] == "current"
             for snapshot in snapshots.values()
         ) else 1
 
