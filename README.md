@@ -213,3 +213,26 @@ stimati o aggiornati con frequenze differenti. Per saldi ufficiali, fiscalita',
 commissioni e movimenti definitivi fanno fede TWS e gli Activity Statement IBKR.
 
 Per interrompere il collegamento, chiudi la finestra del bridge oppure premi Ctrl+C.
+
+## Stato e freschezza del collegamento
+
+Lo stato dei dati e' distinto dal collegamento a TWS: Connessione,
+Sincronizzazione, Dati aggiornati, Dati non aggiornati oppure Offline.
+La connessione da sola non rende i dati aggiornati: sono necessari il completamento
+iniziale del riepilogo e del download dell'account. Dopo una riconnessione i dati
+finanziari vengono acquisiti nuovamente prima di essere considerati aggiornati.
+La soglia di 300 secondi misura l'ultima ricezione del flusso account, non la
+freschezza delle quotazioni di mercato. Metadati e handshake non azzerano questa eta'.
+
+Ogni ambiente ha una sola richiesta HTTP alla volta, condivisa dal pulsante Aggiorna
+e dal polling. Ogni richiesta ha un timeout di 8 secondi; il tentativo successivo
+parte 5 secondi dopo il completamento. Un errore conserva la risposta precedente
+come non aggiornata. Aggiorna insieme bridge e dashboard: un vecchio bridge senza
+stato dati esplicito non viene considerato sincronizzato.
+
+Verifiche locali senza connessione IBKR:
+
+```sh
+python3 -m unittest discover -s tests -p 'test_bridge*.py'
+node --test tests/test-polling.cjs
+```
