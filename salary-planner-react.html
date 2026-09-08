@@ -923,7 +923,7 @@
                   <div className="decision-box warn">
                     <strong>Collegamento locale non avviato</strong>
                     <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-                      Avvia il file avvia-dashboard-ibkr.bat nella cartella outputs e lascia aperta la relativa finestra.
+                      Avvia la dashboard con lo script per il tuo sistema e lascia aperta la relativa finestra.
                     </div>
                   </div>
                 )}
@@ -1238,7 +1238,7 @@
               text: `Archivio ${result.fileName} salvato direttamente nella cartella outputs del progetto.`
             });
           } catch (error) {
-            setArchiveNotice({ tone: "bad", text: `Esportazione non riuscita: ${error.message}. Riavvia avvia-dashboard-ibkr.bat e riprova.` });
+            setArchiveNotice({ tone: "bad", text: `Esportazione non riuscita: ${error.message}. Riavvia lo script della dashboard e riprova.` });
           }
         }
 
@@ -2492,13 +2492,13 @@
                   {!liveConnected && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Conto Live non disponibile</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Apri TWS Live sulla porta 7496 e avvia la dashboard tramite avvia-dashboard-ibkr.bat.</div>
+                      <div className="muted" style={{ marginTop: 8 }}>Apri TWS Live sulla porta 7496 e avvia la dashboard con lo script per il tuo sistema.</div>
                     </div>
                   )}
                   {liveConnected && livePortfolio.positions.length > 0 && !liveContractMetadataReady && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Riavvio del bridge necessario</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri avvia-dashboard-ibkr.bat una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
+                      <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri lo script della dashboard una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
                     </div>
                   )}
                   <div className="split" style={{ marginBottom: 14 }}>

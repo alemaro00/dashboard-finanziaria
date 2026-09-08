@@ -23,6 +23,15 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 5. Lascia aperta la finestra del collegamento locale.
 6. La dashboard si apre su http://127.0.0.1:8765/.
 
+### macOS
+
+1. Apri Trader Workstation e abilita Socket Clients come indicato sopra.
+2. Nel Finder fai doppio clic su `avvia-dashboard-mac.command`.
+3. Al primo avvio viene creato automaticamente un ambiente Python locale e viene installata la libreria IBKR.
+4. Lascia aperta la finestra Terminale: la dashboard si apre su http://127.0.0.1:8765/.
+
+Per interrompere il collegamento, chiudi la finestra Terminale oppure premi `Ctrl+C`.
+
 Puoi aprire soltanto Live, soltanto Paper oppure entrambe le sessioni. Il bridge prova
 automaticamente a ricollegarsi. La dashboard e' una sola: non serve aprire anche il
 file salary-planner-react.html con l'indirizzo file://.
@@ -99,7 +108,7 @@ ARCHIVIO DATI JSON
 - Aggiungi il nuovo mese e crea una nuova esportazione: il nuovo file comprende tutti
   i mesi gia' importati e il nuovo mese appena salvato.
 - Il file usa il nome patrimonio-ANNO-MESE.json. Conservalo in una cartella di backup.
-- L'esportazione diretta nella cartella outputs richiede avvia-dashboard-ibkr.bat.
+- L'esportazione diretta nella cartella outputs richiede lo script di avvio per il sistema in uso (`avvia-dashboard-ibkr.bat` su Windows oppure `avvia-dashboard-mac.command` su macOS).
   L'importazione usa invece il selettore file del browser e non apre finestre
   PowerShell in background.
 - L'importazione accetta gli archivi creati dalla dashboard e applica automaticamente
