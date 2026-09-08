@@ -401,6 +401,48 @@
   </head>
   <body>
     <div id="root"></div>
+    <script id="ibkr-connection-helpers">
+      function ibkrDataStatus(connection) {
+        if (!connection.reachable) return connection.data ? "stale" : connection.loading ? "connecting" : "disconnected";
+        return connection.data?.dataStatus || "synchronizing";
+      }
+      function ibkrStatusLabel(connection) {
+        return { connecting: "Connessione...", synchronizing: "Sincronizzazione...", current: "Dati aggiornati", stale: "Dati non aggiornati", disconnected: "Offline" }[ibkrDataStatus(connection)] || "Stato non disponibile";
+      }
+      function createIbkrPoller({ baseUrl, mode, onState, fetchImpl = fetch, timeoutMs = 8000, intervalMs = 5000 }) {
+        let stopped = false;
+        let pending = null;
+        let controller = null;
+        let timer = null;
+        function refresh() {
+          if (stopped) return Promise.resolve();
+          if (pending) return pending;
+          clearTimeout(timer);
+          onState(current => ({ ...current, loading: true }));
+          controller = new AbortController();
+          const signal = controller.signal;
+          const timeout = setTimeout(() => controller?.abort(), timeoutMs);
+          pending = (async () => {
+            try {
+              const response = await fetchImpl(`${baseUrl}/api/${mode}/snapshot`, { cache: "no-store", signal });
+              if (!response.ok) throw new Error(`Servizio locale non disponibile (${response.status})`);
+              const data = await response.json();
+              if (!data || !["connecting", "synchronizing", "current", "stale", "disconnected"].includes(data.dataStatus)) throw new Error("Aggiorna il bridge: stato dati non disponibile");
+              if (!stopped && !signal.aborted) onState({ reachable: true, loading: false, data, error: "" });
+            } catch (error) {
+              if (!stopped) onState(current => ({ ...current, reachable: false, loading: false, error: signal.aborted ? "Tempo di risposta del bridge scaduto" : error.message }));
+            } finally {
+              clearTimeout(timeout);
+              controller = null;
+              pending = null;
+              if (!stopped) timer = setTimeout(refresh, intervalMs);
+            }
+          })();
+          return pending;
+        }
+        return { refresh, stop() { stopped = true; clearTimeout(timer); controller?.abort(); } };
+      }
+    </script>
     <script type="text/babel">
       const { useEffect, useMemo, useRef, useState } = React;
 
@@ -854,8 +896,8 @@
 
       function IbkrStatusItem({ mode, connection }) {
         const label = mode === "paper" ? "Paper" : "Live";
-        const connected = connection.reachable && connection.data?.status === "connected";
-        const status = connection.loading ? "Verifica..." : connected ? "Collegato" : "Offline";
+        const connected = ibkrDataStatus(connection) === "current";
+        const status = ibkrStatusLabel(connection);
         return (
           <div className={`ibkr-account-status ${mode}`}>
             <span className="badge status-line">
@@ -873,9 +915,9 @@
         const data = connection.data;
         const metrics = data?.metrics || {};
         const currency = data?.baseCurrency || "USD";
-        const connected = connection.reachable && data?.status === "connected";
-        const lastUpdate = data?.lastUpdate
-          ? new Date(data.lastUpdate).toLocaleString("it-IT")
+        const connected = ibkrDataStatus(connection) === "current";
+        const lastUpdate = data?.lastDataUpdate
+          ? new Date(data.lastDataUpdate).toLocaleString("it-IT")
           : "Non disponibile";
         const positions = data?.positions || [];
 
@@ -898,7 +940,7 @@
               <div className="actions">
                 <span className="badge status-line">
                   <span className={`dot ${connected ? "good" : "bad"}`}></span>
-                  {connected ? `${label} collegato` : connection.loading ? "Verifica..." : `${label} offline`}
+                  {`${label}: ${ibkrStatusLabel(connection)}`}
                 </span>
                 <button className="secondary" onClick={onRefresh} disabled={connection.loading}>Aggiorna</button>
                 <SectionToggle isOpen={isOpen} onToggle={onToggle} label={`pannello IBKR ${label}`} />
@@ -923,14 +965,14 @@
                   <div className="decision-box warn">
                     <strong>Collegamento locale non avviato</strong>
                     <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-                      Avvia il file avvia-dashboard-ibkr.bat nella cartella outputs e lascia aperta la relativa finestra.
+                      {connection.error || "Avvia la dashboard con lo script per il tuo sistema e lascia aperta la relativa finestra."}
                     </div>
                   </div>
                 )}
 
                 {connection.reachable && !connected && (
                   <div className="decision-box bad">
-                    <strong>Bridge attivo, ma TWS {label} non collegata</strong>
+                    <strong>{label}: {ibkrStatusLabel(connection)}</strong>
                     <div className="muted" style={{ marginTop: 8 }}>
                       {data?.message || connection.error || `Controlla che TWS ${label} sia aperta sulla porta ${port}.`}
                     </div>
@@ -1058,6 +1100,7 @@
         const [editingMonthId, setEditingMonthId] = useState("");
         const [archiveNotice, setArchiveNotice] = useState({ tone: "", text: "" });
         const archiveFileInputRef = useRef(null);
+        const ibkrPollers = useRef({});
         const [ibkrPaper, setIbkrPaper] = useState({ reachable: false, loading: true, data: null, error: "" });
         const [ibkrLive, setIbkrLive] = useState({ reachable: false, loading: true, data: null, error: "" });
 
@@ -1086,39 +1129,17 @@
         }, [isPortfolioPanelOpen]);
 
         useEffect(() => {
-          let active = true;
-          const loadSnapshot = async (mode, setConnection) => {
-            try {
-              const response = await fetch(`${ibkrBridgeBaseUrl}/api/${mode}/snapshot`, { cache: "no-store" });
-              if (!response.ok) throw new Error(`Servizio locale non disponibile (${response.status})`);
-              const data = await response.json();
-              if (active) setConnection({ reachable: true, loading: false, data, error: "" });
-            } catch (error) {
-              if (active) setConnection((current) => ({ ...current, reachable: false, loading: false, error: error.message }));
-            }
+          const pollers = {
+            paper: createIbkrPoller({ baseUrl: ibkrBridgeBaseUrl, mode: "paper", onState: setIbkrPaper }),
+            live: createIbkrPoller({ baseUrl: ibkrBridgeBaseUrl, mode: "live", onState: setIbkrLive })
           };
-          const loadAllSnapshots = () => {
-            loadSnapshot("paper", setIbkrPaper);
-            loadSnapshot("live", setIbkrLive);
-          };
-          loadAllSnapshots();
-          const interval = setInterval(loadAllSnapshots, 5000);
-          return () => {
-            active = false;
-            clearInterval(interval);
-          };
+          ibkrPollers.current = pollers;
+          Object.values(pollers).forEach(poller => poller.refresh());
+          return () => Object.values(pollers).forEach(poller => poller.stop());
         }, []);
 
-        async function refreshIbkr(mode, setConnection) {
-          setConnection((current) => ({ ...current, loading: true }));
-          try {
-            const response = await fetch(`${ibkrBridgeBaseUrl}/api/${mode}/snapshot`, { cache: "no-store" });
-            if (!response.ok) throw new Error(`Servizio locale non disponibile (${response.status})`);
-            const data = await response.json();
-            setConnection({ reachable: true, loading: false, data, error: "" });
-          } catch (error) {
-            setConnection((current) => ({ ...current, reachable: false, loading: false, error: error.message }));
-          }
+        function refreshIbkr(mode) {
+          return ibkrPollers.current[mode]?.refresh();
         }
 
         const totals = useMemo(() => {
@@ -1238,7 +1259,7 @@
               text: `Archivio ${result.fileName} salvato direttamente nella cartella outputs del progetto.`
             });
           } catch (error) {
-            setArchiveNotice({ tone: "bad", text: `Esportazione non riuscita: ${error.message}. Riavvia avvia-dashboard-ibkr.bat e riprova.` });
+            setArchiveNotice({ tone: "bad", text: `Esportazione non riuscita: ${error.message}. Riavvia lo script della dashboard e riprova.` });
           }
         }
 
@@ -1574,7 +1595,7 @@
         const liveData = ibkrLive.data;
         const liveMetrics = liveData?.metrics || {};
         const liveCurrency = liveData?.baseCurrency || "EUR";
-        const liveConnected = ibkrLive.reachable && liveData?.status === "connected";
+        const liveConnected = ibkrDataStatus(ibkrLive) === "current";
         const liveContractMetadataReady = Number(liveData?.contractMetadataVersion || 0) >= 1;
         const livePortfolio = useMemo(() => {
           const sourcePositions = liveConnected ? (liveData?.positions || []) : [];
@@ -1600,7 +1621,7 @@
             };
           });
           const rawGrossExposure = preparedPositions.reduce((sum, position) => sum + position.rawExposure, 0);
-          const apiGrossExposure = Math.abs(Number(liveMetrics.grossPositionValue) || 0);
+          const apiGrossExposure = liveConnected ? Math.abs(Number(liveMetrics.grossPositionValue) || 0) : 0;
           const grossPositionValue = apiGrossExposure || rawGrossExposure;
           const exposureScale = rawGrossExposure > 0 && apiGrossExposure > 0 ? apiGrossExposure / rawGrossExposure : 1;
           const positions = preparedPositions.map((position) => ({
@@ -2477,7 +2498,7 @@
                       <div className="small">IBKR valorizza esclusivamente le posizioni Live; gli investimenti illiquidi salvati nello storico usano il valore attuale stimato. Le quote mensili destinate a IBKR non vengono sommate.</div>
                     </div>
                     <div className="actions">
-                      <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : "Live offline"}</span>
+                      <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : `Live: ${ibkrStatusLabel(ibkrLive)}`}</span>
                       <button className="secondary" onClick={() => refreshIbkr("live", setIbkrLive)} disabled={ibkrLive.loading}>Aggiorna da IBKR</button>
                       <SectionToggle
                         isOpen={isPortfolioPanelOpen}
@@ -2491,14 +2512,14 @@
                   <>
                   {!liveConnected && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
-                      <strong>Conto Live non disponibile</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Apri TWS Live sulla porta 7496 e avvia la dashboard tramite avvia-dashboard-ibkr.bat.</div>
+                      <strong>Live: {ibkrStatusLabel(ibkrLive)}</strong>
+                      <div className="muted" style={{ marginTop: 8 }}>{ibkrLive.error || (ibkrLive.reachable && liveData?.status === "connected" ? "Attendi la sincronizzazione dei dati account; se lo stato persiste, verifica la sessione TWS." : "Apri TWS Live sulla porta 7496 e avvia la dashboard con lo script per il tuo sistema.")}</div>
                     </div>
                   )}
                   {liveConnected && livePortfolio.positions.length > 0 && !liveContractMetadataReady && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Riavvio del bridge necessario</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri avvia-dashboard-ibkr.bat una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
+                      <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri lo script della dashboard una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
                     </div>
                   )}
                   <div className="split" style={{ marginBottom: 14 }}>
@@ -2562,7 +2583,7 @@
                   {!liveConnected && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Patrimonio parziale</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Finche' il conto Live e' offline, il totale mostra investimenti illiquidi, fondo emergenza e flexible cash dei mesi salvati. Lo storico non viene sovrascritto.</div>
+                      <div className="muted" style={{ marginTop: 8 }}>Finche' i dati Live non sono aggiornati, il totale mostra investimenti illiquidi, fondo emergenza e flexible cash dei mesi salvati. Lo storico non viene sovrascritto.</div>
                     </div>
                   )}
 
