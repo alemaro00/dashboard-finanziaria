@@ -61,6 +61,8 @@ BUDGET, VOCI DETTAGLIATE E CAPITAL ALLOCATION
   meno costi fissi, costi variabili e quota fondo emergenza del mese.
 - In Capital Allocation, Patrimonio a fine mese coincide con la somma disponibile.
   Investimenti totali e Flexible cash funds sono i due target macro da allocare.
+- Le formule di Input del mese, Fondo emergenza, Capital Allocation e Voci dettagliate
+  sono disponibili passando il mouse sulla `i` accanto al titolo della sezione.
 - Le quattro categorie delle Voci dettagliate sono Costo Fisso, Costo Variabile,
   Investimento e Flexible Cash. Le quattro celle gialle mostrano target macro, totale
   gia' dettagliato e importo ancora mancante; segnalano anche un eventuale eccesso.
@@ -90,25 +92,27 @@ WEALTH MANAGEMENT E PORTAFOGLIO
   quando il dato storico e' disponibile.
 - Il profilo di rischio usa la quota difensiva: Prudente almeno 60%, Moderato dal
   35% al 59,9%, Dinamico sotto il 35%. Il livello attivo e' evidenziato rispettivamente
-  in verde, arancione o rosso.
+  in verde, arancione o rosso. La quota difensiva comprende titoli di Stato,
+  obbligazioni, strumenti classificati come liquidita', cash IBKR, fondo emergenza
+  e flexible cash; la `i` accanto all'indicatore mostra formula e soglie.
 - Il Value at Risk parametrico e' una stima mensile al 99% basata sulla volatilita'
   dei rendimenti patrimoniali salvati e richiede almeno tre rilevazioni.
 
 ARCHIVIO DATI JSON
 
-- Il pannello Archivio dati e continuita' mensile si trova alla fine della dashboard,
-  dopo la sezione Wealth management.
+- Il pannello per importare un mese o un archivio JSON si trova all'inizio della
+  dashboard, con l'azione Importa in primo piano.
 - A fine mese premi prima Salva mese e poi Esporta archivio JSON. Il file viene
-  scritto direttamente nella cartella outputs, accanto alla dashboard.
+  scritto direttamente nella cartella del progetto, accanto alla dashboard.
 - Il file scaricato contiene tutto lo stato della dashboard: storico mensile completo,
   voci dettagliate, capital allocation, fondo emergenza e periodo attualmente aperto.
 - Il mese successivo apri la dashboard e scegli Importa archivio JSON: si apre il
-  selettore file del computer. Seleziona l'ultimo JSON nella cartella outputs e
+  selettore file del computer. Seleziona l'ultimo JSON esportato e
   conferma il ripristino. Il browser normalmente ricorda l'ultima cartella usata.
 - Aggiungi il nuovo mese e crea una nuova esportazione: il nuovo file comprende tutti
   i mesi gia' importati e il nuovo mese appena salvato.
 - Il file usa il nome patrimonio-ANNO-MESE.json. Conservalo in una cartella di backup.
-- L'esportazione diretta nella cartella outputs richiede lo script di avvio per il sistema in uso (`avvia-dashboard-ibkr.bat` su Windows oppure `avvia-dashboard-mac.command` su macOS).
+- L'esportazione diretta nella cartella del progetto richiede lo script di avvio per il sistema in uso (`avvia-dashboard-ibkr.bat` su Windows oppure `avvia-dashboard-mac.command` su macOS).
   L'importazione usa invece il selettore file del browser e non apre finestre
   PowerShell in background.
 - L'importazione accetta gli archivi creati dalla dashboard e applica automaticamente

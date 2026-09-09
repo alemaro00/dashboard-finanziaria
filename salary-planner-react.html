@@ -66,7 +66,22 @@
       .delta{margin-top:7px;font-size:12px;color:var(--good)}
       .delta.bad{color:var(--bad)}
       .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+      .title-with-info{display:flex;align-items:center;gap:8px}
       .title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+      .info-tip{position:relative;display:inline-flex;flex:0 0 auto}
+      button.info-tip-button{
+        width:22px;height:22px;padding:0;border-radius:50%;display:grid;place-items:center;
+        color:#d7f4ff;background:#122332;border:1px solid #49718a;font:700 12px/1 Georgia,serif;
+        text-transform:none;letter-spacing:0;box-shadow:none;
+      }
+      button.info-tip-button:hover,button.info-tip-button:focus-visible{color:#081018;background:#8ed7f4;border-color:#b9eaff}
+      .info-tip-content{
+        position:absolute;z-index:20;left:50%;top:calc(100% + 9px);width:min(410px,70vw);padding:12px 14px;
+        border-radius:7px;border:1px solid #49657c;background:#09111a;color:#dce8f5;
+        box-shadow:0 18px 42px rgba(0,0,0,.48);font-size:12px;line-height:1.55;text-transform:none;
+        letter-spacing:0;font-weight:500;opacity:0;visibility:hidden;transform:translate(-50%,-4px);transition:.16s ease;
+      }
+      .info-tip:hover .info-tip-content,.info-tip:focus-within .info-tip-content{opacity:1;visibility:visible;transform:translate(-50%,0)}
       .small{font-size:12px;color:var(--muted);line-height:1.45}
       .form{
         display:grid;grid-template-columns:repeat(12,1fr);gap:10px;
@@ -181,6 +196,23 @@
       .entry-category-chip.active .entry-category-gap.complete{color:#07543a}
       .entry-category-chip.active .entry-category-gap.over{color:#7a2024}
       .entry-category-chip.active .entry-category-progress{background:rgba(23,17,7,.16)}
+      .entry-list-panel{display:grid;align-content:start;gap:10px;min-width:0}
+      .entry-list-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+      .entry-list{display:grid;gap:9px}
+      .entry-list-card{
+        display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:13px 14px;
+        border-radius:8px;border:1px solid #293648;background:linear-gradient(145deg,#111a25,#0b1118);
+      }
+      .entry-list-main{min-width:0}
+      .entry-list-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      .entry-list-top strong{font-size:14px;overflow-wrap:anywhere}
+      .entry-kind{padding:3px 6px;border-radius:999px;border:1px solid #3a4a60;color:#a9c8ff;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+      .entry-list-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+      .entry-list-meta span{padding:3px 6px;border-radius:4px;background:#172230;color:#9fb0c4;font-size:10px}
+      .entry-list-value{text-align:right;white-space:nowrap}
+      .entry-list-value>strong{display:block;font-size:18px;font-variant-numeric:tabular-nums;color:#f0d58d}
+      .entry-list-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:9px}
+      .entry-list-actions button{padding:6px 8px;font-size:10px}
       .detail-gap-preview{padding:11px 12px;border-radius:6px;border:1px solid rgba(233,185,73,.34);background:rgba(233,185,73,.07)}
       .detail-gap-preview.complete{border-color:rgba(66,211,146,.36);background:rgba(66,211,146,.07)}
       .detail-gap-preview.over{border-color:rgba(255,95,99,.36);background:rgba(255,95,99,.07)}
@@ -232,7 +264,7 @@
       .dot.bad{background:var(--bad)}
       .pending-panel{padding:14px;border:1px solid rgba(233,185,73,.28);background:rgba(233,185,73,.06);border-radius:6px}
       .archive-card{
-        order:999;
+        order:-1;
         border-color:rgba(111,178,210,.52);background:linear-gradient(145deg,#13202b,#0c1219 58%,#111827);
         box-shadow:0 0 0 1px rgba(111,178,210,.07),0 14px 32px rgba(0,0,0,.24);
       }
@@ -376,6 +408,11 @@
       }
       @media (max-width:700px){
         .app{padding:16px}
+        .info-tip-content{left:0;transform:translate(0,-4px)}
+        .info-tip:hover .info-tip-content,.info-tip:focus-within .info-tip-content{transform:translate(0,0)}
+        .entry-list-card{grid-template-columns:1fr}
+        .entry-list-value{text-align:left}
+        .entry-list-actions{justify-content:flex-start}
         .hero{flex-direction:column;align-items:flex-start}
         .ibkr-status-card{align-items:stretch;flex-direction:column}
         .ibkr-status-heading{margin-right:0}
@@ -891,6 +928,15 @@
           >
             <span className="toggle-chevron" aria-hidden="true"></span>
           </button>
+        );
+      }
+
+      function InfoTip({ label, children }) {
+        return (
+          <span className="info-tip">
+            <button type="button" className="info-tip-button" aria-label={`Informazioni: ${label}`}>i</button>
+            <span className="info-tip-content" role="tooltip">{children}</span>
+          </span>
         );
       }
 
@@ -1777,8 +1823,8 @@
                 <div className="card full archive-card section-surface">
                   <div className="section-head">
                     <div>
-                      <div className="title">Archivio dati e continuità mensile</div>
-                      <div className="small">Esporta direttamente nella cartella outputs e importa tramite il selettore file del computer.</div>
+                      <div className="title">Importa mese o archivio JSON</div>
+                      <div className="small">Riprendi subito un mese o uno storico esportato in precedenza; da qui puoi anche creare una copia aggiornata.</div>
                     </div>
                     <div className="archive-summary">
                       <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
@@ -1787,11 +1833,11 @@
                   </div>
                   <div className="archive-toolbar">
                     <div className="small">
-                      Prima dell'esportazione premi <strong>Salva mese</strong>. Il file cumulativo viene salvato accanto alla dashboard; con Importa seleziona il JSON dalla cartella outputs.
+                      Seleziona il file JSON dal computer. Prima di esportare una nuova copia premi <strong>Salva mese</strong>.
                     </div>
                     <div className="actions">
-                      <button onClick={exportDashboardArchive}>Esporta archivio JSON</button>
-                      <button className="secondary" onClick={importDashboardArchive}>Importa archivio JSON</button>
+                      <button onClick={importDashboardArchive}>Importa mese / archivio</button>
+                      <button className="secondary" onClick={exportDashboardArchive}>Esporta archivio JSON</button>
                       <input
                         ref={archiveFileInputRef}
                         type="file"
@@ -1901,7 +1947,12 @@
                 <section className="finance-panel emergency-fund-card" style={emergencyStatusStyle}>
                   <div className="section-head">
                     <div>
-                      <div className="title">Fondo emergenza</div>
+                      <div className="title-with-info">
+                        <div className="title">Fondo emergenza</div>
+                        <InfoTip label="formula del fondo emergenza">
+                          Fondo aggiornato = quote del fondo nei mesi salvati + quota del mese selezionato. La percentuale confronta il fondo aggiornato con il target impostato.
+                        </InfoTip>
+                      </div>
                       <div className="small">La barra usa le quote dei mesi salvati e, durante la modifica, sostituisce correttamente la quota del mese selezionato.</div>
                     </div>
                     <span className="badge">{plainPct(totals.emergencyProgress)} completato</span>
@@ -1918,7 +1969,12 @@
                 <section className={`finance-panel monthly-input-card ${isMonthlyInputOpen ? "is-open" : ""}`} id="monthly-input">
                   <div className="section-head">
                     <div>
-                      <div className="title">Input del mese</div>
+                      <div className="title-with-info">
+                        <div className="title">Input del mese</div>
+                        <InfoTip label="formula del patrimonio mensile">
+                          Patrimonio a fine mese = stipendio netto + eventuale bonus di dicembre − costi fissi − costi variabili − quota fondo emergenza del mese.
+                        </InfoTip>
+                      </div>
                       <div className="small">Dati generali, allocazione del capitale e voci dettagliate vengono salvati insieme nello stesso mese.</div>
                     </div>
                     <div className="actions">
@@ -1985,28 +2041,21 @@
                       <div className="small" style={{ marginTop: 6 }}>Target macro del mese: le singole voci servono a riconciliare questo totale.</div>
                     </div>
                     <div className="field third">
-                      <label>Stato fondo cumulato (€)</label>
-                      <input value={money(totals.historicalEmergencyFund)} readOnly />
-                      <div className="small" style={{ marginTop: 6 }}>Somma automatica delle quote fondo emergenza presenti nello storico.</div>
-                    </div>
-                    <div className="field third">
                       <label>Quota fondo emergenza del mese (€)</label>
                       <input type="number" min="0" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} />
                       <div className="small" style={{ marginTop: 6 }}>Viene aggiunta al fondo e registrata quando salvi il mese.</div>
-                    </div>
-                    <div className="field full-field">
-                      <div className="readout">
-                        <div className="label">Somma disponibile dopo costi e fondo emergenza</div>
-                        <div className="value">{money(totals.spendable)}</div>
-                        <div className="small">Stipendio netto + eventuale bonus − costi fissi − costi variabili − quota fondo emergenza del mese. Questo valore non si modifica manualmente.</div>
-                      </div>
                     </div>
                   </div>
 
                   <section className="monthly-input-block">
                   <div className="section-head">
                     <div>
-                      <div className="title">Capital allocation</div>
+                      <div className="title-with-info">
+                        <div className="title">Capital allocation</div>
+                        <InfoTip label="formula della capital allocation">
+                          Patrimonio {money(totals.currentNetWorth)} = target investimenti {money(totals.investmentAllocation)} + target flexible cash {money(totals.flexibleCashAllocation)} + differenza {money(totals.unallocatedCapital)}. Dettaglio investimenti: {money(totals.noteTotals.investments)} ({detailGapLabel(totals.investmentDetailGap)}). Dettaglio flexible cash: {money(totals.noteTotals.flexibleCash)} ({detailGapLabel(totals.flexibleCashDetailGap)}).
+                        </InfoTip>
+                      </div>
                       <div className="small">Divide il patrimonio a fine mese tra investimenti e flexible cash funds</div>
                     </div>
                     <span className={Math.abs(totals.unallocatedCapital) < 0.01 ? "badge allocation-ok" : totals.unallocatedCapital > 0 ? "badge allocation-pending" : "badge allocation-warning"}>
@@ -2035,21 +2084,18 @@
                       <input type="number" min="0" value={state.flexibleCashFunds} onChange={(e) => updateField("flexibleCashFunds", e.target.value)} />
                       <div className="small" style={{ marginTop: 6 }}>Target macro: le singole voci Flexible Cash spiegano dove resta la liquidita'.</div>
                     </div>
-                    <div className="field full-field">
-                      <div className="decision-box">
-                        <strong>Formula del mese</strong>
-                        <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-                          Patrimonio {money(totals.currentNetWorth)} = target investimenti {money(totals.investmentAllocation)} + target flexible cash {money(totals.flexibleCashAllocation)} + differenza {money(totals.unallocatedCapital)}. Dettaglio investimenti: {money(totals.noteTotals.investments)} ({detailGapLabel(totals.investmentDetailGap)}). Dettaglio flexible cash: {money(totals.noteTotals.flexibleCash)} ({detailGapLabel(totals.flexibleCashDetailGap)}).
-                        </div>
-                      </div>
-                    </div>
                   </div>
                   </section>
 
                   <section className="monthly-input-block">
                   <div className="section-head">
                     <div>
-                      <div className="title">Voci dettagliate</div>
+                      <div className="title-with-info">
+                        <div className="title">Voci dettagliate</div>
+                        <InfoTip label="riconciliazione delle voci dettagliate">
+                          Le voci dettagliano i target macro senza sommare nuovamente gli importi. Il residuo di ogni categoria è target meno totale delle relative voci.
+                        </InfoTip>
+                      </div>
                       <div className="small">Scomponi i quattro target macro in singole voci: ogni voce riduce il gap della categoria senza aumentare il budget.</div>
                     </div>
                   </div>
@@ -2230,37 +2276,52 @@
                         <div className="small" style={{ marginTop: 7 }}>Cancella solo le voci dettagliate del mese corrente. Lo storico mensile resta invariato.</div>
                       </div>
                     </div>
-                    <div className="rows">
+                    <div className="entry-list-panel">
+                      <div className="entry-list-heading">
+                        <div className="title">Voci del mese</div>
+                        <span className="badge">{state.notes.length} {state.notes.length === 1 ? "voce" : "voci"}</span>
+                      </div>
+                      {state.notes.length === 0 && (
+                        <div className="decision-box">
+                          <strong>Nessuna voce inserita</strong>
+                          <div className="small" style={{ marginTop: 6 }}>Usa il pannello a sinistra per aggiungere il primo dettaglio del mese.</div>
+                        </div>
+                      )}
+                      <div className="entry-list">
                       {state.notes.map((item, index) => (
-                        <div className="mini" key={`${item.label}-${index}`}>
-                          <div>
-                            <strong>{item.label}</strong>
-                            <div className="small">
-                              {item.category}
-                              {item.category === "Investimento" && item.ticker ? ` | ${item.ticker}` : ""}
-                              {item.category === "Investimento" && item.investmentType ? ` | ${item.investmentType}` : ""}
-                              {item.category === "Investimento" && item.investmentDetail ? ` | ${item.investmentDetail}` : ""}
-                              {item.category === "Investimento" && item.purchaseDate ? ` | ${new Date(item.purchaseDate).toLocaleDateString("it-IT")}` : ""}
-                              {item.category === "Investimento" && item.geography ? ` | ${item.geography}` : ""}
-                              {item.category === "Investimento" && item.continent ? ` | ${item.continent}` : ""}
+                        <div className="entry-list-card" key={`${item.label}-${index}`}>
+                          <div className="entry-list-main">
+                            <div className="entry-list-top">
+                              <strong>{item.label}</strong>
+                              <span className="entry-kind">{item.category}</span>
+                            </div>
+                            <div className="entry-list-meta">
+                              {item.category === "Investimento" && item.managementSource && <span>{item.managementSource === "Manuale" ? "Illiquido / non IBKR" : "IBKR Live"}</span>}
+                              {item.category === "Investimento" && item.ticker && <span>{item.ticker}</span>}
+                              {item.category === "Investimento" && item.investmentType && <span>{item.investmentType}</span>}
+                              {item.category === "Investimento" && item.investmentDetail && <span>{item.investmentDetail}</span>}
+                              {item.category === "Investimento" && item.purchaseDate && <span>{new Date(item.purchaseDate).toLocaleDateString("it-IT")}</span>}
+                              {item.category === "Investimento" && item.geography && <span>{item.geography}</span>}
+                              {item.category === "Investimento" && item.continent && <span>{item.continent}</span>}
                             </div>
                             {item.category === "Investimento" && (
-                              <div className="small">
+                              <div className="small" style={{ marginTop: 8 }}>
                                 {item.managementSource === "Manuale" ? `Valore attuale: ${money(item.currentValue)} | Investimento illiquido incluso nel portafoglio` : "Quota mensile IBKR | non crea una posizione patrimoniale"}
                                 {item.managementSource === "Manuale" && item.entryPrice ? ` | Quantita': ${precise(item.quantity)} | Carico: ${precise(item.entryPrice, 2)} ${item.marketCurrency || "EUR"}` : ""}
                               </div>
                             )}
                             <div className="bar"><div className="fill" style={{ width: `${Math.min(100, (item.amount / Math.max(1, totals.income)) * 100)}%` }} /></div>
                           </div>
-                          <div style={{ textAlign: "right" }}>
+                          <div className="entry-list-value">
                             <strong>{money(item.amount)}</strong>
-                            <div style={{ marginTop: 8 }}>
-                              <button className="secondary" onClick={() => editEntry(item)} style={{ marginRight: 6 }}>Modifica</button>
+                            <div className="entry-list-actions">
+                              <button className="secondary" onClick={() => editEntry(item)}>Modifica</button>
                               <button className="secondary" onClick={() => removeEntry(index)}>Rimuovi</button>
                             </div>
                           </div>
                         </div>
                       ))}
+                      </div>
                     </div>
                   </div>
                   </section>
@@ -2510,20 +2571,13 @@
                   </div>
                   {isPortfolioPanelOpen && (
                   <>
-                  {!liveConnected && (
-                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
-                      <strong>Live: {ibkrStatusLabel(ibkrLive)}</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>{ibkrLive.error || (ibkrLive.reachable && liveData?.status === "connected" ? "Attendi la sincronizzazione dei dati account; se lo stato persiste, verifica la sessione TWS." : "Apri TWS Live sulla porta 7496 e avvia la dashboard con lo script per il tuo sistema.")}</div>
-                    </div>
-                  )}
                   {liveConnected && livePortfolio.positions.length > 0 && !liveContractMetadataReady && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Riavvio del bridge necessario</strong>
                       <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri lo script della dashboard una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
                     </div>
                   )}
-                  <div className="split" style={{ marginBottom: 14 }}>
-                    <div className="rows">
+                  <div className="rows" style={{ marginBottom: 14 }}>
                       <div className="title">Allocazione investimenti per asset class</div>
                       {Object.keys(historicalInvestmentTotals).length === 0 && (
                         <div className="decision-box">
@@ -2541,13 +2595,6 @@
                           <strong>{money(amount)}</strong>
                         </div>
                       ))}
-                    </div>
-                    <div className="decision-box">
-                      <strong>Logica di classificazione</strong>
-                      <div className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>
-                        Le posizioni IBKR usano security type e Contract Details. Gli investimenti illiquidi usano categoria, Paese, continente e valore stimato inseriti nelle voci dettagliate. Una quota collegata a IBKR non viene sommata una seconda volta, evitando duplicazioni.
-                      </div>
-                    </div>
                   </div>
                   </>
                   )}
@@ -2579,13 +2626,6 @@
                       Aggiorna
                     </button>
                   </div>
-
-                  {!liveConnected && (
-                    <div className="decision-box warn" style={{ marginBottom: 14 }}>
-                      <strong>Patrimonio parziale</strong>
-                      <div className="muted" style={{ marginTop: 8 }}>Finche' i dati Live non sono aggiornati, il totale mostra investimenti illiquidi, fondo emergenza e flexible cash dei mesi salvati. Lo storico non viene sovrascritto.</div>
-                    </div>
-                  )}
 
                   <div className="performance-grid wealth-performance-grid">
                     <div className="performance-card">
@@ -2836,7 +2876,12 @@
                         </div>
                         <div className="indicator-row">
                           <div>
-                            <strong>Profilo di rischio</strong>
+                            <div className="title-with-info">
+                              <strong>Profilo di rischio</strong>
+                              <InfoTip label="calcolo del profilo di rischio">
+                                Quota difensiva = titoli di Stato, obbligazioni, strumenti classificati come liquidità, liquidità IBKR, fondo emergenza e flexible cash, divisi per il patrimonio totale. Prudente: almeno 60%. Moderato: dal 35% al 59,9%. Dinamico: meno del 35%.
+                              </InfoTip>
+                            </div>
                             <div className="small">Stimato dalla quota di allocazione difensiva</div>
                           </div>
                           <div className="indicator-value">{wealthOverview.riskLabel}</div>
