@@ -97,8 +97,8 @@ WEALTH MANAGEMENT E PORTAFOGLIO
   P/L degli investimenti illiquidi, liquidita' IBKR, P/L non realizzato e P/L realizzato.
 - Le tabelle Posizioni IBKR Live e Investimenti illiquidi sono raccolte nella stessa
   sezione, immediatamente dopo gli indicatori.
-- I grafici mostrano esposizione per asset class, Continente e Paese; il cash IBKR
-  compare nell'asset allocation separato per valuta ma non nelle analisi geografiche.
+- I grafici mostrano esposizione per asset class, Continente, Paese e valuta; il cash
+  IBKR compare nell'asset allocation e nell'esposizione valutaria separato per valuta.
 - La crescita YoY confronta il patrimonio con lo stesso mese dell'anno precedente,
   quando il dato storico e' disponibile.
 - Il profilo di rischio usa una media ponderata per l'esposizione, su scala 0-100.

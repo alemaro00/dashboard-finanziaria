@@ -1656,6 +1656,11 @@
             totalsByCountry[position.country] = (totalsByCountry[position.country] || 0) + position.currentValue;
             return totalsByCountry;
           }, {});
+          const byCurrency = positions.reduce((totalsByCurrency, position) => {
+            const currency = String(position.marketCurrency || "EUR").toUpperCase();
+            totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + position.currentValue;
+            return totalsByCurrency;
+          }, {});
           const total = positions.reduce((sum, position) => sum + position.currentValue, 0);
           const costBasis = positions.reduce((sum, position) => sum + position.costBasis, 0);
           const liquidValue = positions
@@ -1666,6 +1671,7 @@
             byType,
             byContinent,
             byCountry,
+            byCurrency,
             total,
             geographyTotal: geographicPositions.reduce((sum, position) => sum + position.currentValue, 0),
             costBasis,
@@ -1724,6 +1730,11 @@
             totalsByCountry[position.country] = (totalsByCountry[position.country] || 0) + position.baseMarketValue;
             return totalsByCountry;
           }, {});
+          const byCurrency = investmentPositions.reduce((totalsByCurrency, position) => {
+            const currency = String(position.currency || liveCurrency).toUpperCase();
+            totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + position.baseMarketValue;
+            return totalsByCurrency;
+          }, {});
           const geographyPositionValue = geographicPositions.reduce((sum, position) => sum + position.baseMarketValue, 0);
           const totalCash = liveConnected ? Number(liveMetrics.totalCash) || 0 : 0;
           const positiveCash = Math.max(0, totalCash);
@@ -1742,11 +1753,14 @@
           if (positiveCurrencyCashTotal > 0) {
             cashBalances.forEach((balance) => {
               if (balance.baseValue <= 0) return;
+              const allocatedCash = balance.baseValue * cashAllocationScale;
               const label = `Liquidità IBKR — ${balance.currency}`;
-              byAssetClass[label] = (byAssetClass[label] || 0) + (balance.baseValue * cashAllocationScale);
+              byAssetClass[label] = (byAssetClass[label] || 0) + allocatedCash;
+              byCurrency[balance.currency] = (byCurrency[balance.currency] || 0) + allocatedCash;
             });
           } else if (positiveCash > 0) {
             byAssetClass["Liquidità IBKR"] = (byAssetClass["Liquidità IBKR"] || 0) + positiveCash;
+            byCurrency[liveCurrency] = (byCurrency[liveCurrency] || 0) + positiveCash;
           }
           const netLiquidation = liveConnected ? Number(liveMetrics.netLiquidation) || 0 : 0;
           const unrealizedPnl = liveConnected ? Number(liveMetrics.unrealizedPnl) || 0 : 0;
@@ -1769,6 +1783,7 @@
             byAssetClass,
             byContinent,
             byCountry,
+            byCurrency,
             geographyPositionValue,
             assetClassTotal: Object.values(byAssetClass).reduce((sum, value) => sum + value, 0)
           };
@@ -1812,6 +1827,7 @@
           const combinedAssetClasses = mergeValueMaps(livePortfolio.byAssetClass, manualPortfolio.byType);
           const combinedContinents = mergeValueMaps(livePortfolio.byContinent, manualPortfolio.byContinent);
           const combinedCountries = mergeValueMaps(livePortfolio.byCountry, manualPortfolio.byCountry);
+          const combinedCurrencies = mergeValueMaps(livePortfolio.byCurrency, manualPortfolio.byCurrency);
           const productEntries = Object.entries(combinedAssetClasses)
             .map(([label, value]) => ({ label, value }))
             .filter((item) => item.value > 0)
@@ -1821,6 +1837,10 @@
             .filter((item) => item.value > 0)
             .sort((a, b) => b.value - a.value);
           const countryEntries = Object.entries(combinedCountries)
+            .map(([label, value]) => ({ label, value }))
+            .filter((item) => item.value > 0)
+            .sort((a, b) => b.value - a.value);
+          const currencyEntries = Object.entries(combinedCurrencies)
             .map(([label, value]) => ({ label, value }))
             .filter((item) => item.value > 0)
             .sort((a, b) => b.value - a.value);
@@ -1871,10 +1891,13 @@
             productTotal: Object.values(combinedAssetClasses).reduce((sum, value) => sum + value, 0),
             continentEntries,
             countryEntries,
+            currencyEntries,
             geographyTotal: livePortfolio.geographyPositionValue + manualPortfolio.geographyTotal,
+            currencyTotal: currencyEntries.reduce((sum, item) => sum + item.value, 0),
             productGradient: buildDonutGradient(productEntries),
             continentGradient: buildDonutGradient(continentEntries),
             countryGradient: buildDonutGradient(countryEntries),
+            currencyGradient: buildDonutGradient(currencyEntries),
             liveConnected
           };
         }, [liveConnected, livePortfolio, manualPortfolio, monthlyHistory, state.monthName, state.year]);
@@ -2471,7 +2494,6 @@
                               </div>
                             </div>
                             <div className="history-notes">
-                              {itemNotes.length === 0 && <div className="small">Nessuna voce dettagliata salvata per questo mese.</div>}
                               {itemNotes.map((note) => (
                                 <div className="history-note" key={note.id}>
                                   <div>
@@ -2498,7 +2520,6 @@
                               ))}
                             </div>
                             <div className="history-actions">
-                              <div className="small">Modificando e salvando, questo mese viene aggiornato senza duplicarlo, anche se cambi mese o anno.</div>
                               <div className="actions">
                                 <button onClick={() => loadSnapshot(item)}>Modifica mese</button>
                                 <button className="secondary" onClick={() => deleteSnapshot(item.id)}>Elimina</button>
@@ -2841,6 +2862,39 @@
                             );
                           })}
                           {wealthOverview.countryEntries.length === 0 && <div className="decision-box">Nessun Paese emittente disponibile oppure metadati IBKR ancora in caricamento.</div>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="wealth-panel">
+                      <div className="wealth-panel-head">
+                        <h3>Esposizione per Valuta</h3>
+                      </div>
+                      <div className="donut-layout">
+                        <div className="donut-wrap">
+                          <div className="donut" style={{ background: wealthOverview.currencyGradient }} role="img" aria-label="Grafico esposizione per valuta del portafoglio">
+                            <div className="donut-center">
+                              <strong>Valute</strong>
+                              <span>{accountMoney(wealthOverview.currencyTotal, liveCurrency)} esposti</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="exposure-list">
+                          {wealthOverview.currencyEntries.map((item, index) => {
+                            const share = wealthOverview.currencyTotal ? (item.value / wealthOverview.currencyTotal) * 100 : 0;
+                            return (
+                              <div className="exposure-row geo-row" key={item.label}>
+                                <div>
+                                  <strong>{item.label}</strong>
+                                  <div className="small">{plainPct(share)} del portafoglio</div>
+                                  <div className="geo-track"><span style={{ width: `${share}%` }}></span></div>
+                                </div>
+                                <div className="exposure-value">{accountMoney(item.value, liveCurrency)}</div>
+                                <div className="geo-rank">#{index + 1} valuta</div>
+                              </div>
+                            );
+                          })}
+                          {wealthOverview.currencyEntries.length === 0 && <div className="decision-box">Nessuna esposizione valutaria disponibile.</div>}
                         </div>
                       </div>
                     </div>
