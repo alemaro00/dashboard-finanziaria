@@ -12,6 +12,11 @@
 @implementation DashboardAppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    NSURL *iconURL = [NSBundle.mainBundle URLForResource:@"AppIcon" withExtension:@"icns"];
+    NSImage *appIcon = [[NSImage alloc] initWithContentsOfURL:iconURL];
+    if (appIcon) [NSApp setApplicationIconImage:appIcon];
+
     WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
     configuration.websiteDataStore = WKWebsiteDataStore.defaultDataStore;
     self.webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:configuration];
