@@ -42,7 +42,7 @@
         background:linear-gradient(180deg, #141b25 0%, #0d1219 100%);
         box-shadow:var(--shadow);
       }
-      .dashboard-title{padding:6px 2px 2px}
+      .dashboard-title{padding:6px 2px 2px;display:flex;align-items:center;justify-content:space-between;gap:16px}
       .dashboard-title h1{margin:0;font-size:28px}
       h1{margin:8px 0 10px;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:0}
       .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
@@ -1167,8 +1167,8 @@
         const [isPortfolioPanelOpen, setIsPortfolioPanelOpen] = useState(() => localStorage.getItem("portfolio-panel-open") !== "false");
         const [entry, setEntry] = useState(createEmptyEntry);
         const [editingMonthId, setEditingMonthId] = useState("");
-        const [archiveNotice, setArchiveNotice] = useState({ tone: "", text: "" });
-        const archiveFileInputRef = useRef(null);
+        const [persistenceStatus, setPersistenceStatus] = useState("loading");
+        const persistenceReady = useRef(false);
         const ibkrPollers = useRef({});
         const [ibkrPaper, setIbkrPaper] = useState({ reachable: false, loading: true, data: null, error: "" });
         const [ibkrLive, setIbkrLive] = useState({ reachable: false, loading: true, data: null, error: "" });
@@ -1176,6 +1176,118 @@
         useEffect(() => {
           localStorage.setItem(storageKey, JSON.stringify(state));
         }, [state]);
+
+        useEffect(() => {
+          let cancelled = false;
+          (async () => {
+            try {
+              const response = await fetch(`${ibkrBridgeBaseUrl}/api/state`, { cache: "no-store" });
+              const document = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error(document.error || "Memoria locale non disponibile");
+              if (!cancelled && document.saved && document.state) {
+                setState(normalizeStoredState(document.state));
+                setEntry({ ...createEmptyEntry(), ...(document.entry || {}) });
+                setEditingMonthId(String(document.editingMonthId || ""));
+                const ui = document.ui || {};
+                if (typeof ui.salaryPanelOpen === "boolean") setIsSalaryPanelOpen(ui.salaryPanelOpen);
+                if (typeof ui.monthlyInputOpen === "boolean") setIsMonthlyInputOpen(ui.monthlyInputOpen);
+                if (typeof ui.monthlyHistoryOpen === "boolean") setIsMonthlyHistoryOpen(ui.monthlyHistoryOpen);
+                if (typeof ui.monthlySummaryOpen === "boolean") setIsMonthlySummaryOpen(ui.monthlySummaryOpen);
+                if (typeof ui.portfolioPanelOpen === "boolean") setIsPortfolioPanelOpen(ui.portfolioPanelOpen);
+              } else if (!cancelled) {
+                const initialPayload = {
+                  state: {
+                    ...state,
+                    budgetModelVersion: 4,
+                    notes: (state.notes || []).map(normalizeNote),
+                    monthlyHistory: recalibrateMonthlyHistory(state.monthlyHistory || [])
+                  },
+                  entry,
+                  editingMonthId,
+                  ui: {
+                    salaryPanelOpen: isSalaryPanelOpen,
+                    monthlyInputOpen: isMonthlyInputOpen,
+                    monthlyHistoryOpen: isMonthlyHistoryOpen,
+                    monthlySummaryOpen: isMonthlySummaryOpen,
+                    portfolioPanelOpen: isPortfolioPanelOpen
+                  }
+                };
+                const saveResponse = await fetch(`${ibkrBridgeBaseUrl}/api/state`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(initialPayload)
+                });
+                if (!saveResponse.ok) throw new Error("Inizializzazione memoria non riuscita");
+              }
+              if (!cancelled) {
+                persistenceReady.current = true;
+                setPersistenceStatus("saved");
+              }
+            } catch {
+              if (!cancelled) {
+                persistenceReady.current = true;
+                setPersistenceStatus("error");
+              }
+            }
+          })();
+          return () => { cancelled = true; };
+        }, []);
+
+        const persistencePayload = useMemo(() => ({
+          state: {
+            ...state,
+            budgetModelVersion: 4,
+            notes: (state.notes || []).map(normalizeNote),
+            monthlyHistory: recalibrateMonthlyHistory(state.monthlyHistory || [])
+          },
+          entry,
+          editingMonthId,
+          ui: {
+            salaryPanelOpen: isSalaryPanelOpen,
+            monthlyInputOpen: isMonthlyInputOpen,
+            monthlyHistoryOpen: isMonthlyHistoryOpen,
+            monthlySummaryOpen: isMonthlySummaryOpen,
+            portfolioPanelOpen: isPortfolioPanelOpen
+          }
+        }), [state, entry, editingMonthId, isSalaryPanelOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isMonthlySummaryOpen, isPortfolioPanelOpen]);
+
+        useEffect(() => {
+          if (!persistenceReady.current) return;
+          setPersistenceStatus("saving");
+          const timer = setTimeout(async () => {
+            try {
+              const response = await fetch(`${ibkrBridgeBaseUrl}/api/state`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(persistencePayload)
+              });
+              if (!response.ok) throw new Error("Salvataggio non riuscito");
+              setPersistenceStatus("saved");
+            } catch {
+              setPersistenceStatus("error");
+            }
+          }, 350);
+          return () => clearTimeout(timer);
+        }, [persistencePayload]);
+
+        useEffect(() => {
+          const flushState = () => {
+            if (!persistenceReady.current) return;
+            navigator.sendBeacon(
+              `${ibkrBridgeBaseUrl}/api/state`,
+              new Blob([JSON.stringify(persistencePayload)], { type: "application/json" })
+            );
+          };
+          const flushWhenHidden = () => {
+            if (document.visibilityState === "hidden") flushState();
+          };
+          window.addEventListener("pagehide", flushState);
+          document.addEventListener("visibilitychange", flushWhenHidden);
+          return () => {
+            window.removeEventListener("pagehide", flushState);
+            document.removeEventListener("visibilitychange", flushWhenHidden);
+          };
+        }, [persistencePayload]);
 
         useEffect(() => {
           localStorage.setItem("salary-estimate-panel-open", String(isSalaryPanelOpen));
@@ -1283,105 +1395,6 @@
 
         function updateField(field, value) {
           setState((current) => ({ ...current, [field]: value }));
-        }
-
-        function buildDashboardArchive() {
-          const normalizedHistory = recalibrateMonthlyHistory(state.monthlyHistory || []);
-          const monthPart = String(state.monthName || "periodo")
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-zA-Z0-9]+/g, "-")
-            .replace(/^-|-$/g, "")
-            .toLowerCase();
-          return {
-            fileName: `patrimonio-${state.year || new Date().getFullYear()}-${monthPart || "periodo"}.json`,
-            archive: {
-              format: "portfolio-operations-archive",
-              formatVersion: 1,
-              exportedAt: new Date().toISOString(),
-              summary: {
-                savedMonths: normalizedHistory.length,
-                currentPeriod: `${state.monthName} ${state.year}`
-              },
-              state: {
-                ...state,
-                budgetModelVersion: 4,
-                notes: (state.notes || []).map(normalizeNote),
-                monthlyHistory: normalizedHistory
-              }
-            }
-          };
-        }
-
-        async function exportDashboardArchive() {
-          try {
-            const exportPayload = buildDashboardArchive();
-            const response = await fetch(`${ibkrBridgeBaseUrl}/api/archive/export`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(exportPayload)
-            });
-            const result = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(result.error || "Servizio archivio non disponibile");
-            setArchiveNotice({
-              tone: "good",
-              text: `Archivio ${result.fileName} salvato direttamente nella cartella outputs del progetto.`
-            });
-          } catch (error) {
-            setArchiveNotice({ tone: "bad", text: `Esportazione non riuscita: ${error.message}. Riavvia lo script della dashboard e riprova.` });
-          }
-        }
-
-        function importDashboardArchive() {
-          setArchiveNotice({ tone: "", text: "Seleziona un archivio JSON dal computer..." });
-          archiveFileInputRef.current?.click();
-        }
-
-        async function handleDashboardArchiveFile(event) {
-          const file = event.target.files?.[0];
-          if (!file) {
-            setArchiveNotice({ tone: "", text: "Importazione annullata: nessun file selezionato." });
-            return;
-          }
-          try {
-            if (file.size > 10 * 1024 * 1024) throw new Error("Il file supera il limite di 10 MB");
-            let payload;
-            try {
-              payload = JSON.parse(await file.text());
-            } catch {
-              throw new Error("Il file selezionato non contiene JSON valido");
-            }
-            if (payload?.format && payload.format !== "portfolio-operations-archive") {
-              throw new Error("Il file non è un archivio della dashboard");
-            }
-            if (Number(payload?.formatVersion || 1) > 1) {
-              throw new Error("Il file è stato creato da una versione più recente della dashboard");
-            }
-            const importedState = payload?.state || payload?.data || payload;
-            if (!importedState || typeof importedState !== "object" || !Array.isArray(importedState.monthlyHistory)) {
-              throw new Error("Lo storico mensile non è presente nel file");
-            }
-            const normalizedState = normalizeStoredState(importedState);
-            const savedMonths = normalizedState.monthlyHistory.length;
-            const confirmed = window.confirm(
-              `Importare ${file.name} con ${savedMonths} ${savedMonths === 1 ? "mese salvato" : "mesi salvati"}? I dati attualmente aperti verranno sostituiti.`
-            );
-            if (!confirmed) {
-              setArchiveNotice({ tone: "", text: "Importazione annullata: i dati aperti non sono stati modificati." });
-              return;
-            }
-            setEditingMonthId("");
-            setEntry(createEmptyEntry());
-            setState(normalizedState);
-            setArchiveNotice({
-              tone: "good",
-              text: `Archivio ${file.name} importato correttamente: ${savedMonths} ${savedMonths === 1 ? "mese disponibile" : "mesi disponibili"}. Ora puoi aggiungere il nuovo mese ed esportare un archivio aggiornato.`
-            });
-          } catch (error) {
-            setArchiveNotice({ tone: "bad", text: `Importazione non riuscita: ${error.message}. Controlla il file JSON e riprova.` });
-          } finally {
-            event.target.value = "";
-          }
         }
 
         function addEntry() {
@@ -1851,36 +1864,18 @@
             <div className="shell">
               <header className="dashboard-title">
                 <h1>Dashboard finanziaria</h1>
+                <span className={`badge ${persistenceStatus === "error" ? "allocation-warning" : persistenceStatus === "saved" ? "allocation-ok" : "allocation-pending"}`}>
+                  {persistenceStatus === "loading"
+                    ? "Caricamento dati"
+                    : persistenceStatus === "saving"
+                      ? "Salvataggio automatico"
+                      : persistenceStatus === "saved"
+                        ? "Modifiche salvate"
+                        : "Memoria non disponibile"}
+                </span>
               </header>
 
               <section className="grid">
-                <div className="card full archive-card section-surface">
-                  <div className="section-head">
-                    <div className="title">Importa mese o archivio JSON</div>
-                    <div className="archive-summary">
-                      <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
-                      <span className="badge">Periodo aperto: {state.monthName} {state.year}</span>
-                    </div>
-                  </div>
-                  <div className="archive-toolbar">
-                    <div className="small">
-                      Seleziona il file JSON dal computer. Prima di esportare una nuova copia premi <strong>Salva mese</strong>.
-                    </div>
-                    <div className="actions">
-                      <button onClick={importDashboardArchive}>Importa mese / archivio</button>
-                      <button className="secondary" onClick={exportDashboardArchive}>Esporta archivio JSON</button>
-                      <input
-                        ref={archiveFileInputRef}
-                        type="file"
-                        accept=".json,application/json"
-                        hidden
-                        onChange={handleDashboardArchiveFile}
-                      />
-                    </div>
-                  </div>
-                  {archiveNotice.text && <div className={`archive-notice ${archiveNotice.tone}`}>{archiveNotice.text}</div>}
-                </div>
-
                 <div className="card full section-surface">
                   <div className="section-head">
                     <div className="title">Stima Stipendio netto da RAL</div>

@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
 import types
 import unittest
 from unittest.mock import patch
@@ -123,6 +124,37 @@ class DataStatusTests(unittest.TestCase):
         self.assertEqual(bridge.wait_for_snapshot(self.client, 0)['dataStatus'], 'synchronizing')
         self.synchronize()
         self.assertEqual(bridge.wait_for_snapshot(self.client, 1)['dataStatus'], 'current')
+
+
+class DashboardStateTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary_directory.cleanup)
+        self.data_directory = Path(self.temporary_directory.name)
+        self.file_patch = patch.object(bridge, 'APP_DATA_DIR', self.data_directory)
+        self.state_file_patch = patch.object(bridge, 'APP_STATE_FILE', self.data_directory / 'dashboard-state.json')
+        self.file_patch.start()
+        self.state_file_patch.start()
+        self.addCleanup(self.file_patch.stop)
+        self.addCleanup(self.state_file_patch.stop)
+
+    def test_round_trip_keeps_open_month_and_draft_entry(self):
+        payload = {
+            'state': {'monthName': 'Settembre', 'income': '2450', 'monthlyHistory': []},
+            'entry': {'label': 'Affitto', 'amount': '900'},
+            'editingMonthId': '2026-settembre',
+            'ui': {'monthlyInputOpen': True},
+        }
+        saved = bridge.save_dashboard_state(payload)
+        loaded = bridge.load_dashboard_state()
+        self.assertEqual(loaded, saved)
+        self.assertEqual(loaded['state']['income'], '2450')
+        self.assertEqual(loaded['entry']['label'], 'Affitto')
+        self.assertEqual(loaded['editingMonthId'], '2026-settembre')
+
+    def test_invalid_state_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'Stato dashboard non valido'):
+            bridge.save_dashboard_state({'state': {'monthlyHistory': 'non-lista'}})
 
 
 if __name__ == '__main__':

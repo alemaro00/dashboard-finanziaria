@@ -12,7 +12,7 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 - Investimenti illiquidi/non IBKR con valore attuale e P/L stimato.
 - Wealth management con sei indicatori operativi, esposizioni, crescita YoY,
   profilo di rischio e Value at Risk parametrico.
-- Archivio JSON locale per esportazione, importazione e continuita' mensile.
+- Memoria automatica su disco per mese aperto, storico, voci e bozze in compilazione.
 
 ## Avvio rapido
 
@@ -25,10 +25,18 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 
 ### macOS
 
-1. Apri Trader Workstation e abilita Socket Clients come indicato sopra.
-2. Nel Finder fai doppio clic su `avvia-dashboard-mac.command`.
-3. Al primo avvio viene creato automaticamente un ambiente Python locale e viene installata la libreria IBKR.
-4. Lascia aperta la finestra Terminale: la dashboard si apre su http://127.0.0.1:8765/.
+L'app nativa si trova in `dist/Dashboard Finanziaria.app`. Aprila con un doppio clic:
+avvia il servizio locale, mostra la dashboard in una finestra macOS e lo chiude quando
+esci dall'app. Se TWS e' aperto, il collegamento Live/Paper avviene automaticamente.
+
+Per ricreare l'app dopo un aggiornamento del progetto esegui:
+
+```text
+./scripts/build-macos-app.sh
+```
+
+`avvia-dashboard-mac.command` resta disponibile come avvio alternativo nel browser.
+Al primo utilizzo prepara automaticamente l'ambiente Python e installa la libreria IBKR.
 
 Per interrompere il collegamento, chiudi la finestra Terminale oppure premi `Ctrl+C`.
 
@@ -48,7 +56,7 @@ SICUREZZA
 - Il patrimonio consolidato somma Net Liquidation del conto Live, fondo emergenza e flexible cash.
 - Le posizioni Live non vengono sommate una seconda volta: sono gia' comprese nel Net Liquidation.
 - Fondo emergenza e flexible cash entrano nel patrimonio consolidato soltanto dopo il
-  salvataggio del mese nello Storico mensile. Gli input del mese non salvato sono esclusi.
+  salvataggio del mese nello Storico mensile. La bozza del mese resta comunque in memoria.
 - Se un mese viene eliminato, tutti i cumulati successivi, il patrimonio storico e la
   liquidita' contabilizzata vengono ricalcolati automaticamente sui mesi rimasti.
 
@@ -76,7 +84,8 @@ BUDGET, VOCI DETTAGLIATE E CAPITAL ALLOCATION
   e singole voci. Il pulsante Modifica mese ricarica tutto nella sezione Input del mese.
 - Salvando le modifiche, il mese selezionato viene sostituito senza duplicazioni anche
   quando vengono cambiati il mese o l'anno. Eliminando un mese si ricalcolano i cumulati.
-- Gli input del mese sono una simulazione finche' non viene premuto Salva mese.
+- Gli input del mese sono una simulazione finche' non viene premuto Salva mese, ma ogni
+  modifica viene conservata automaticamente e ripristinata alla successiva apertura.
 
 WEALTH MANAGEMENT E PORTAFOGLIO
 
@@ -101,25 +110,18 @@ WEALTH MANAGEMENT E PORTAFOGLIO
 - Il Value at Risk parametrico e' una stima mensile al 99% basata sulla volatilita'
   dei rendimenti patrimoniali salvati e richiede almeno tre rilevazioni.
 
-ARCHIVIO DATI JSON
+MEMORIA AUTOMATICA
 
-- Il pannello per importare un mese o un archivio JSON si trova all'inizio della
-  dashboard, con l'azione Importa in primo piano.
-- A fine mese premi prima Salva mese e poi Esporta archivio JSON. Il file viene
-  scritto direttamente nella cartella del progetto, accanto alla dashboard.
-- Il file scaricato contiene tutto lo stato della dashboard: storico mensile completo,
-  voci dettagliate, capital allocation, fondo emergenza e periodo attualmente aperto.
-- Il mese successivo apri la dashboard e scegli Importa archivio JSON: si apre il
-  selettore file del computer. Seleziona l'ultimo JSON esportato e
-  conferma il ripristino. Il browser normalmente ricorda l'ultima cartella usata.
-- Aggiungi il nuovo mese e crea una nuova esportazione: il nuovo file comprende tutti
-  i mesi gia' importati e il nuovo mese appena salvato.
-- Il file usa il nome patrimonio-ANNO-MESE.json. Conservalo in una cartella di backup.
-- L'esportazione diretta nella cartella del progetto richiede lo script di avvio per il sistema in uso (`avvia-dashboard-ibkr.bat` su Windows oppure `avvia-dashboard-mac.command` su macOS).
-  L'importazione usa invece il selettore file del browser e non apre finestre
-  PowerShell in background.
-- L'importazione accetta gli archivi creati dalla dashboard e applica automaticamente
-  le migrazioni necessarie senza duplicare i mesi salvati.
+- Non serve importare o esportare il mese. La dashboard salva automaticamente ogni
+  modifica circa 350 millisecondi dopo l'inserimento.
+- Vengono conservati il mese aperto, tutti gli input, le voci gia' aggiunte, la voce
+  ancora in compilazione, il mese storico in modifica e lo stato dei pannelli.
+- Alla chiusura dell'app viene inviato un ultimo salvataggio prima di fermare il servizio.
+- I dati sono nel file `~/Library/Application Support/Dashboard Finanziaria/dashboard-state.json`.
+- Al primo avvio la dashboard trasferisce automaticamente in questo file i dati gia'
+  presenti nella precedente memoria del browser.
+- `Salva mese` continua ad avere un significato preciso: conferma il periodo nello
+  Storico mensile. Non e' necessario per conservare una bozza incompleta.
 
 INVESTIMENTI ILLIQUIDI
 

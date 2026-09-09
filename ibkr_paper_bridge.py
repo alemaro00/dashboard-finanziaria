@@ -23,6 +23,14 @@ from ibapi.wrapper import EWrapper
 SCRIPT_DIR = Path(__file__).resolve().parent
 DASHBOARD_FILE = SCRIPT_DIR / "salary-planner-react.html"
 ARCHIVE_FILE_PATTERN = re.compile(r"^patrimonio-[0-9]{4}-[a-z0-9-]+\.json$")
+APP_DATA_DIR = Path(
+    os.environ.get(
+        "DASHBOARD_DATA_DIR",
+        Path.home() / "Library" / "Application Support" / "Dashboard Finanziaria",
+    )
+).expanduser()
+APP_STATE_FILE = APP_DATA_DIR / "dashboard-state.json"
+APP_STATE_LOCK = threading.Lock()
 # Account updates normally arrive every three minutes; allow a five-minute gap.
 STALE_AFTER_SECONDS = 300
 ACCOUNT_SUMMARY_TAGS = ",".join(
@@ -127,6 +135,37 @@ COUNTRY_CODE_ALIASES = {
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def save_dashboard_state(payload: dict[str, object]) -> dict[str, object]:
+    state = payload.get("state")
+    if not isinstance(state, dict) or not isinstance(state.get("monthlyHistory", []), list):
+        raise ValueError("Stato dashboard non valido")
+    document = {
+        "format": "dashboard-auto-state",
+        "formatVersion": 1,
+        "savedAt": utc_now(),
+        "state": state,
+        "entry": payload.get("entry") if isinstance(payload.get("entry"), dict) else {},
+        "editingMonthId": str(payload.get("editingMonthId") or ""),
+        "ui": payload.get("ui") if isinstance(payload.get("ui"), dict) else {},
+    }
+    APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    temporary = APP_STATE_FILE.with_suffix(".json.tmp")
+    with APP_STATE_LOCK:
+        temporary.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
+        temporary.replace(APP_STATE_FILE)
+    return document
+
+
+def load_dashboard_state() -> dict[str, object] | None:
+    with APP_STATE_LOCK:
+        if not APP_STATE_FILE.exists():
+            return None
+        document = json.loads(APP_STATE_FILE.read_text(encoding="utf-8"))
+    if not isinstance(document, dict) or not isinstance(document.get("state"), dict):
+        raise ValueError("Stato dashboard non valido")
+    return document
 
 
 def as_number(value):
@@ -866,6 +905,11 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             if origin and not origin.startswith(("http://127.0.0.1:", "http://localhost:")):
                 self._send_json({"error": "Richiesta non autorizzata"}, 403)
                 return
+            if path == "/api/state":
+                payload = self._read_json_body()
+                document = save_dashboard_state(payload)
+                self._send_json({"status": "saved", "savedAt": document["savedAt"]})
+                return
             if path == "/api/archive/export":
                 payload = self._read_json_body()
                 file_name = self._safe_archive_name(payload.get("fileName"))
@@ -897,6 +941,16 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 
     def do_GET(self):
         path = urlparse(self.path).path
+        if path == "/api/state":
+            try:
+                document = load_dashboard_state()
+                if document is None:
+                    self._send_json({"status": "empty", "saved": False})
+                    return
+                self._send_json({"status": "loaded", "saved": True, **document})
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                self._send_json({"error": f"Impossibile leggere lo stato: {error}"}, 500)
+            return
         if path in {"/api/paper/snapshot", "/api/live/snapshot"}:
             environment = "live" if path.startswith("/api/live/") else "paper"
             self._send_json(self.clients[environment].snapshot())
