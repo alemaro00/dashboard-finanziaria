@@ -1856,10 +1856,7 @@
               <section className="grid">
                 <div className="card full archive-card section-surface">
                   <div className="section-head">
-                    <div>
-                      <div className="title">Importa mese o archivio JSON</div>
-                      <div className="small">Riprendi subito un mese o uno storico esportato in precedenza; da qui puoi anche creare una copia aggiornata.</div>
-                    </div>
+                    <div className="title">Importa mese o archivio JSON</div>
                     <div className="archive-summary">
                       <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
                       <span className="badge">Periodo aperto: {state.monthName} {state.year}</span>
@@ -1886,10 +1883,7 @@
 
                 <div className="card full section-surface">
                   <div className="section-head">
-                    <div>
-                      <div className="title">Stima Stipendio netto da RAL</div>
-                      <div className="small">Pannello opzionale per stimare lo stipendio netto mensile partendo dalla RAL</div>
-                    </div>
+                    <div className="title">Stima Stipendio netto da RAL</div>
                     <div className="actions">
                       <span className="badge">Netto stimato: {money(salaryEstimate.monthlyNet)} x {salaryEstimate.paychecks}</span>
                       <SectionToggle
@@ -1972,22 +1966,16 @@
 
                 <div className="card full finance-management-card section-surface">
                   <div className="section-head finance-management-head">
-                    <div>
-                      <div className="title">Gestione delle finanze</div>
-                      <div className="small">Input del mese e storico mensile raccolti in un unico spazio operativo.</div>
-                    </div>
+                    <div className="title">Gestione delle finanze</div>
                   </div>
 
                 <section className="finance-panel emergency-fund-card" style={emergencyStatusStyle}>
                   <div className="section-head">
-                    <div>
-                      <div className="title-with-info">
+                    <div className="title-with-info">
                         <div className="title">Fondo emergenza</div>
                         <InfoTip label="formula del fondo emergenza">
                           Fondo aggiornato = quote del fondo nei mesi salvati + quota del mese selezionato. La percentuale confronta il fondo aggiornato con il target impostato.
                         </InfoTip>
-                      </div>
-                      <div className="small">La barra usa le quote dei mesi salvati e, durante la modifica, sostituisce correttamente la quota del mese selezionato.</div>
                     </div>
                     <span className="badge">{plainPct(totals.emergencyProgress)} completato</span>
                   </div>
@@ -2002,14 +1990,11 @@
 
                 <section className={`finance-panel monthly-input-card ${isMonthlyInputOpen ? "is-open" : ""}`} id="monthly-input">
                   <div className="section-head">
-                    <div>
-                      <div className="title-with-info">
+                    <div className="title-with-info">
                         <div className="title">Input del mese</div>
                         <InfoTip label="formula del patrimonio mensile">
                           Patrimonio a fine mese = stipendio netto + eventuale bonus di dicembre − costi fissi − costi variabili − quota fondo emergenza del mese.
                         </InfoTip>
-                      </div>
-                      <div className="small">Dati generali, allocazione del capitale e voci dettagliate vengono salvati insieme nello stesso mese.</div>
                     </div>
                     <div className="actions">
                       {editingMonthId && <span className="badge allocation-pending">Modifica di un mese salvato</span>}
@@ -2067,30 +2052,24 @@
                     <div className="field third">
                       <label>Costi fissi totali del mese (€)</label>
                       <input type="number" min="0" value={state.fixedCosts} onChange={(e) => updateField("fixedCosts", e.target.value)} />
-                      <div className="small" style={{ marginTop: 6 }}>Target macro del mese: le singole voci lo dettagliano senza aumentare le uscite.</div>
                     </div>
                     <div className="field third">
                       <label>Costi variabili totali del mese (€)</label>
                       <input type="number" min="0" value={state.variableCosts} onChange={(e) => updateField("variableCosts", e.target.value)} />
-                      <div className="small" style={{ marginTop: 6 }}>Target macro del mese: le singole voci servono a riconciliare questo totale.</div>
                     </div>
                     <div className="field third">
                       <label>Quota fondo emergenza del mese (€)</label>
                       <input type="number" min="0" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} />
-                      <div className="small" style={{ marginTop: 6 }}>Viene aggiunta al fondo e registrata quando salvi il mese.</div>
                     </div>
                   </div>
 
                   <section className="monthly-input-block">
                   <div className="section-head">
-                    <div>
-                      <div className="title-with-info">
+                    <div className="title-with-info">
                         <div className="title">Capital allocation</div>
                         <InfoTip label="formula della capital allocation">
                           Patrimonio {money(totals.currentNetWorth)} = target investimenti {money(totals.investmentAllocation)} + target flexible cash {money(totals.flexibleCashAllocation)} + differenza {money(totals.unallocatedCapital)}. Dettaglio investimenti: {money(totals.noteTotals.investments)} ({detailGapLabel(totals.investmentDetailGap)}). Dettaglio flexible cash: {money(totals.noteTotals.flexibleCash)} ({detailGapLabel(totals.flexibleCashDetailGap)}).
                         </InfoTip>
-                      </div>
-                      <div className="small">Divide il patrimonio a fine mese tra investimenti e flexible cash funds</div>
                     </div>
                     <span className={Math.abs(totals.unallocatedCapital) < 0.01 ? "badge allocation-ok" : totals.unallocatedCapital > 0 ? "badge allocation-pending" : "badge allocation-warning"}>
                       {Math.abs(totals.unallocatedCapital) < 0.01
@@ -2105,32 +2084,26 @@
                       <div className="readout allocation-patrimony">
                         <div className="label">Patrimonio a fine mese</div>
                         <div className="value">{money(totals.currentNetWorth)}</div>
-                        <div className="small">Uguale alla somma disponibile calcolata nell'Input del mese.</div>
                       </div>
                     </div>
                     <div className="field third">
                       <label>Investimenti totali del mese (€)</label>
                       <input type="number" min="0" value={state.investedCapital} onChange={(e) => updateField("investedCapital", e.target.value)} />
-                      <div className="small" style={{ marginTop: 6 }}>Target macro: le singole voci Investimento spiegano come viene distribuito.</div>
                     </div>
                     <div className="field third">
                       <label>Flexible cash funds a fine mese (€)</label>
                       <input type="number" min="0" value={state.flexibleCashFunds} onChange={(e) => updateField("flexibleCashFunds", e.target.value)} />
-                      <div className="small" style={{ marginTop: 6 }}>Target macro: le singole voci Flexible Cash spiegano dove resta la liquidita'.</div>
                     </div>
                   </div>
                   </section>
 
                   <section className="monthly-input-block">
                   <div className="section-head">
-                    <div>
-                      <div className="title-with-info">
+                    <div className="title-with-info">
                         <div className="title">Voci dettagliate</div>
                         <InfoTip label="riconciliazione delle voci dettagliate">
                           Le voci dettagliano i target macro senza sommare nuovamente gli importi. Il residuo di ogni categoria è target meno totale delle relative voci.
                         </InfoTip>
-                      </div>
-                      <div className="small">Scomponi i quattro target macro in singole voci: ogni voce riduce il gap della categoria senza aumentare il budget.</div>
                     </div>
                   </div>
                   <div className="entry-category-grid" aria-label="Categoria della voce dettagliata">
@@ -2307,7 +2280,6 @@
                           {entry.id && <button className="secondary" onClick={() => setEntry(createEmptyEntry())}>Annulla modifica</button>}
                           <button className="secondary" onClick={resetCustomEntries}>Reset voci</button>
                         </div>
-                        <div className="small" style={{ marginTop: 7 }}>Cancella solo le voci dettagliate del mese corrente. Lo storico mensile resta invariato.</div>
                       </div>
                     </div>
                     <div className="entry-list-panel">
@@ -2360,10 +2332,7 @@
                   </div>
                   </section>
                   <div className="monthly-save-bar">
-                    <div>
-                      <strong>{editingMonthId ? `Salva le modifiche di ${state.monthName} ${state.year}` : `Salva tutti gli input di ${state.monthName} ${state.year}`}</strong>
-                      <div className="small" style={{ marginTop: 5 }}>Il salvataggio comprende dati generali, costi, fondo emergenza, capital allocation e tutte le voci dettagliate.</div>
-                    </div>
+                    <strong>{editingMonthId ? `Salva le modifiche di ${state.monthName} ${state.year}` : `Salva tutti gli input di ${state.monthName} ${state.year}`}</strong>
                     <div className="actions">
                       <button onClick={saveMonthSnapshot}>{editingMonthId ? "Salva modifiche" : "Salva mese"}</button>
                       <button className="secondary" onClick={startNextMonth}>Salva e apri mese dopo</button>
@@ -2375,10 +2344,7 @@
 
                 <section className={`finance-panel monthly-history-card ${isMonthlyHistoryOpen ? "is-open" : ""}`}>
                   <div className="section-head">
-                    <div>
-                      <div className="title">Storico mensile</div>
-                      <div className="small">Apri un mese per vedere tutti gli input e le voci dettagliate; usa Modifica mese per caricarlo nella sezione superiore.</div>
-                    </div>
+                    <div className="title">Storico mensile</div>
                     <div className="actions">
                       <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
                       <SectionToggle
@@ -2549,10 +2515,7 @@
 
                 <section className={`finance-panel monthly-summary-card ${isMonthlySummaryOpen ? "is-open" : ""}`}>
                   <div className="section-head">
-                    <div>
-                      <div className="title">Riepilogo del mese</div>
-                      <div className="small">Entrate, uscite, capitale disponibile e investimenti del periodo selezionato.</div>
-                    </div>
+                    <div className="title">Riepilogo del mese</div>
                     <SectionToggle
                       isOpen={isMonthlySummaryOpen}
                       onToggle={() => setIsMonthlySummaryOpen((open) => !open)}
@@ -2564,22 +2527,18 @@
                       <div className="card metric">
                         <div className="label">Entrate mensili</div>
                         <div className="value">{money(totals.income)}</div>
-                        <div className="delta">Stipendio netto + eventuale bonus di dicembre</div>
                       </div>
                       <div className="card metric">
                         <div className="label">Uscite totali</div>
                         <div className="value">{money(totals.essential)}</div>
-                        <div className="delta bad">Importi base + voci di costo dettagliate</div>
                       </div>
                       <div className="card metric">
                         <div className="label">Disponibile allocabile</div>
                         <div className="value">{money(totals.currentNetWorth)}</div>
-                        <div className="delta">Dopo costi e fondo emergenza | {pct(totals.ratio)} del reddito</div>
                       </div>
                       <div className="card metric">
                         <div className="label">Capitale investito del mese</div>
                         <div className="value">{money(totals.investmentAllocation)}</div>
-                        <div className="delta">Non dettagliato + investimenti dettagliati | {pct(investRatio)}</div>
                       </div>
                     </div>
                   )}
@@ -2588,9 +2547,11 @@
 
                 <div className="card full portfolio-panel-card section-surface">
                   <div className="section-head">
-                    <div>
+                    <div className="title-with-info">
                       <div className="title">Portafoglio investimenti | IBKR Live + investimenti illiquidi</div>
-                      <div className="small">IBKR valorizza esclusivamente le posizioni Live; gli investimenti illiquidi salvati nello storico usano il valore attuale stimato. Le quote mensili destinate a IBKR non vengono sommate.</div>
+                      <InfoTip label="composizione del portafoglio">
+                        IBKR valorizza le posizioni Live. Gli investimenti illiquidi salvati usano il valore attuale stimato. Le quote mensili destinate a IBKR non vengono sommate una seconda volta.
+                      </InfoTip>
                     </div>
                     <div className="actions">
                       <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : `Live: ${ibkrStatusLabel(ibkrLive)}`}</span>
@@ -2636,16 +2597,17 @@
 
                 <section className="wealth-section section-surface">
                   <div className="wealth-heading">
-                    <div>
+                    <div className="title-with-info">
                       <h2>Wealth management</h2>
-                      <div className="small">Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza e flexible cash dei soli mesi salvati.</div>
+                      <InfoTip label="formula del patrimonio complessivo">
+                        Patrimonio complessivo = Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza + flexible cash dei mesi salvati.
+                      </InfoTip>
                     </div>
                   </div>
 
                   <div className="ibkr-status-card wealth-ibkr-status">
                     <div className="ibkr-status-heading">
                       <div className="ibkr-status-title">Stato account IBKR</div>
-                      <div className="small">Account Live e Paper di Trader Workstation</div>
                     </div>
                     <IbkrStatusItem mode="paper" connection={ibkrPaper} />
                     <IbkrStatusItem mode="live" connection={ibkrLive} />
@@ -2669,7 +2631,6 @@
                     <div className="performance-card">
                       <div className="label">Investimenti illiquidi / non IBKR</div>
                       <div className="value">{money(manualPortfolio.total)}</div>
-                      <div className="small">Solo investimenti presenti nei mesi salvati</div>
                     </div>
                     <div className="performance-card">
                       <div className="label">P/L investimenti illiquidi</div>
@@ -2688,7 +2649,6 @@
                     <div className="performance-card">
                       <div className="label">P/L realizzato</div>
                       <div className={`value ${livePortfolio.realizedPnl > 0 ? "positive" : livePortfolio.realizedPnl < 0 ? "negative" : "neutral"}`}>{accountMoney(livePortfolio.realizedPnl, liveCurrency)}</div>
-                      <div className="small">Dato fornito direttamente da IBKR</div>
                     </div>
                   </div>
 
@@ -2742,10 +2702,7 @@
 
                   <div className="table-wrap wealth-illiquid-table" style={{ marginTop: 18 }}>
                     <div className="section-head">
-                      <div>
-                        <div className="title">Investimenti illiquidi</div>
-                        <div className="small">Creati nelle voci dettagliate e contabilizzati dopo il salvataggio del mese.</div>
-                      </div>
+                      <div className="title">Investimenti illiquidi</div>
                       <span className="badge">{manualPortfolio.positions.length} {manualPortfolio.positions.length === 1 ? "posizione illiquida" : "posizioni illiquide"}</span>
                     </div>
                     <table>
@@ -2787,10 +2744,7 @@
                   <div className="wealth-layout">
                     <div className="wealth-panel">
                       <div className="wealth-panel-head">
-                        <div>
-                          <h3>Esposizione per asset class | IBKR + investimenti illiquidi</h3>
-                          <div className="small">Posizioni IBKR, cash IBKR e investimenti illiquidi dei mesi salvati.</div>
-                        </div>
+                        <h3>Esposizione per asset class | IBKR + investimenti illiquidi</h3>
                         <span className="wealth-chip">Totale: {accountMoney(wealthOverview.productTotal, liveCurrency)}</span>
                       </div>
                       <div className="donut-layout">
@@ -2822,10 +2776,7 @@
 
                     <div className="wealth-panel wealth-half">
                       <div className="wealth-panel-head">
-                        <div>
-                          <h3>Esposizione per Continente</h3>
-                          <div className="small">Posizioni IBKR e investimenti illiquidi; USA e Canada sono separati dal resto delle Americhe. Liquidita' esclusa.</div>
-                        </div>
+                        <h3>Esposizione per Continente</h3>
                       </div>
                       <div className="donut-layout">
                         <div className="donut-wrap">
@@ -2858,10 +2809,7 @@
 
                     <div className="wealth-panel wealth-half">
                       <div className="wealth-panel-head">
-                        <div>
-                          <h3>Esposizione per Paese</h3>
-                          <div className="small">Paese emittente IBKR oppure Paese impostato per gli investimenti illiquidi. Liquidita' esclusa.</div>
-                        </div>
+                        <h3>Esposizione per Paese</h3>
                       </div>
                       <div className="donut-layout">
                         <div className="donut-wrap">
@@ -2894,16 +2842,15 @@
 
                     <div className="wealth-panel">
                       <div className="wealth-panel-head">
-                        <div>
-                          <h3>Indicatori chiave</h3>
-                          <div className="small">Sintesi rapida del profilo patrimoniale</div>
-                        </div>
+                        <h3>Indicatori chiave</h3>
                       </div>
                       <div className="indicator-list">
                         <div className="indicator-row">
-                          <div>
+                          <div className="title-with-info">
                             <strong>Liquidita' disponibile contabilizzata</strong>
-                            <div className="small">Fondo emergenza e flexible cash dallo storico salvato + liquidita' IBKR Live</div>
+                            <InfoTip label="formula della liquidità disponibile">
+                              Fondo emergenza + flexible cash dello storico salvato + liquidità IBKR Live.
+                            </InfoTip>
                           </div>
                           <div className="indicator-value">{money(wealthOverview.liquidityAvailable)}</div>
                           <div className="indicator-status">{plainPct(wealthOverview.liquidityPct)} del patrimonio</div>
@@ -2916,7 +2863,6 @@
                                 Punteggio = somma di ogni esposizione × relativo peso, divisa per le esposizioni complessive. Pesi su 100: fondo emergenza 0; liquidità 5; liquidità positiva IBKR e flexible cash 8; titoli di Stato 12; obbligazioni corporate/altre 30; Real Estate/REIT 45; fondi 50; ETF 55; indici e categorie non classificate 60; commodities 65; azioni, equity e passion assets 70; Forex 75; crypto 95; opzioni e derivati 100. Soglie: Prudente 0–25, Moderato oltre 25 e fino a 60, Dinamico oltre 60.
                               </InfoTip>
                             </div>
-                            <div className="small">Media del rischio delle asset class, ponderata per l'esposizione</div>
                           </div>
                           <div className="indicator-value">{wealthOverview.riskLabel}</div>
                           <div>
@@ -2931,9 +2877,11 @@
                           </div>
                         </div>
                         <div className="indicator-row">
-                          <div>
+                          <div className="title-with-info">
                             <strong>Value at Risk parametrico</strong>
-                            <div className="small">Stima a un mese, confidenza 99%, basata sulla volatilità dei rendimenti mensili salvati</div>
+                            <InfoTip label="calcolo del Value at Risk">
+                              Stima a un mese con confidenza 99%, basata sulla volatilità dei rendimenti mensili salvati. Servono almeno tre rilevazioni patrimoniali.
+                            </InfoTip>
                           </div>
                           <div className="indicator-value negative">{wealthOverview.hasVarData ? money(wealthOverview.parametricVarAmount) : "n/d"}</div>
                           <div className="indicator-status">
