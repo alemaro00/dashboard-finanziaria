@@ -11,6 +11,8 @@
 
 @implementation DashboardAppDelegate
 
+static NSString *const DashboardURL = @"http://127.0.0.1:8766";
+
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     NSURL *iconURL = [NSBundle.mainBundle URLForResource:@"AppIcon" withExtension:@"icns"];
@@ -65,7 +67,7 @@
 }
 
 - (void)checkBridge:(void (^)(BOOL available))completion {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"http://127.0.0.1:8765/api/health"]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[DashboardURL stringByAppendingString:@"/api/health"]]];
     request.timeoutInterval = 0.8;
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         BOOL available = [(NSHTTPURLResponse *)response statusCode] == 200;
@@ -87,7 +89,7 @@
     }
     NSTask *task = [[NSTask alloc] init];
     task.executableURL = python;
-    task.arguments = @[bridge.path, @"--no-browser"];
+    task.arguments = @[bridge.path, @"--no-browser", @"--http-port", @"8766"];
     task.currentDirectoryURL = runtime;
     NSURL *logDirectory = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
     logDirectory = [logDirectory URLByAppendingPathComponent:@"Dashboard Finanziaria" isDirectory:YES];
@@ -126,7 +128,7 @@
 }
 
 - (void)loadDashboard {
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"http://127.0.0.1:8765/"] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15];
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:[DashboardURL stringByAppendingString:@"/"]] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15];
     [self.webView loadRequest:request];
 }
 

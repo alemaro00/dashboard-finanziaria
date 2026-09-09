@@ -28,6 +28,8 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 L'app nativa si trova in `dist/Dashboard Finanziaria.app`. Aprila con un doppio clic:
 avvia il servizio locale, mostra la dashboard in una finestra macOS e lo chiude quando
 esci dall'app. Se TWS e' aperto, il collegamento Live/Paper avviene automaticamente.
+L'app usa la porta locale 8766, separata dall'avvio alternativo nel browser, per non
+caricare per errore una vecchia istanza del bridge rimasta aperta sulla porta 8765.
 
 Per ricreare l'app dopo un aggiornamento del progetto esegui:
 

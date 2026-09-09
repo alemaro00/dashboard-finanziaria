@@ -2012,7 +2012,6 @@
                         </InfoTip>
                     </div>
                     <div className="actions">
-                      {editingMonthId && <span className="badge allocation-pending">Modifica di un mese salvato</span>}
                       <span className="badge">Disponibile da allocare: {money(totals.currentNetWorth)}</span>
                       <SectionToggle
                         isOpen={isMonthlyInputOpen}
@@ -2405,11 +2404,6 @@
                           <summary className="history-summary">
                             <div>
                               <strong>{item.monthName} {item.year}</strong>
-                              <div className="small">
-                                {editingMonthId === item.id
-                                  ? "In modifica"
-                                  : `${itemNotes.length === 1 ? "1 voce dettagliata" : `${itemNotes.length} voci dettagliate`}${item.savedAt ? ` | salvato il ${new Date(item.savedAt).toLocaleDateString("it-IT")}` : ""}`}
-                              </div>
                             </div>
                             <div className="history-kpi history-optional">
                               <strong>{money(item.freeCash)}</strong>
@@ -2438,47 +2432,38 @@
                               <div className="history-detail-card">
                                 <div className="label">Stipendio netto</div>
                                 <strong>{money(item.baseIncome ?? item.income)}</strong>
-                                {Number(item.decemberBonusNet) > 0 && <div className="small">+ bonus netto {money(item.decemberBonusNet)}</div>}
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Target costi fissi</div>
                                 <strong>{money(item.fixedCosts)}</strong>
-                                <div className="small">Dettagliati {money(itemNoteTotals.fixedCosts)} | {detailGapLabel(item.fixedCostDetailGap ?? (Number(item.fixedCosts) - itemNoteTotals.fixedCosts))}</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Target costi variabili</div>
                                 <strong>{money(item.variableCosts)}</strong>
-                                <div className="small">Dettagliati {money(itemNoteTotals.variableCosts)} | {detailGapLabel(item.variableCostDetailGap ?? (Number(item.variableCosts) - itemNoteTotals.variableCosts))}</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Quota fondo emergenza</div>
                                 <strong>{money(item.emergencyFundAllocation)}</strong>
-                                <div className="small">Fondo cumulato {money(item.cumulativeEmergencyFund ?? item.projectedEmergencyFund)}</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Patrimonio a fine mese</div>
                                 <strong>{money(item.currentNetWorth)}</strong>
-                                <div className="small">Dopo costi e quota fondo</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Target investimenti</div>
                                 <strong>{money(item.investmentAllocation)}</strong>
-                                <div className="small">Dettagliati {money(itemNoteTotals.investments)} | {detailGapLabel(item.investmentDetailGap ?? (Number(item.investmentAllocation) - itemNoteTotals.investments))}</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Target flexible cash</div>
                                 <strong>{money(item.flexibleCashAllocation)}</strong>
-                                <div className="small">Dettagliati {money(itemNoteTotals.flexibleCash)} | {detailGapLabel(item.flexibleCashDetailGap ?? (Number(item.flexibleCashAllocation) - itemNoteTotals.flexibleCash))}</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Differenza allocazione</div>
                                 <strong className={Math.abs(Number(item.unallocatedCapital) || 0) < 0.01 ? "positive" : "negative"}>{money(item.unallocatedCapital)}</strong>
-                                <div className="small">Zero indica allocazione completa</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Voci dettagliate</div>
                                 <strong>{itemNotes.length}</strong>
-                                <div className="small">Totale {money(itemNoteTotals.total)}</div>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Ultimo salvataggio</div>
