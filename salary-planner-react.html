@@ -153,10 +153,14 @@
         transition:color .2s ease,background .2s ease,box-shadow .2s ease,transform .2s ease;
       }
       button.toggle:hover{color:#e18b93;background:rgba(88,29,39,.68);box-shadow:none;transform:translateY(-1px)}
-      .toggle-chevron{width:11px;height:11px;border-right:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(-45deg);transition:transform .22s ease}
+      .toggle-chevron{
+        width:13px;height:9px;background:currentColor;
+        clip-path:polygon(0 0,50% 62%,100% 0,100% 38%,50% 100%,0 38%);
+        transform:rotate(0deg);transition:transform .22s ease;
+      }
       button.toggle[aria-expanded="true"]{color:#62b991;background:rgba(18,65,49,.58);border-color:rgba(98,185,145,.68);box-shadow:none}
       button.toggle[aria-expanded="true"]:hover{color:#88d1af;background:rgba(24,82,62,.68);box-shadow:none}
-      button.toggle[aria-expanded="true"] .toggle-chevron{transform:rotate(45deg) translate(-1px,-1px)}
+      button.toggle[aria-expanded="true"] .toggle-chevron{transform:rotate(180deg)}
       .rows{display:grid;gap:8px}
       .row{
         display:grid;grid-template-columns:1.2fr .8fr .8fr .6fr;gap:10px;align-items:center;
