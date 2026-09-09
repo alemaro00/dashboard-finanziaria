@@ -90,11 +90,14 @@ WEALTH MANAGEMENT E PORTAFOGLIO
   compare nell'asset allocation ma non nelle analisi geografiche.
 - La crescita YoY confronta il patrimonio con lo stesso mese dell'anno precedente,
   quando il dato storico e' disponibile.
-- Il profilo di rischio usa la quota difensiva: Prudente almeno 60%, Moderato dal
-  35% al 59,9%, Dinamico sotto il 35%. Il livello attivo e' evidenziato rispettivamente
-  in verde, arancione o rosso. La quota difensiva comprende titoli di Stato,
-  obbligazioni, strumenti classificati come liquidita', cash IBKR, fondo emergenza
-  e flexible cash; la `i` accanto all'indicatore mostra formula e soglie.
+- Il profilo di rischio usa una media ponderata per l'esposizione, su scala 0-100.
+  Ogni asset class ha un peso: fondo emergenza 0; liquidita' 5; cash IBKR positivo
+  e flexible cash 8; titoli di Stato 12; obbligazioni corporate/altre 30; Real
+  Estate/REIT 45; fondi 50; ETF 55; indici e categorie non classificate 60;
+  commodities 65; azioni, equity e passion assets 70; Forex 75; crypto 95;
+  opzioni e derivati 100. Il risultato e' Prudente fino a 25, Moderato oltre 25
+  e fino a 60, Dinamico oltre 60. Senza esposizioni mostra Non calcolabile; la `i`
+  accanto all'indicatore riporta formula, pesi e soglie.
 - Il Value at Risk parametrico e' una stima mensile al 99% basata sulla volatilita'
   dei rendimenti patrimoniali salvati e richiede almeno tre rilevazioni.
 

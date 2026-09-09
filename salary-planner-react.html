@@ -738,6 +738,29 @@
         "Passion Assets"
       ];
 
+      const riskWeights = [
+        { match: "titoli di stato", label: "Titoli di Stato", weight: 12 },
+        { match: "obblig", label: "Obbligazioni corporate / altre", weight: 30 },
+        { match: "liquid", label: "Liquidità", weight: 5 },
+        { match: "real estate", label: "Real Estate / REIT", weight: 45 },
+        { match: "fond", label: "Fondi", weight: 50 },
+        { match: "etf", label: "ETF", weight: 55 },
+        { match: "indic", label: "Indici", weight: 60 },
+        { match: "commod", label: "Commodities", weight: 65 },
+        { match: "azion", label: "Azioni", weight: 70 },
+        { match: "equity", label: "Equity", weight: 70 },
+        { match: "passion", label: "Passion Assets", weight: 70 },
+        { match: "forex", label: "Forex", weight: 75 },
+        { match: "crypto", label: "Crypto", weight: 95 },
+        { match: "opzion", label: "Opzioni", weight: 100 },
+        { match: "derivat", label: "Derivati", weight: 100 }
+      ];
+
+      function riskWeightForType(type) {
+        const normalizedType = String(type || "").trim().toLowerCase();
+        return riskWeights.find((item) => normalizedType.includes(item.match))?.weight ?? 60;
+      }
+
       const geographies = [
         "Globale", "Italia", "USA", "Spagna", "Francia", "Germania", "Regno Unito",
         "Svizzera", "Paesi Bassi", "Irlanda", "Lussemburgo", "Canada", "Messico",
@@ -1738,14 +1761,20 @@
           const total = livePortfolio.netLiquidation + manualPortfolio.total + emergencyFund + flexibleCash;
           const liquidityAvailable = emergencyFund + flexibleCash + livePortfolio.positiveCash + manualPortfolio.liquidValue;
           const combinedInvestmentsByType = mergeValueMaps(livePortfolio.byType, manualPortfolio.byType);
-          const defensiveInvestments = Object.entries(combinedInvestmentsByType)
-            .filter(([type]) => {
-              const normalizedType = String(type).toLowerCase();
-              return normalizedType.includes("titoli di stato") || normalizedType.includes("obblig") || normalizedType.includes("liquid");
-            })
-            .reduce((sum, [, value]) => sum + value, 0);
-          const defensiveValue = defensiveInvestments + livePortfolio.positiveCash + emergencyFund + flexibleCash;
-          const defensivePct = total > 0 ? (defensiveValue / total) * 100 : 0;
+          const riskExposures = [
+            ...Object.entries(combinedInvestmentsByType).map(([type, value]) => ({
+              type,
+              value: Math.max(0, Number(value) || 0),
+              weight: riskWeightForType(type)
+            })),
+            { type: "Liquidità positiva IBKR", value: livePortfolio.positiveCash, weight: 8 },
+            { type: "Flexible cash", value: flexibleCash, weight: 8 },
+            { type: "Fondo emergenza", value: emergencyFund, weight: 0 }
+          ].filter((item) => item.value > 0);
+          const riskExposureTotal = riskExposures.reduce((sum, item) => sum + item.value, 0);
+          const riskScore = riskExposureTotal > 0
+            ? riskExposures.reduce((sum, item) => sum + (item.value * item.weight), 0) / riskExposureTotal
+            : null;
 
           const combinedAssetClasses = mergeValueMaps(livePortfolio.byAssetClass, manualPortfolio.byType);
           const combinedContinents = mergeValueMaps(livePortfolio.byContinent, manualPortfolio.byContinent);
@@ -1784,7 +1813,11 @@
           const hasVarData = monthlyReturns.length > 1;
           const parametricVarAmount = hasVarData ? total * 2.32635 * monthlyVolatility : 0;
           const parametricVarPct = hasVarData ? 2.32635 * monthlyVolatility * 100 : 0;
-          const riskLabel = defensivePct >= 60 ? "Prudente" : defensivePct >= 35 ? "Moderato" : "Dinamico";
+          const riskLabel = riskScore === null
+            ? "Non calcolabile"
+            : riskScore <= 25
+              ? "Prudente"
+              : riskScore <= 60 ? "Moderato" : "Dinamico";
 
           return {
             total,
@@ -1792,7 +1825,8 @@
             flexibleCash,
             liquidityAvailable,
             liquidityPct: total > 0 ? (liquidityAvailable / total) * 100 : 0,
-            defensivePct,
+            riskScore,
+            riskExposureTotal,
             twelveMonthGrowthPct,
             yoyGrowthPct,
             yearAgoTotal,
@@ -2879,16 +2913,21 @@
                             <div className="title-with-info">
                               <strong>Profilo di rischio</strong>
                               <InfoTip label="calcolo del profilo di rischio">
-                                Quota difensiva = titoli di Stato, obbligazioni, strumenti classificati come liquidità, liquidità IBKR, fondo emergenza e flexible cash, divisi per il patrimonio totale. Prudente: almeno 60%. Moderato: dal 35% al 59,9%. Dinamico: meno del 35%.
+                                Punteggio = somma di ogni esposizione × relativo peso, divisa per le esposizioni complessive. Pesi su 100: fondo emergenza 0; liquidità 5; liquidità positiva IBKR e flexible cash 8; titoli di Stato 12; obbligazioni corporate/altre 30; Real Estate/REIT 45; fondi 50; ETF 55; indici e categorie non classificate 60; commodities 65; azioni, equity e passion assets 70; Forex 75; crypto 95; opzioni e derivati 100. Soglie: Prudente 0–25, Moderato oltre 25 e fino a 60, Dinamico oltre 60.
                               </InfoTip>
                             </div>
-                            <div className="small">Stimato dalla quota di allocazione difensiva</div>
+                            <div className="small">Media del rischio delle asset class, ponderata per l'esposizione</div>
                           </div>
                           <div className="indicator-value">{wealthOverview.riskLabel}</div>
-                          <div className="risk-thresholds" aria-label={`Soglie del profilo di rischio; quota difensiva attuale ${plainPct(wealthOverview.defensivePct)}`}>
-                            <span className={`risk-threshold prudente ${wealthOverview.riskLabel === "Prudente" ? "active" : ""}`}>Prudente ≥ 60%</span>
-                            <span className={`risk-threshold moderato ${wealthOverview.riskLabel === "Moderato" ? "active" : ""}`}>Moderato 35–59,9%</span>
-                            <span className={`risk-threshold dinamico ${wealthOverview.riskLabel === "Dinamico" ? "active" : ""}`}>Dinamico &lt; 35%</span>
+                          <div>
+                            <div className="indicator-status" style={{ marginBottom: 7 }}>
+                              {wealthOverview.riskScore === null ? "Servono esposizioni patrimoniali" : `Punteggio ${precise(wealthOverview.riskScore, 1)} / 100`}
+                            </div>
+                            <div className="risk-thresholds" aria-label={`Soglie del profilo di rischio${wealthOverview.riskScore === null ? "" : `; punteggio attuale ${precise(wealthOverview.riskScore, 1)} su 100`}`}>
+                              <span className={`risk-threshold prudente ${wealthOverview.riskLabel === "Prudente" ? "active" : ""}`}>Prudente 0–25</span>
+                              <span className={`risk-threshold moderato ${wealthOverview.riskLabel === "Moderato" ? "active" : ""}`}>Moderato 25,1–60</span>
+                              <span className={`risk-threshold dinamico ${wealthOverview.riskLabel === "Dinamico" ? "active" : ""}`}>Dinamico 60,1–100</span>
+                            </div>
                           </div>
                         </div>
                         <div className="indicator-row">
