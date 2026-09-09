@@ -80,12 +80,17 @@
       .macro-wealth{--macro-accent:#a482ef;--macro-glow:rgba(164,130,239,.48);border-color:rgba(164,130,239,.38)}
       .macro-wealth .macro-number{color:#dfd0ff;background:rgba(92,61,151,.22)}
       .macro-section-shell{
-        grid-column:span 12;display:grid;gap:12px;padding:14px;border:1px solid rgba(164,130,239,.38);
+        grid-column:span 12;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;padding:14px;border:1px solid rgba(164,130,239,.38);
         border-radius:12px;background:linear-gradient(145deg,rgba(31,24,47,.62),rgba(11,16,24,.94) 32%);
         box-shadow:0 20px 52px rgba(0,0,0,.28);
       }
+      .macro-section-shell > *{min-width:0;width:100%}
       .macro-shell-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 5px 8px}
       .macro-shell-heading h2{margin:0;font-size:21px;letter-spacing:.01em}
+      .macro-shell-controls{
+        display:grid;grid-template-columns:22px 40px;align-items:center;justify-content:end;gap:10px;
+        flex:0 0 72px;min-width:72px;
+      }
       h1{margin:8px 0 10px;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:0}
       .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
       .sub{max-width:860px;color:var(--muted);line-height:1.5;font-size:13px}
@@ -2658,7 +2663,7 @@
                       <span className="macro-number">03</span>
                       <h2>Wealth management</h2>
                     </div>
-                    <div className="actions">
+                    <div className="macro-shell-controls">
                       <InfoTip label="formula del patrimonio complessivo">
                         Patrimonio complessivo = Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza + flexible cash dei mesi salvati.
                       </InfoTip>
