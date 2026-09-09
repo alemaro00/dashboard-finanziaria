@@ -1074,7 +1074,7 @@
                         </div>
                       </div>
                       <div className="ibkr-kpi">
-                        <div className="label">P/L realizzato</div>
+                        <div className="label">P/L realizzato giornaliero</div>
                         <div className={`value ${metrics.realizedPnl > 0 ? "positive" : metrics.realizedPnl < 0 ? "negative" : ""}`}>
                           {accountMoney(metrics.realizedPnl, currency)}
                         </div>
@@ -1727,8 +1727,27 @@
           const geographyPositionValue = geographicPositions.reduce((sum, position) => sum + position.baseMarketValue, 0);
           const totalCash = liveConnected ? Number(liveMetrics.totalCash) || 0 : 0;
           const positiveCash = Math.max(0, totalCash);
+          const cashBalances = (liveConnected ? (liveData?.cashBalances || []) : [])
+            .map((balance) => ({
+              currency: String(balance.currency || "").toUpperCase(),
+              amount: Number(balance.amount) || 0,
+              baseValue: Number(balance.baseValue)
+            }))
+            .filter((balance) => balance.currency && Number.isFinite(balance.baseValue) && Math.abs(balance.amount) > 0.000001);
+          const positiveCurrencyCashTotal = cashBalances.reduce((sum, balance) => sum + Math.max(0, balance.baseValue), 0);
+          const cashAllocationScale = positiveCurrencyCashTotal > 0 && positiveCash > 0
+            ? positiveCash / positiveCurrencyCashTotal
+            : 0;
           const byAssetClass = { ...byType };
-          if (positiveCash > 0) byAssetClass["Liquidita'"] = (byAssetClass["Liquidita'"] || 0) + positiveCash;
+          if (positiveCurrencyCashTotal > 0) {
+            cashBalances.forEach((balance) => {
+              if (balance.baseValue <= 0) return;
+              const label = `Liquidità IBKR — ${balance.currency}`;
+              byAssetClass[label] = (byAssetClass[label] || 0) + (balance.baseValue * cashAllocationScale);
+            });
+          } else if (positiveCash > 0) {
+            byAssetClass["Liquidità IBKR"] = (byAssetClass["Liquidità IBKR"] || 0) + positiveCash;
+          }
           const netLiquidation = liveConnected ? Number(liveMetrics.netLiquidation) || 0 : 0;
           const unrealizedPnl = liveConnected ? Number(liveMetrics.unrealizedPnl) || 0 : 0;
           const realizedPnl = liveConnected ? Number(liveMetrics.realizedPnl) || 0 : 0;
@@ -1741,6 +1760,7 @@
             grossPositionValue,
             totalCash,
             positiveCash,
+            cashBalances,
             unrealizedPnl,
             realizedPnl,
             unrealizedPct: activeCostBasis > 0 ? (unrealizedPnl / activeCostBasis) * 100 : 0,
@@ -2635,6 +2655,11 @@
                     <div className="performance-card">
                       <div className="label">Liquidita' IBKR</div>
                       <div className="value">{accountMoney(livePortfolio.totalCash, liveCurrency)}</div>
+                      {livePortfolio.cashBalances.map((balance) => (
+                        <div className={`delta ${balance.amount < 0 ? "bad" : ""}`} key={balance.currency}>
+                          {balance.currency}: {accountMoney(balance.amount, balance.currency)}
+                        </div>
+                      ))}
                     </div>
                     <div className="performance-card">
                       <div className="label">P/L non realizzato</div>
@@ -2642,7 +2667,7 @@
                       <div className={`delta ${livePortfolio.unrealizedPnl < 0 ? "bad" : ""}`}>{pct(livePortfolio.unrealizedPct)} sul costo stimato</div>
                     </div>
                     <div className="performance-card">
-                      <div className="label">P/L realizzato</div>
+                      <div className="label">P/L realizzato giornaliero</div>
                       <div className={`value ${livePortfolio.realizedPnl > 0 ? "positive" : livePortfolio.realizedPnl < 0 ? "negative" : "neutral"}`}>{accountMoney(livePortfolio.realizedPnl, liveCurrency)}</div>
                     </div>
                   </div>

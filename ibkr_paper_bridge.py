@@ -733,6 +733,31 @@ class IbkrAccountClient(EWrapper, EClient):
         with self.lock:
             account = self.active_account or (self.accounts[0] if self.accounts else "")
             base_currency = self._base_currency(account) if account else ""
+            account_values = list(self.account_values.get(account, {}).values())
+            exchange_rates = {
+                str(item.get("currency") or "").upper(): float(item.get("value") or 0)
+                for item in account_values
+                if str(item.get("key") or "").removeprefix("$LEDGER-") == "ExchangeRate"
+                and item.get("currency")
+            }
+            cash_balances = []
+            for item in account_values:
+                if str(item.get("key") or "").removeprefix("$LEDGER-") != "CashBalance":
+                    continue
+                currency = str(item.get("currency") or "").upper()
+                if not currency or currency == "BASE":
+                    continue
+                amount = float(item.get("value") or 0)
+                exchange_rate = 1.0 if currency == base_currency else exchange_rates.get(currency, 0.0)
+                cash_balances.append(
+                    {
+                        "currency": currency,
+                        "amount": amount,
+                        "exchangeRate": exchange_rate,
+                        "baseValue": amount * exchange_rate if exchange_rate > 0 else None,
+                    }
+                )
+            cash_balances.sort(key=lambda item: abs(float(item.get("baseValue") or 0)), reverse=True)
             account_positions = [
                 dict(position)
                 for position in self.positions.values()
@@ -811,6 +836,7 @@ class IbkrAccountClient(EWrapper, EClient):
                 "accounts": list(self.accounts),
                 "baseCurrency": base_currency,
                 "metrics": metrics,
+                "cashBalances": cash_balances,
                 "positions": positions,
                 "positionCount": len(positions),
                 "lastUpdate": self.last_update,

@@ -30,7 +30,16 @@ render_icon 256 icon_256x256.png
 render_icon 512 icon_256x256@2x.png
 render_icon 512 icon_512x512.png
 render_icon 1024 icon_512x512@2x.png
-/usr/bin/iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/AppIcon.icns"
+ICON_FILE="$RESOURCES_DIR/AppIcon.icns"
+ICON_BUILD="$PROJECT_DIR/.build/AppIcon.icns"
+if /usr/bin/iconutil -c icns "$ICONSET_DIR" -o "$ICON_BUILD"; then
+  cp "$ICON_BUILD" "$ICON_FILE"
+elif [[ -f "$ICON_FILE" ]]; then
+  print -u2 "Avviso: iconutil non ha rigenerato l'icona; mantengo l'icona esistente."
+else
+  print -u2 "Errore: impossibile creare AppIcon.icns e non esiste un'icona precedente."
+  exit 1
+fi
 
 CLANG_MODULE_CACHE_PATH="$PROJECT_DIR/.build/module-cache" /usr/bin/clang \
   -fobjc-arc \

@@ -125,6 +125,21 @@ class DataStatusTests(unittest.TestCase):
         self.synchronize()
         self.assertEqual(bridge.wait_for_snapshot(self.client, 1)['dataStatus'], 'current')
 
+    def test_cash_balances_are_exposed_per_currency_in_base_value(self):
+        self.synchronize()
+        self.client.accountSummary(9101, 'TEST', 'Currency', 'EUR', 'EUR')
+        self.client.updateAccountValue('CashBalance', '8', 'EUR', 'TEST')
+        self.client.updateAccountValue('ExchangeRate', '1', 'EUR', 'TEST')
+        self.client.updateAccountValue('$LEDGER-CashBalance', '3', 'USD', 'TEST')
+        self.client.updateAccountValue('$LEDGER-ExchangeRate', '0.9', 'USD', 'TEST')
+
+        balances = {item['currency']: item for item in self.client.snapshot()['cashBalances']}
+
+        self.assertEqual(balances['EUR']['amount'], 8)
+        self.assertEqual(balances['EUR']['baseValue'], 8)
+        self.assertEqual(balances['USD']['amount'], 3)
+        self.assertAlmostEqual(balances['USD']['baseValue'], 2.7)
+
 
 class DashboardStateTests(unittest.TestCase):
     def setUp(self):
