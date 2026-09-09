@@ -9,8 +9,28 @@ CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 IBAPI_DIR="$("$VENV_DIR/bin/python" -c 'import pathlib, ibapi; print(pathlib.Path(ibapi.__file__).parent)')"
+ICON_SOURCE="$PROJECT_DIR/assets/dashboard-app-icon-source.png"
+ICONSET_DIR="$PROJECT_DIR/.build/AppIcon.iconset"
 
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+rm -rf "$ICONSET_DIR"
+mkdir -p "$ICONSET_DIR"
+
+render_icon() {
+  /usr/bin/sips -z "$1" "$1" "$ICON_SOURCE" --out "$ICONSET_DIR/$2" >/dev/null
+}
+
+render_icon 16 icon_16x16.png
+render_icon 32 icon_16x16@2x.png
+render_icon 32 icon_32x32.png
+render_icon 64 icon_32x32@2x.png
+render_icon 128 icon_128x128.png
+render_icon 256 icon_128x128@2x.png
+render_icon 256 icon_256x256.png
+render_icon 512 icon_256x256@2x.png
+render_icon 512 icon_512x512.png
+render_icon 1024 icon_512x512@2x.png
+/usr/bin/iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/AppIcon.icns"
 
 CLANG_MODULE_CACHE_PATH="$PROJECT_DIR/.build/module-cache" /usr/bin/clang \
   -fobjc-arc \
@@ -28,11 +48,12 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleDisplayName</key><string>Dashboard Finanziaria</string>
   <key>CFBundleExecutable</key><string>DashboardFinanziaria</string>
   <key>CFBundleIdentifier</key><string>it.alemaro.dashboard-finanziaria</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>Dashboard Finanziaria</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
-  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleShortVersionString</key><string>1.1</string>
+  <key>CFBundleVersion</key><string>2</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
