@@ -25,6 +25,7 @@
         --shadow:0 18px 48px rgba(0,0,0,.34);
       }
       *{box-sizing:border-box}
+      html{scroll-behavior:smooth}
       body{
         margin:0;
         font-family:"Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -44,6 +45,47 @@
       }
       .dashboard-title{padding:6px 2px 2px;display:flex;align-items:center;justify-content:space-between;gap:16px}
       .dashboard-title h1{margin:0;font-size:28px}
+      .workspace-nav{
+        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+        margin:12px 0;padding:7px;border:1px solid #2a3545;border-radius:12px;
+        background:rgba(9,13,19,.9);box-shadow:0 14px 34px rgba(0,0,0,.28);backdrop-filter:blur(16px);
+      }
+      .workspace-nav a{
+        display:flex;align-items:center;gap:10px;min-width:0;padding:11px 13px;border-radius:8px;
+        color:#cad4e1;text-decoration:none;font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.055em;
+        border:1px solid transparent;transition:.16s ease;
+      }
+      .workspace-nav a:hover,.workspace-nav a:focus-visible{color:#fff;background:#17202c;border-color:#344257;outline:none}
+      .workspace-nav-index{
+        display:grid;place-items:center;width:28px;height:28px;flex:0 0 auto;border-radius:7px;
+        font-size:10px;font-weight:850;background:#202b39;border:1px solid #3a485c;color:#dce7f5;
+      }
+      .workspace-nav a:nth-child(1) .workspace-nav-index{color:#bcecff;border-color:#41748b;background:#102734}
+      .workspace-nav a:nth-child(2) .workspace-nav-index{color:#f4d98d;border-color:#745f30;background:#2b2414}
+      .workspace-nav a:nth-child(3) .workspace-nav-index{color:#d9c7ff;border-color:#67548e;background:#251d3a}
+      .macro-title-line{display:flex;align-items:center;gap:11px;min-width:0}
+      .macro-number{
+        display:grid;place-items:center;width:34px;height:34px;flex:0 0 auto;border-radius:9px;
+        font-size:11px;font-weight:850;letter-spacing:.06em;border:1px solid currentColor;
+      }
+      .macro-section-card,.macro-section-shell{scroll-margin-top:92px;position:relative;overflow:hidden}
+      .macro-section-card::before,.macro-section-shell::before{
+        content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--macro-accent);
+        box-shadow:0 0 20px var(--macro-glow);
+      }
+      .macro-salary{--macro-accent:#69c8ee;--macro-glow:rgba(105,200,238,.5);border-color:rgba(105,200,238,.34)}
+      .macro-salary .macro-number{color:#aee8ff;background:rgba(31,101,130,.2)}
+      .macro-finance{--macro-accent:#d7b46a;--macro-glow:rgba(215,180,106,.46);border-color:rgba(215,180,106,.38)}
+      .macro-finance .macro-number{color:#f2d58d;background:rgba(126,91,26,.2)}
+      .macro-wealth{--macro-accent:#a482ef;--macro-glow:rgba(164,130,239,.48);border-color:rgba(164,130,239,.38)}
+      .macro-wealth .macro-number{color:#dfd0ff;background:rgba(92,61,151,.22)}
+      .macro-section-shell{
+        grid-column:span 12;display:grid;gap:12px;padding:14px;border:1px solid rgba(164,130,239,.38);
+        border-radius:12px;background:linear-gradient(145deg,rgba(31,24,47,.62),rgba(11,16,24,.94) 32%);
+        box-shadow:0 20px 52px rgba(0,0,0,.28);
+      }
+      .macro-shell-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 5px 8px}
+      .macro-shell-heading h2{margin:0;font-size:21px;letter-spacing:.01em}
       h1{margin:8px 0 10px;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:0}
       .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
       .sub{max-width:860px;color:var(--muted);line-height:1.5;font-size:13px}
@@ -408,6 +450,8 @@
       }
       @media (max-width:700px){
         .app{padding:16px}
+        .workspace-nav{position:static;grid-template-columns:1fr}
+        .workspace-nav a{padding:9px 11px}
         .info-tip-content{left:0;transform:translate(0,-4px)}
         .info-tip:hover .info-tip-content,.info-tip:focus-within .info-tip-content{transform:translate(0,0)}
         .entry-list-card{grid-template-columns:1fr}
@@ -1161,6 +1205,8 @@
       function App() {
         const [state, setState] = useState(loadState);
         const [isSalaryPanelOpen, setIsSalaryPanelOpen] = useState(() => localStorage.getItem("salary-estimate-panel-open") !== "false");
+        const [isFinanceSectionOpen, setIsFinanceSectionOpen] = useState(() => localStorage.getItem("finance-section-open") !== "false");
+        const [isWealthSectionOpen, setIsWealthSectionOpen] = useState(() => localStorage.getItem("wealth-section-open") !== "false");
         const [isMonthlyInputOpen, setIsMonthlyInputOpen] = useState(() => localStorage.getItem("monthly-input-panel-open") !== "false");
         const [isMonthlyHistoryOpen, setIsMonthlyHistoryOpen] = useState(() => localStorage.getItem("monthly-history-panel-open") !== "false");
         const [isMonthlySummaryOpen, setIsMonthlySummaryOpen] = useState(() => localStorage.getItem("monthly-summary-panel-open") !== "false");
@@ -1190,6 +1236,8 @@
                 setEditingMonthId(String(document.editingMonthId || ""));
                 const ui = document.ui || {};
                 if (typeof ui.salaryPanelOpen === "boolean") setIsSalaryPanelOpen(ui.salaryPanelOpen);
+                if (typeof ui.financeSectionOpen === "boolean") setIsFinanceSectionOpen(ui.financeSectionOpen);
+                if (typeof ui.wealthSectionOpen === "boolean") setIsWealthSectionOpen(ui.wealthSectionOpen);
                 if (typeof ui.monthlyInputOpen === "boolean") setIsMonthlyInputOpen(ui.monthlyInputOpen);
                 if (typeof ui.monthlyHistoryOpen === "boolean") setIsMonthlyHistoryOpen(ui.monthlyHistoryOpen);
                 if (typeof ui.monthlySummaryOpen === "boolean") setIsMonthlySummaryOpen(ui.monthlySummaryOpen);
@@ -1206,6 +1254,8 @@
                   editingMonthId,
                   ui: {
                     salaryPanelOpen: isSalaryPanelOpen,
+                    financeSectionOpen: isFinanceSectionOpen,
+                    wealthSectionOpen: isWealthSectionOpen,
                     monthlyInputOpen: isMonthlyInputOpen,
                     monthlyHistoryOpen: isMonthlyHistoryOpen,
                     monthlySummaryOpen: isMonthlySummaryOpen,
@@ -1244,12 +1294,14 @@
           editingMonthId,
           ui: {
             salaryPanelOpen: isSalaryPanelOpen,
+            financeSectionOpen: isFinanceSectionOpen,
+            wealthSectionOpen: isWealthSectionOpen,
             monthlyInputOpen: isMonthlyInputOpen,
             monthlyHistoryOpen: isMonthlyHistoryOpen,
             monthlySummaryOpen: isMonthlySummaryOpen,
             portfolioPanelOpen: isPortfolioPanelOpen
           }
-        }), [state, entry, editingMonthId, isSalaryPanelOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isMonthlySummaryOpen, isPortfolioPanelOpen]);
+        }), [state, entry, editingMonthId, isSalaryPanelOpen, isFinanceSectionOpen, isWealthSectionOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isMonthlySummaryOpen, isPortfolioPanelOpen]);
 
         useEffect(() => {
           if (!persistenceReady.current) return;
@@ -1292,6 +1344,14 @@
         useEffect(() => {
           localStorage.setItem("salary-estimate-panel-open", String(isSalaryPanelOpen));
         }, [isSalaryPanelOpen]);
+
+        useEffect(() => {
+          localStorage.setItem("finance-section-open", String(isFinanceSectionOpen));
+        }, [isFinanceSectionOpen]);
+
+        useEffect(() => {
+          localStorage.setItem("wealth-section-open", String(isWealthSectionOpen));
+        }, [isWealthSectionOpen]);
 
         useEffect(() => {
           localStorage.setItem("monthly-input-panel-open", String(isMonthlyInputOpen));
@@ -1918,10 +1978,19 @@
                 </span>
               </header>
 
+              <nav className="workspace-nav" aria-label="Sezioni principali">
+                <a href="#salary-section"><span className="workspace-nav-index">01</span><span>Stima stipendio</span></a>
+                <a href="#finance-section"><span className="workspace-nav-index">02</span><span>Gestione delle finanze</span></a>
+                <a href="#wealth-section"><span className="workspace-nav-index">03</span><span>Wealth management</span></a>
+              </nav>
+
               <section className="grid">
-                <div className="card full section-surface">
+                <div className="card full section-surface macro-section-card macro-salary" id="salary-section">
                   <div className="section-head">
-                    <div className="title">Stima Stipendio netto da RAL</div>
+                    <div className="macro-title-line">
+                      <span className="macro-number">01</span>
+                      <div className="title">Stima stipendio netto da RAL</div>
+                    </div>
                     <div className="actions">
                       <span className="badge">Netto stimato: {money(salaryEstimate.monthlyNet)} x {salaryEstimate.paychecks}</span>
                       <SectionToggle
@@ -2002,11 +2071,22 @@
                   )}
                 </div>
 
-                <div className="card full finance-management-card section-surface">
+                <div className="card full finance-management-card section-surface macro-section-card macro-finance" id="finance-section">
                   <div className="section-head finance-management-head">
-                    <div className="title">Gestione delle finanze</div>
+                    <div className="macro-title-line">
+                      <span className="macro-number">02</span>
+                      <div className="title">Gestione delle finanze</div>
+                    </div>
+                    <SectionToggle
+                      isOpen={isFinanceSectionOpen}
+                      onToggle={() => setIsFinanceSectionOpen((open) => !open)}
+                      label="gestione delle finanze"
+                      tone="gold"
+                    />
                   </div>
 
+                {isFinanceSectionOpen && (
+                <>
                 <section className="finance-panel emergency-fund-card" style={emergencyStatusStyle}>
                   <div className="section-head">
                     <div className="title-with-info">
@@ -2564,8 +2644,31 @@
                     </div>
                   )}
                 </section>
+                </>
+                )}
                 </div>
 
+                <section className="macro-section-shell macro-wealth" id="wealth-section">
+                  <div className="macro-shell-heading">
+                    <div className="macro-title-line">
+                      <span className="macro-number">03</span>
+                      <h2>Wealth management</h2>
+                    </div>
+                    <div className="actions">
+                      <InfoTip label="formula del patrimonio complessivo">
+                        Patrimonio complessivo = Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza + flexible cash dei mesi salvati.
+                      </InfoTip>
+                      <SectionToggle
+                        isOpen={isWealthSectionOpen}
+                        onToggle={() => setIsWealthSectionOpen((open) => !open)}
+                        label="wealth management"
+                        tone="violet"
+                      />
+                    </div>
+                  </div>
+
+                {isWealthSectionOpen && (
+                <>
                 <div className="card full portfolio-panel-card section-surface">
                   <div className="section-head">
                     <div className="title-with-info">
@@ -2617,15 +2720,6 @@
                 </div>
 
                 <section className="wealth-section section-surface">
-                  <div className="wealth-heading">
-                    <div className="title-with-info">
-                      <h2>Wealth management</h2>
-                      <InfoTip label="formula del patrimonio complessivo">
-                        Patrimonio complessivo = Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza + flexible cash dei mesi salvati.
-                      </InfoTip>
-                    </div>
-                  </div>
-
                   <div className="ibkr-status-card wealth-ibkr-status">
                     <div className="ibkr-status-heading">
                       <div className="ibkr-status-title">Stato account IBKR</div>
@@ -2950,6 +3044,9 @@
                       </div>
                     </div>
                   </div>
+                </section>
+                </>
+                )}
                 </section>
               </section>
             </div>

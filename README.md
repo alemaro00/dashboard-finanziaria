@@ -13,6 +13,8 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 - Wealth management con sei indicatori operativi, esposizioni, crescita YoY,
   profilo di rischio e Value at Risk parametrico.
 - Memoria automatica su disco per mese aperto, storico, voci e bozze in compilazione.
+- Tre macrosezioni riconoscibili e richiudibili: Stima stipendio, Gestione delle
+  finanze e Wealth management, con navigazione rapida sempre disponibile.
 
 ## Avvio rapido
 
