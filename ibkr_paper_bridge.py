@@ -5,6 +5,9 @@ import json
 import math
 import os
 import queue
+import secrets
+import shutil
+import hashlib
 import re
 import subprocess
 import threading
@@ -14,6 +17,8 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
+
+from local_security import RequestGuard, validate_json_tree, verify_csrf
 
 from ibapi.client import EClient
 from ibapi.contract import Contract
@@ -138,6 +143,7 @@ def utc_now() -> str:
 
 
 def save_dashboard_state(payload: dict[str, object]) -> dict[str, object]:
+    validate_json_tree(payload)
     state = payload.get("state")
     if not isinstance(state, dict) or not isinstance(state.get("monthlyHistory", []), list):
         raise ValueError("Stato dashboard non valido")
@@ -150,10 +156,23 @@ def save_dashboard_state(payload: dict[str, object]) -> dict[str, object]:
         "editingMonthId": str(payload.get("editingMonthId") or ""),
         "ui": payload.get("ui") if isinstance(payload.get("ui"), dict) else {},
     }
-    APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    APP_DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     temporary = APP_STATE_FILE.with_suffix(".json.tmp")
     with APP_STATE_LOCK:
-        temporary.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
+        # Never overwrite a corrupt but potentially recoverable previous document.
+        if APP_STATE_FILE.exists():
+            previous = json.loads(APP_STATE_FILE.read_text(encoding="utf-8"))
+            if not isinstance(previous, dict) or not isinstance(previous.get("state"), dict):
+                raise ValueError("Memoria esistente non valida: recuperare il backup prima di salvare")
+            backup = APP_STATE_FILE.with_suffix(".json.bak")
+            shutil.copyfile(APP_STATE_FILE, backup)
+            backup.chmod(0o600)
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump(document, stream, ensure_ascii=False, indent=2, allow_nan=False)
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.chmod(0o600)
         temporary.replace(APP_STATE_FILE)
     return document
 
@@ -278,6 +297,15 @@ def investment_asset_class(contract_details) -> str:
 
 class IbkrAccountClient(EWrapper, EClient):
     """Read-only account monitor. No order methods are exposed by this service."""
+
+    def placeOrder(self, *args, **kwargs):
+        raise PermissionError("Esecuzione broker non implementata: bridge sola lettura")
+
+    def cancelOrder(self, *args, **kwargs):
+        raise PermissionError("Modifica ordini broker disabilitata")
+
+    def reqGlobalCancel(self, *args, **kwargs):
+        raise PermissionError("Modifica ordini broker disabilitata")
 
     def __init__(self, host: str, port: int, client_id: int, environment: str):
         EWrapper.__init__(self)
@@ -848,7 +876,27 @@ class IbkrAccountClient(EWrapper, EClient):
 class DashboardHandler(BaseHTTPRequestHandler):
     clients: dict[str, IbkrAccountClient]
 
+    research_engine = None
+    wallet_service = None
+    enable_banking_service = None
+    csrf_token = secrets.token_urlsafe(32)
+    guard = RequestGuard()
+
+    def _authorize(self):
+        if not self.guard.allowed(self.headers, self.server.server_port):
+            self._send_json({"error": "Origine non autorizzata"}, 403)
+            return False
+        if not self.guard.admit():
+            self._send_json({"error": "Troppe richieste"}, 429)
+            return False
+        return True
+
     def _read_json_body(self, maximum_size: int = 10 * 1024 * 1024) -> dict[str, object]:
+        if self.headers.get_content_type() != "application/json":
+            raise ValueError("Content-Type JSON richiesto")
+        if self.headers.get("Transfer-Encoding"):
+            raise ValueError("Transfer-Encoding non supportato")
+        self.connection.settimeout(5)
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
         except ValueError as error:
@@ -861,6 +909,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             raise ValueError("JSON non valido") from error
         if not isinstance(payload, dict):
             raise ValueError("Archivio non valido")
+        validate_json_tree(payload)
+        if not verify_csrf(self.csrf_token, self.headers.get("X-CSRF-Token") or payload.pop("_csrf", None)):
+            raise ValueError("Token sessione non valido: ricarica la dashboard")
         return payload
 
     @staticmethod
@@ -909,9 +960,10 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Cache-Control", "no-store")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'")
         if length is not None:
             self.send_header("Content-Length", str(length))
         self.end_headers()
@@ -922,14 +974,78 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         self.wfile.write(body)
 
     def do_OPTIONS(self):
-        self._send_headers(204, "text/plain", 0)
+        if self._authorize():
+            self._send_headers(204, "text/plain", 0)
 
     def do_POST(self):
+        if not self._authorize():
+            return
         path = urlparse(self.path).path
         try:
-            origin = self.headers.get("Origin", "")
-            if origin and not origin.startswith(("http://127.0.0.1:", "http://localhost:")):
-                self._send_json({"error": "Richiesta non autorizzata"}, 403)
+            if path == "/api/enable-banking/control":
+                payload = self._read_json_body(maximum_size=16 * 1024)
+                service = getattr(self, "enable_banking_service", None)
+                if service is None:
+                    raise ValueError("Servizio Enable Banking non disponibile")
+                if set(payload) - {"action", "bank", "country", "callbackUrl", "recordId", "customName"}:
+                    raise ValueError("Campi non ammessi")
+                action = payload.get("action")
+                if action == "verify":
+                    result = service.verify()
+                elif action == "authorize":
+                    result = service.start_authorization(payload.get("bank"), payload.get("country"))
+                elif action == "complete":
+                    result = service.complete_authorization(payload.get("callbackUrl"))
+                elif action == "sync":
+                    result = service.sync()
+                elif action == "rename":
+                    result = service.rename_record(payload.get("recordId"), payload.get("customName"))
+                else:
+                    raise ValueError("Azione Enable Banking non ammessa")
+                self._send_json(result)
+                return
+            if path == "/api/wallet/control":
+                payload = self._read_json_body(maximum_size=16 * 1024)
+                service = getattr(self, "wallet_service", None)
+                if service is None:
+                    raise ValueError("Servizio Wallet non disponibile")
+                if set(payload) - {"action", "record"}:
+                    raise ValueError("Campi non ammessi")
+                action = payload.get("action")
+                if action == "sync":
+                    if "record" in payload:
+                        raise ValueError("Record non ammesso per la sincronizzazione")
+                    self._send_json(service.sync())
+                elif action == "create":
+                    self._send_json(service.create_record(payload.get("record")))
+                elif action == "update":
+                    self._send_json(service.update_record(payload.get("record")))
+                else:
+                    raise ValueError("Azione Wallet non ammessa")
+                return
+            if path == "/api/paper-lab/control":
+                payload = self._read_json_body()
+                lab = getattr(self, 'paper_lab', None)
+                if lab is None:
+                    raise ValueError('Laboratorio paper non disponibile')
+                if set(payload) - {'action', 'port'}:
+                    raise ValueError('Campi non ammessi')
+                if payload.get('action') == 'collect':
+                    result = lab.start(payload.get('port', 7497))
+                elif payload.get('action') == 'stop':
+                    result = lab.stop()
+                else:
+                    raise ValueError('Solo raccolta dati paper e arresto sono ammessi')
+                self._send_json(result)
+                return
+            if path == "/api/research/control":
+                payload = self._read_json_body()
+                if self.research_engine is None:
+                    raise ValueError("Laboratorio non disponibile")
+                if set(payload) - {"action", "strategy"}:
+                    raise ValueError("Campi non ammessi")
+                self.research_engine.control(payload.get("action"), payload.get("strategy"))
+                self._send_json(self.research_engine.snapshot())
                 return
             if path == "/api/state":
                 payload = self._read_json_body()
@@ -949,6 +1065,7 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                 self._send_json({"status": "saved", "fileName": file_name, "path": str(target)})
                 return
             if path == "/api/archive/pick":
+                self._read_json_body()
                 selected_path = self._open_archive_picker()
                 if selected_path is None:
                     self._send_json({"status": "cancelled"})
@@ -966,7 +1083,49 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             self._send_json({"error": str(error)}, 400)
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if not self._authorize():
+            return
+        if path == "/api/enable-banking/snapshot":
+            service = getattr(self, "enable_banking_service", None)
+            self._send_json(service.snapshot() if service else {"error": "Servizio Enable Banking non disponibile"},
+                            200 if service else 503)
+            return
+        if path == "/api/wallet/snapshot":
+            service = getattr(self, "wallet_service", None)
+            self._send_json(service.snapshot() if service else {"error": "Servizio Wallet non disponibile"},
+                            200 if service else 503)
+            return
+        if path == "/api/paper-lab/snapshot":
+            lab = getattr(self, 'paper_lab', None)
+            self._send_json(lab.snapshot() if lab else {'error': 'Laboratorio paper non disponibile'}, 200 if lab else 503)
+            return
+        if path == "/api/research/snapshot":
+            if self.research_engine is None:
+                self._send_json({"error": "Laboratorio non disponibile"}, 503)
+            else:
+                self._send_json(self.research_engine.snapshot())
+            return
+        if path == "/api/research/strategies":
+            from research.strategies import strategy_catalog
+            self._send_json({"strategies": strategy_catalog()})
+            return
+        if path.startswith("/assets/"):
+            assets = {
+                "/assets/react-18.3.1.min.js": SCRIPT_DIR / "vendor/react-18.3.1.min.js",
+                "/assets/react-dom-18.3.1.min.js": SCRIPT_DIR / "vendor/react-dom-18.3.1.min.js",
+                "/assets/app.js": SCRIPT_DIR / "web-build/app.js",
+                "/assets/connection.js": SCRIPT_DIR / "web-build/connection.js",
+            }
+            target = assets.get(path)
+            if target is None or not target.is_file():
+                self._send_json({"error": "Risorsa non trovata"}, 404)
+                return
+            body = target.read_bytes()
+            self._send_headers(200, "text/javascript; charset=utf-8", len(body))
+            self.wfile.write(body)
+            return
         if path == "/api/state":
             try:
                 document = load_dashboard_state()
@@ -1011,7 +1170,13 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             if not DASHBOARD_FILE.exists():
                 self._send_json({"error": "Dashboard non trovata"}, 404)
                 return
-            body = DASHBOARD_FILE.read_bytes()
+            built = SCRIPT_DIR / "web-build/dashboard.html"
+            digest_file = SCRIPT_DIR / "web-build/source.sha256"
+            digest = hashlib.sha256(DASHBOARD_FILE.read_bytes()).hexdigest()
+            if not built.exists() or not digest_file.exists() or digest_file.read_text().strip() != digest:
+                self._send_json({"error": "Frontend da compilare: node scripts/build-web.cjs"}, 503)
+                return
+            body = built.read_text().replace("__CSRF_TOKEN__", self.csrf_token).encode("utf-8")
             self._send_headers(200, "text/html; charset=utf-8", len(body))
             self.wfile.write(body)
             return
@@ -1051,6 +1216,8 @@ def main() -> int:
         help="Sceglie quale collegamento verificare con --test.",
     )
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--broker-mode", choices=("offline", "paper-readonly", "monitor-readonly"), default="offline",
+                        help="Offline predefinito; monitor-readonly abilita esplicitamente le letture live.")
     args = parser.parse_args()
 
     clients = {
@@ -1068,12 +1235,21 @@ def main() -> int:
         ),
     }
 
+    enabled = {} if args.broker_mode == "offline" else (
+        {"paper": clients["paper"]} if args.broker_mode == "paper-readonly" else clients
+    )
+    if args.broker_mode == "paper-readonly" and (args.tws_host != "127.0.0.1" or args.paper_port not in (7497, 4002)):
+        parser.error("Paper read-only richiede loopback e porta 7497 o 4002; non certifica il tipo di account.")
+    if args.test and not enabled:
+        parser.error("Verifica broker disabilitata in modalita offline")
     if args.test:
         selected = (
-            clients
+            enabled
             if args.test_environment == "both"
-            else {args.test_environment: clients[args.test_environment]}
+            else {k: v for k, v in enabled.items() if k == args.test_environment}
         )
+        if not selected:
+            parser.error("Ambiente richiesto non abilitato")
         snapshots: dict[str, dict[str, object]] = {}
         for environment, client in selected.items():
             client.start()
@@ -1086,8 +1262,16 @@ def main() -> int:
             for snapshot in snapshots.values()
         ) else 1
 
-    for client in clients.values():
+    for client in enabled.values():
         client.start()
+    from research.engine import ResearchEngine
+    DashboardHandler.research_engine = ResearchEngine(APP_DATA_DIR / "research" / "laboratory.sqlite3")
+    from paper_data import PaperLab
+    DashboardHandler.paper_lab = PaperLab(APP_DATA_DIR / 'paper-research')
+    from wallet_sync import WalletSyncService
+    DashboardHandler.wallet_service = WalletSyncService(APP_DATA_DIR / "wallet")
+    from enable_banking_sync import EnableBankingService
+    DashboardHandler.enable_banking_service = EnableBankingService(APP_DATA_DIR / "enable-banking")
     DashboardHandler.clients = clients
     server = ThreadingHTTPServer(("127.0.0.1", args.http_port), DashboardHandler)
     dashboard_url = f"http://127.0.0.1:{args.http_port}/"
@@ -1095,7 +1279,7 @@ def main() -> int:
     print(f"TWS Live:  {args.tws_host}:{args.live_port}")
     print(f"TWS Paper: {args.tws_host}:{args.paper_port}")
     print(f"Dashboard: {dashboard_url}")
-    print("Puoi tenere aperta una sola sessione o entrambe: il bridge si ricollega automaticamente.")
+    print(f"Modalita broker: {args.broker_mode}. Esecuzione ordini broker sempre disabilitata.")
     print("Premi Ctrl+C per chiudere il collegamento.")
 
     if not args.no_browser:
@@ -1107,6 +1291,8 @@ def main() -> int:
         pass
     finally:
         server.server_close()
+        DashboardHandler.paper_lab.stop()
+        DashboardHandler.research_engine.close()
         for client in clients.values():
             client.stop()
     return 0

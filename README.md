@@ -1,4 +1,4 @@
-# Dashboard finanziaria IBKR Live + Paper
+# Dashboard finanziaria — locale e laboratorio di ricerca
 
 Dashboard locale in sola lettura per unire pianificazione finanziaria mensile,
 monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
@@ -13,25 +13,94 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 - Wealth management con sei indicatori operativi, esposizioni, crescita YoY,
   profilo di rischio e Value at Risk parametrico.
 - Memoria automatica su disco per mese aperto, storico, voci e bozze in compilazione.
+- Sincronizzazione Wallet by BudgetBakers di entrate e uscite, con creazione e modifica
+  protetta delle sole voci manuali create dalla Dashboard.
 - Tre macrosezioni riconoscibili e richiudibili: Stima stipendio, Gestione delle
   finanze e Wealth management, con navigazione rapida sempre disponibile.
 
-## Avvio rapido
+## Avvio rapido (baseline di ricerca, offline predefinito)
 
-1. Apri Trader Workstation con il conto che vuoi monitorare.
-2. Per Live usa la porta 7496; per Paper usa la porta 7497.
-3. Abilita Socket Clients. Sul conto Live mantieni attiva Read-Only API.
-4. Fai doppio clic su avvia-dashboard-ibkr.bat.
-5. Lascia aperta la finestra del collegamento locale.
-6. La dashboard si apre su http://127.0.0.1:8765/.
+Requisiti: Python 3.9+ e Node.js per compilare il JSX. Nessuna connessione broker è
+avviata per impostazione predefinita. Il nuovo laboratorio usa solo dati sintetici;
+le sei strategie non sono validate e non esiste esecuzione IBKR/live.
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+node scripts/build-web.cjs
+.venv/bin/python ibkr_paper_bridge.py --broker-mode offline
+```
+
+Aprire `http://127.0.0.1:8765/`, non il file HTML con `file://`.
+Il frontend viene compilato localmente con dipendenze versionate in `vendor`;
+se il sorgente cambia, ricompilare (`node scripts/build-web.cjs`). Il bridge rifiuta
+build obsolete, non carica codice CDN e accetta solo richieste della stessa origine.
+
+Per testare senza toccare il proprio storico:
+
+```sh
+DASHBOARD_DATA_DIR=/tmp/dashboard-research-test .venv/bin/python ibkr_paper_bridge.py --no-browser --broker-mode offline --http-port 8771
+python3 scripts/research_demo.py
+```
+
+La demo crea ed elimina automaticamente un ledger temporaneo. Non è un backtest
+storico e non si collega a TWS. Per consultare esplicitamente i conti nell'uso personale,
+la capacità di lettura esistente resta disponibile separatamente:
+
+```sh
+.venv/bin/python ibkr_paper_bridge.py --broker-mode monitor-readonly
+```
+
+Questo comando abilita **letture Live e Paper**, non invia ordini. TWS Live 7496,
+Paper 7497; mantenere Read-Only API nel broker. `--broker-mode paper-readonly`
+abilita soltanto lettura su loopback7497/4002: la porta non attesta l'identità del
+conto e questa opzione **non è** un servizio di esecuzione paper isolato.
+Nessun collegamento broker è stato utilizzato durante questo sviluppo.
 
 ### macOS
 
-L'app nativa si trova in `dist/Dashboard Finanziaria.app`. Aprila con un doppio clic:
+La build nativa locale si trova in `dist/Dashboard Finanziaria.app`. Richiede Python
+`/usr/bin/python3`, Mac Apple Silicon e macOS13+. Su questo Mac la versione **1.13.5**
+è stata installata in `/Applications/Dashboard Finanziaria.app` su richiesta dell'utente.
+Se la avvii con un doppio clic:
 avvia il servizio locale, mostra la dashboard in una finestra macOS e lo chiude quando
-esci dall'app. Se TWS e' aperto, il collegamento Live/Paper avviene automaticamente.
+esci dall'app. La nuova build parte offline anche se TWS è aperta.
+Per il monitoraggio usa il menu macOS **Dashboard Finanziaria → Collega TWS — sola lettura**.
+La scelta vale per la sessione corrente; ogni riavvio parte offline. Il menu
+**Disconnetti TWS — modalità offline** interrompe il monitoraggio. Nessun ordine broker è abilitato.
+La chiusura attende la conferma del salvataggio; se fallisce mantiene la finestra aperta.
+Nel **Laboratorio strategie** usa **Verifica paper e raccogli dati** per acquisire
+storici dalla TWS paper (API7497) e ricalcolare lo screening su barre. I risultati
+sono esplorativi, con costi modellati; non sono eseguiti broker. Il passaggio al reale
+resta disabilitato. [Esiti, metodo e gate della validazione](docs/PAPER_VALIDATION.md).
+È disponibile anche il menu **Collega TWS paper — sola lettura** per monitorare solo il conto paper.
+I dati restano in `~/Library/Application Support/Dashboard Finanziaria`.
+Backup della precedente app e dei dati prima dell'installazione:
+`.build/install-backups/20260910-130946/` (locale, escluso da Git).
 L'app usa la porta locale 8766, separata dall'avvio alternativo nel browser, per non
 caricare per errore una vecchia istanza del bridge rimasta aperta sulla porta 8765.
+
+### Collegamento Wallet by BudgetBakers
+
+Il connettore usa la REST API ufficiale di Wallet Premium per leggere entrate e uscite
+e per creare voci manuali. La modifica è consentita soltanto sui record creati dalla
+Dashboard; i movimenti originati dalla sincronizzazione bancaria rimangono in sola lettura.
+Wallet aggrega i conti bancari e fornisce alla Dashboard transazioni e categorie; la
+Dashboard non riceve password, PIN o codici bancari. Genera il token personale nella
+versione web di Wallet, in **Impostazioni → REST API**, quindi esegui:
+
+```sh
+python3 scripts/configure_wallet_api.py
+```
+
+In alternativa usa direttamente il menu **Dashboard Finanziaria → Configura Wallet API…**:
+il campo è protetto e il token viene salvato nel Portachiavi macOS. Non inserirlo
+nel codice, nel repository o in chat. Ricaricando l'app, la prima sincronizzazione parte
+automaticamente; **Aggiorna da Wallet** consente anche l'aggiornamento manuale. La Dashboard
+legge fino a 365 giorni di record e aggiorna le uscite EUR già categorizzate nei costi
+variabili. Entrate, uscite e saldo mensile restano visibili insieme al patrimonio IBKR.
+Le scritture richiedono un gesto esplicito; in caso di timeout non vengono ritentate
+automaticamente perché l'API non espone una chiave di idempotenza documentata.
 
 Per ricreare l'app dopo un aggiornamento del progetto esegui:
 
@@ -44,8 +113,8 @@ Al primo utilizzo prepara automaticamente l'ambiente Python e installa la librer
 
 Per interrompere il collegamento, chiudi la finestra Terminale oppure premi `Ctrl+C`.
 
-Puoi aprire soltanto Live, soltanto Paper oppure entrambe le sessioni. Il bridge prova
-automaticamente a ricollegarsi. La dashboard e' una sola: non serve aprire anche il
+Nel modo `monitor-readonly` puoi aprire soltanto Live, soltanto Paper oppure entrambe
+le sessioni. Solo in quel modo il bridge prova automaticamente a ricollegarsi. La dashboard e' una sola: non serve aprire anche il
 file salary-planner-react.html con l'indirizzo file://.
 
 Se TWS chiede di autorizzare una connessione API da 127.0.0.1, accettala.
@@ -111,8 +180,8 @@ WEALTH MANAGEMENT E PORTAFOGLIO
   opzioni e derivati 100. Il risultato e' Prudente fino a 25, Moderato oltre 25
   e fino a 60, Dinamico oltre 60. Senza esposizioni mostra Non calcolabile; la `i`
   accanto all'indicatore riporta formula, pesi e soglie.
-- Il Value at Risk parametrico e' una stima mensile al 99% basata sulla volatilita'
-  dei rendimenti patrimoniali salvati e richiede almeno tre rilevazioni.
+- Il precedente VaR da variazioni patrimoniali è sospeso: versamenti e prelievi
+  alteravano la misura. Servono rendimenti depurati dai flussi e dati adeguati.
 
 MEMORIA AUTOMATICA
 
@@ -249,3 +318,41 @@ Verifiche locali senza connessione IBKR:
 python3 -m unittest discover -s tests -p 'test_bridge*.py'
 node --test tests/test-polling.cjs
 ```
+
+## Verifica e documentazione dell'evoluzione
+
+```sh
+python3 -m unittest discover -s tests -p 'test*.py'
+node --test tests/test-polling.cjs
+node scripts/build-web.cjs
+python3 tests/http_smoke.py
+python3 scripts/check_repository.py
+python3 -m pip install -r requirements-dev.txt
+ruff check .
+mypy
+bandit -r research local_security.py ibkr_paper_bridge.py -ll
+pip-audit --no-deps --disable-pip -r requirements.txt
+```
+
+`http_smoke.py` usa una porta loopback temporanea e fake SDK incapace di collegarsi al broker.
+Mypy controlla i sette moduli nuovi; il vecchio bridge dinamico ibapi resta fuori dalla
+copertura statica e viene testato con callback offline. La build JSX è verificata da Babel;
+non si dichiara type checking TypeScript di un frontend che non è TypeScript.
+
+- [Rapporto e stato di completamento](docs/REPORT.md)
+- [Audit e gap analysis](docs/AUDIT.md)
+- [IBKR e quadro normativo con fonti](docs/IBKR_COMPLIANCE.md)
+- [Architettura e threat model](docs/ARCHITECTURE_SECURITY.md)
+- [Risk engine e ledger](docs/RISK_ENGINE.md)
+- [Sei strategie, allocator e protocollo backtest](docs/STRATEGIES_RESEARCH.md)
+- [UX, abbonamenti, roadmap e rischi](docs/PRODUCT_ROADMAP.md)
+
+Memoria cashflow preservata nel JSON esistente, con backup precedente `.json.bak` e
+permessi0600. Nuovo ledger `research/laboratory.sqlite3` sotto la directory dati:
+capitale e fill soltanto sintetici, mai sommati al patrimonio personale. Nessuna
+cifratura applicativa o autenticazione multiutente è stata introdotta: non pubblicare
+questo server in rete. Audit SQLite con hash/digest è tamper evident, non immutabile
+contro un amministratore. Errori di lettura memoria interrompono l'autosalvataggio:
+recuperare il backup prima di proseguire; non sovrascrivere uno stato corrotto.
+
+Strategia con uno specifico profilo di rischio e potenziale rendimento, senza garanzia di risultato. Il capitale investito può subire perdite, anche rilevanti.

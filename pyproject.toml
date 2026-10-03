@@ -1,0 +1,14 @@
+[tool.ruff]
+target-version = "py39"
+cache-dir = ".build/ruff_cache"
+exclude = [".venv", ".build", "dist", "vendor", "web-build"]
+
+[tool.ruff.lint]
+select = ["E9", "F"]
+
+[tool.mypy]
+python_version = "3.9"
+files = ["research", "local_security.py"]
+check_untyped_defs = true
+ignore_missing_imports = true
+cache_dir = ".build/mypy_cache"

@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Portfolio Operations | Planner React</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="vendor/react-18.3.1.min.js"></script>
+    <script src="vendor/react-dom-18.3.1.min.js"></script>
+    <script src="vendor/babel-7.28.5.min.js"></script>
     <style>
       :root{
         --bg:#080a0f;
@@ -24,6 +24,47 @@
         --warn:#e9b949;
         --shadow:0 18px 48px rgba(0,0,0,.34);
       }
+      .research-grid{display:grid;grid-template-columns:1fr;gap:14px;min-width:0}
+      .research-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:0}
+      .research-metrics>div{min-width:0;padding:11px;border:1px solid #283746;border-radius:8px;background:#0b131a}
+      .research-metrics dt{margin:0 0 7px;color:#8da0af;font-size:10px;text-transform:uppercase;letter-spacing:.065em}
+      .research-metrics dd{margin:0;color:#ecf5f5;font-size:14px;font-weight:750;overflow-wrap:anywhere}
+      .research-log{max-height:320px;overflow:auto;white-space:pre-wrap;font-size:12px}
+      .research-intro{display:grid;grid-template-columns:1.05fr 1.95fr;gap:12px}
+      .research-status-card,.research-guide-card,.strategy-card{border-color:rgba(51,206,181,.28)!important;background:linear-gradient(145deg,#10201f,#0b1218 68%)!important}
+      .research-status-card{display:grid;align-content:center;gap:9px;padding:18px}
+      .research-kicker{color:#72e0cd;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.1em}
+      .research-status-card h3,.research-guide-card h3,.strategy-card h3{margin:0}
+      .research-stage{font-size:24px;font-weight:800;line-height:1.15}
+      .research-explainer{margin:0;color:#aab9c3;line-height:1.55}
+      .research-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+      .research-step{min-width:0;padding:12px;border:1px solid #29413f;border-radius:8px;background:rgba(8,20,20,.72)}
+      .research-step-number{display:grid;place-items:center;width:24px;height:24px;margin-bottom:9px;border-radius:7px;background:#153b37;color:#7ce8d5;font-size:10px;font-weight:850}
+      .research-step strong{display:block;margin-bottom:5px;font-size:12px}
+      .research-step span{display:block;color:#91a6aa;font-size:11px;line-height:1.45}
+      .research-collector{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
+      .strategy-card{display:grid;gap:14px;padding:17px!important;min-width:0}
+      .strategy-card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+      .strategy-card-title{display:grid;gap:6px;min-width:0}
+      .strategy-badges{display:flex;gap:6px;flex-wrap:wrap}
+      .strategy-badge{display:inline-flex;padding:5px 7px;border-radius:999px;border:1px solid #33504d;background:#102422;color:#b5d7d2;font-size:10px}
+      .strategy-status{flex:0 0 auto;max-width:260px;padding:7px 9px;border-radius:6px;border:1px solid rgba(233,185,73,.34);background:rgba(233,185,73,.08);color:#f2cf7c;font-size:11px;font-weight:750;text-align:right}
+      .strategy-status.ready{border-color:rgba(66,211,146,.38);background:rgba(66,211,146,.08);color:#8de6bd}
+      .strategy-description{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+      .strategy-description>div{padding:12px;border-left:2px solid #2f6f66;background:rgba(13,25,28,.72)}
+      .strategy-description strong{display:block;margin-bottom:6px;color:#d9f3ee;font-size:11px;text-transform:uppercase;letter-spacing:.055em}
+      .strategy-description span{color:#a9b8c1;font-size:12px;line-height:1.5}
+      .strategy-result-note{padding:10px 12px;border:1px solid rgba(111,178,210,.25);border-radius:7px;background:rgba(111,178,210,.06);color:#abc5d3;font-size:12px;line-height:1.5}
+      .research-empty-value{color:#f2cf7c!important}
+      .research-details{border-top:1px solid rgba(51,206,181,.18);padding-top:12px}
+      .research-details summary{color:#b8d7d2;font-size:12px;font-weight:750}
+      .signal-summary{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+      .signal-summary span{padding:6px 8px;border:1px solid #30433f;border-radius:6px;background:#0b1717;color:#b8cbc8;font-size:11px}
+      .signal-list{display:grid;gap:5px;max-height:360px;overflow:auto;margin-top:10px;padding-right:5px}
+      .signal-row{display:grid;grid-template-columns:150px 70px 90px minmax(0,1fr) 90px;gap:9px;align-items:center;padding:7px 9px;border:1px solid #233532;border-radius:5px;background:#091311;color:#afc1be;font-size:11px}
+      .signal-row strong{color:#e1f1ee}
+      .research-controls{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;border:1px solid #263846;border-radius:8px;background:#0b1218}
+      .research-controls .actions{margin:0}
       *{box-sizing:border-box}
       html{scroll-behavior:smooth}
       body{
@@ -46,7 +87,7 @@
       .dashboard-title{padding:6px 2px 2px;display:flex;align-items:center;justify-content:space-between;gap:16px}
       .dashboard-title h1{margin:0;font-size:28px}
       .workspace-nav{
-        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
         margin:12px 0;padding:7px;border:1px solid #2a3545;border-radius:12px;
         background:rgba(9,13,19,.9);box-shadow:0 14px 34px rgba(0,0,0,.28);backdrop-filter:blur(16px);
       }
@@ -63,6 +104,7 @@
       .workspace-nav a:nth-child(1) .workspace-nav-index{color:#bcecff;border-color:#41748b;background:#102734}
       .workspace-nav a:nth-child(2) .workspace-nav-index{color:#f4d98d;border-color:#745f30;background:#2b2414}
       .workspace-nav a:nth-child(3) .workspace-nav-index{color:#d9c7ff;border-color:#67548e;background:#251d3a}
+      .workspace-nav a:nth-child(4) .workspace-nav-index{color:#a9f4e7;border-color:#34796e;background:#102b28}
       .macro-title-line{display:flex;align-items:center;gap:11px;min-width:0}
       .macro-number{
         display:grid;place-items:center;width:34px;height:34px;flex:0 0 auto;border-radius:9px;
@@ -79,6 +121,9 @@
       .macro-finance .macro-number{color:#f2d58d;background:rgba(126,91,26,.2)}
       .macro-wealth{--macro-accent:#a482ef;--macro-glow:rgba(164,130,239,.48);border-color:rgba(164,130,239,.38)}
       .macro-wealth .macro-number{color:#dfd0ff;background:rgba(92,61,151,.22)}
+      .macro-research{--macro-accent:#33ceb5;--macro-glow:rgba(51,206,181,.48);border-color:rgba(51,206,181,.4)}
+      .macro-research .macro-number{color:#a9f4e7;background:rgba(29,111,99,.22)}
+      .macro-section-shell.macro-research{border-color:rgba(51,206,181,.4);background:linear-gradient(145deg,rgba(15,48,44,.58),rgba(11,16,24,.95) 34%)}
       .macro-section-shell{
         grid-column:span 12;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;padding:14px;border:1px solid rgba(164,130,239,.38);
         border-radius:12px;background:linear-gradient(145deg,rgba(31,24,47,.62),rgba(11,16,24,.94) 32%);
@@ -186,6 +231,38 @@
       .decision-box.good{border-color:rgba(99,230,167,.32);background:rgba(99,230,167,.08)}
       .decision-box.warn{border-color:rgba(255,204,102,.35);background:rgba(255,204,102,.08)}
       .decision-box.bad{border-color:rgba(255,123,123,.32);background:rgba(255,123,123,.08)}
+      .bank-sync{display:grid;gap:12px}
+      .bank-sync-status{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+      .wallet-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .wallet-kpi{padding:12px 14px;border:1px solid #283344;border-radius:8px;background:#0b1119}
+      .wallet-kpi strong{display:block;font-size:21px;margin-top:6px}
+      .wallet-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px;border:1px solid rgba(215,180,106,.25);border-radius:8px;background:rgba(11,17,25,.72)}
+      .wallet-form .wide{grid-column:span 2}
+      .wallet-form-actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+      .wallet-ledger{display:grid;gap:7px;max-height:340px;overflow:auto;padding-right:3px}
+      .wallet-record{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid #263243;border-radius:7px;background:#0c131d}
+      .wallet-record-meta{display:flex;gap:8px;flex-wrap:wrap;color:#96a3b5;font-size:12px;margin-top:3px}
+      .wallet-income{color:#44d7a8}.wallet-expense{color:#ff7d83}
+      .bank-connections{display:flex;gap:7px;flex-wrap:wrap}
+      .bank-review-list{display:grid;gap:8px;max-height:340px;overflow:auto;padding:10px;border:1px solid #253244;border-radius:8px;background:#091019;overscroll-behavior:contain;scrollbar-gutter:stable}
+      .bank-review-list>strong{position:sticky;top:-10px;z-index:1;padding:10px 2px 8px;background:#091019;border-bottom:1px solid #253244}
+      .bank-review-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:11px 12px;border:1px solid #2a3748;border-radius:7px;background:#0c131c}
+      .bank-review-main{display:grid;gap:4px;min-width:0}
+      .bank-review-main strong{overflow-wrap:anywhere}
+      .bank-review-meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+      .bank-review-action{text-align:right}
+      .bank-review-action strong{display:block;color:#f0d58d;margin-bottom:6px}
+      .bank-movement-window{display:grid;gap:8px;max-height:430px;overflow:auto;padding:10px;border:1px solid #253244;border-radius:8px;background:#091019;overscroll-behavior:contain;scrollbar-gutter:stable}
+      .bank-movement-window>strong{position:sticky;top:-10px;z-index:2;padding:10px 2px 8px;background:#091019;border-bottom:1px solid #253244}
+      .bank-movement-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:11px 12px;border:1px solid #2a3748;border-radius:7px;background:#0c131c}
+      .bank-movement-name{overflow-wrap:anywhere}
+      .bank-original-name{margin-top:5px;color:#7f8b9c;font-size:11px;overflow-wrap:anywhere}
+      .bank-movement-side{display:grid;justify-items:end;gap:8px;min-width:230px}
+      .bank-movement-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+      .bank-movement-actions button{padding:7px 10px}
+      .bank-movement-actions button.selected{border-color:#d7b46a;background:rgba(215,180,106,.2);color:#f4d98d}
+      .bank-rename-form{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}
+      .bank-rename-form input{min-width:260px;flex:1}
       .muted{color:var(--muted)}
       .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
       .mini{
@@ -448,6 +525,7 @@
         .allocation-grid{grid-template-columns:1fr}
         .performance-grid{grid-template-columns:repeat(2,1fr)}
         .finance-summary-grid{grid-template-columns:repeat(2,1fr)}
+        .wallet-form{grid-template-columns:repeat(2,minmax(0,1fr))}
         .ibkr-kpis{grid-template-columns:repeat(3,1fr)}
         .wealth-kpis{grid-template-columns:1fr}
         .wealth-half{grid-column:span 12}
@@ -456,6 +534,9 @@
         .history-summary{grid-template-columns:1fr repeat(2,.7fr) auto}
         .history-summary .history-optional{display:none}
         .history-detail-grid{grid-template-columns:repeat(2,1fr)}
+        .research-intro{grid-template-columns:1fr}
+        .research-steps,.research-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .strategy-description{grid-template-columns:1fr}
       }
       @media (max-width:700px){
         .app{padding:16px}
@@ -473,6 +554,8 @@
         .value{font-size:32px}
         .performance-grid{grid-template-columns:1fr}
         .finance-summary-grid{grid-template-columns:1fr}
+        .wallet-kpis,.wallet-form{grid-template-columns:1fr}.wallet-form .wide{grid-column:auto}
+        .wallet-record{grid-template-columns:1fr auto}.wallet-record button{grid-column:1/-1}
         .ibkr-kpis{grid-template-columns:1fr}
         .ibkr-strip{align-items:flex-start;flex-direction:column}
         .wealth-heading{align-items:flex-start;flex-direction:column}
@@ -484,8 +567,18 @@
         .monthly-save-bar,.history-actions{align-items:flex-start;flex-direction:column}
         .history-summary{grid-template-columns:1fr auto}
         .history-summary .history-kpi{display:none}
+        .research-steps,.research-metrics{grid-template-columns:1fr}
+        .research-collector,.research-controls,.strategy-card-head{grid-template-columns:1fr;align-items:flex-start}
+        .research-collector{display:grid}
+        .research-controls,.strategy-card-head{display:flex;flex-direction:column}
+        .strategy-status{max-width:none;text-align:left}
+        .signal-row{grid-template-columns:1fr 1fr}
         .history-detail-grid{grid-template-columns:1fr}
         .detail-gap-preview-grid{grid-template-columns:1fr}
+        .bank-review-item,.bank-movement-row{grid-template-columns:1fr}
+        .bank-review-action{text-align:left}
+        .bank-movement-side{justify-items:start;min-width:0}
+        .bank-movement-actions{justify-content:flex-start}
       }
     </style>
   </head>
@@ -536,6 +629,7 @@
     <script type="text/babel">
       const { useEffect, useMemo, useRef, useState } = React;
 
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
       const storageKey = "salary-planner-react-v1";
       const ibkrBridgeBaseUrl = /^https?:$/.test(window.location.protocol)
         ? window.location.origin
@@ -564,12 +658,17 @@
         notes: []
       };
 
+      function roundMoney(value) {
+        return Math.round(((Number(value) || 0) + Number.EPSILON) * 100) / 100;
+      }
+
       function money(value) {
         return new Intl.NumberFormat("it-IT", {
           style: "currency",
           currency: "EUR",
-          maximumFractionDigits: 0
-        }).format(value || 0);
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(roundMoney(value));
       }
 
       function detailGapTone(value) {
@@ -596,8 +695,9 @@
         return new Intl.NumberFormat("it-IT", {
           style: "currency",
           currency: safeCurrency,
+          minimumFractionDigits: 2,
           maximumFractionDigits: 2
-        }).format(Number(value) || 0);
+        }).format(roundMoney(value));
       }
 
       function pct(value) {
@@ -685,7 +785,8 @@
         const normalized = {
           ...note,
           id: note.id || `legacy-${Date.now()}-${index}`,
-          category: normalizeCategory(note.category)
+          category: normalizeCategory(note.category),
+          amount: roundMoney(note.amount)
         };
         if (normalized.category === "Investimento") {
           normalized.managementSource = normalized.managementSource || (normalized.ticker ? "IBKR" : "Manuale");
@@ -720,14 +821,36 @@
 
       function summarizeNotes(notes) {
         return (notes || []).map(normalizeNote).reduce((summary, note) => {
-          const amount = Math.max(0, Number(note.amount) || 0);
-          summary.total += amount;
-          if (note.category === "Costo Fisso") summary.fixedCosts += amount;
-          if (note.category === "Costo Variabile") summary.variableCosts += amount;
-          if (note.category === "Investimento") summary.investments += amount;
-          if (note.category === "Flexible Cash") summary.flexibleCash += amount;
+          const amount = Math.max(0, roundMoney(note.amount));
+          summary.total = roundMoney(summary.total + amount);
+          if (note.category === "Costo Fisso") summary.fixedCosts = roundMoney(summary.fixedCosts + amount);
+          if (note.category === "Costo Variabile") summary.variableCosts = roundMoney(summary.variableCosts + amount);
+          if (note.category === "Investimento") summary.investments = roundMoney(summary.investments + amount);
+          if (note.category === "Flexible Cash") summary.flexibleCash = roundMoney(summary.flexibleCash + amount);
           return summary;
         }, { fixedCosts: 0, variableCosts: 0, investments: 0, flexibleCash: 0, total: 0 });
+      }
+
+      function removeDetailedEntriesFromState(current, shouldRemove) {
+        const notes = [];
+        let linkedFixedCosts = 0;
+        let linkedVariableCosts = 0;
+        (Array.isArray(current.notes) ? current.notes : []).forEach((note, index) => {
+          if (!shouldRemove(note, index)) {
+            notes.push(note);
+            return;
+          }
+          if (!note.bankTransactionId) return;
+          const amount = Math.max(0, Number(note.amount) || 0);
+          if (note.category === "Costo Fisso") linkedFixedCosts += amount;
+          if (note.category === "Costo Variabile") linkedVariableCosts += amount;
+        });
+        return {
+          ...current,
+          notes,
+          fixedCosts: roundMoney(Math.max(0, (Number(current.fixedCosts) || 0) - linkedFixedCosts)).toFixed(2),
+          variableCosts: roundMoney(Math.max(0, (Number(current.variableCosts) || 0) - linkedVariableCosts)).toFixed(2)
+        };
       }
 
       function mergeValueMaps(...maps) {
@@ -1196,6 +1319,11 @@
           id: "",
           label: "",
           amount: "",
+          bankTransactionId: "",
+          bank: "",
+          transactionDate: "",
+          originalBankDescription: "",
+          autoImported: false,
           category: "Costo Variabile",
           managementSource: "Manuale",
           currentValue: "",
@@ -1211,6 +1339,314 @@
         };
       }
 
+      function ResearchPanel() {
+        const [open, setOpen] = useState(() => window.location.hash === '#research-section');
+        const [snapshot, setSnapshot] = useState(null);
+        const [paper, setPaper] = useState(null);
+        const [catalog, setCatalog] = useState([]);
+        const [error, setError] = useState("");
+        const [busy, setBusy] = useState(false);
+        const [openLedgers, setOpenLedgers] = useState({});
+        useEffect(() => {
+          if (!open) return;
+          let stopped = false;
+          let timer;
+          let controller;
+          async function poll() {
+            controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+            try {
+              const response = await fetch("/api/research/snapshot", {signal:controller.signal});
+              if (!response.ok) throw new Error("Laboratorio non raggiungibile");
+              const data = await response.json();
+              if (!stopped) {setSnapshot(data); setError("");}
+              const paperResponse = await fetch('/api/paper-lab/snapshot', {signal:controller.signal});
+              if (!paperResponse.ok) throw new Error('Validazione paper non raggiungibile');
+              const paperData = await paperResponse.json();
+              if (!stopped) setPaper(paperData);
+            } catch (e) { if (!stopped) setError("Stato non aggiornato: " + e.message); }
+            finally {clearTimeout(timeout); if (!stopped) timer = setTimeout(poll, 5000);}
+          }
+          poll();
+          fetch("/api/research/strategies").then(r => {if (!r.ok) throw new Error(); return r.json();})
+            .then(data => {if (!stopped) setCatalog(data.strategies || []);}).catch(() => {});
+          return () => {stopped = true; clearTimeout(timer); controller?.abort();};
+        }, [open]);
+        async function control(action, strategy) {
+          setBusy(true);
+          try {
+            const response = await fetch("/api/research/control", {
+              method:"POST", headers:{"Content-Type":"application/json", "X-CSRF-Token":csrfToken},
+              body:JSON.stringify({action, ...(strategy ? {strategy} : {})})
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Controllo non riuscito");
+            setSnapshot(result); setError("");
+          } catch(e) {setError(e.message);} finally {setBusy(false);}
+        }
+        const shown = value => value == null || value === "" ? "Da calcolare" : String(value);
+        const formatPercent = value => typeof value === 'number' && Number.isFinite(value)
+          ? value.toLocaleString('it-IT', {style:'percent', maximumFractionDigits:2}) : 'Da calcolare';
+        async function paperControl(action) {
+          setBusy(true);
+          try {
+            const response = await fetch('/api/paper-lab/control', {
+              method:'POST', headers:{'Content-Type':'application/json', 'X-CSRF-Token':csrfToken},
+              body:JSON.stringify({action})
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Raccolta non disponibile');
+            setPaper(result); setError('');
+          } catch(e) {setError(e.message);} finally {setBusy(false);}
+        }
+        const gateLabels = {
+          broker_paper_observed:'Operazioni delle strategie osservate nel conto paper',
+          sample_size:'Numero di operazioni chiuse sufficiente', observation_period:'Periodo osservato sufficiente',
+          costs_complete:'Costi completi', data_quality:'Qualità dei dati verificata', reconciliation:'Eseguiti riconciliati',
+          out_of_sample:'Verifica fuori campione', stress_tests:'Stress test', net_positive:'Risultato netto positivo',
+          expectancy_lower_bound_positive:'Intervallo della media netta sopra zero',
+          drawdown_within_limit:'Drawdown entro limite', double_costs_positive:'Risultato positivo con costi doppi',
+          profit_not_one_trade:'Profitto non concentrato in una sola operazione'
+        };
+        const strategyHelp = {
+          scalping:{
+            idea:'Cerca movimenti molto brevi leggendo prezzi denaro/lettera, volumi e velocità del mercato.',
+            action:'Propone ingressi limitati solo con spread stretto e dati tick completi; chiude entro pochi minuti.',
+            needs:'Dati tick e profondità di mercato affidabili. Le normali barre non bastano per valutarla.'
+          },
+          mean_reversion:{
+            idea:'Cerca un prezzo che si è allontanato troppo dalla propria media durante la giornata.',
+            action:'Propone un ingresso quando lo scostamento è anomalo e il mercato non è in forte trend; esce al ritorno verso la media, allo stop o a fine sessione.',
+            needs:'Molte giornate con barre a 1 minuto, costi reali e operazioni paper attribuibili alla strategia.'
+          },
+          breakout:{
+            idea:'Cerca la rottura di un intervallo di prezzo accompagnata da aumento del volume.',
+            action:'Propone l’ingresso dopo una conferma, applica uno stop e non rincorre ripetutamente i falsi segnali.',
+            needs:'Barre a 5 minuti, volume attendibile e un campione paper in regimi di mercato differenti.'
+          },
+          swing:{
+            idea:'Segue tendenze che possono durare giorni o settimane su strumenti liquidi.',
+            action:'Propone l’ingresso quando trend e rottura di canale coincidono; riduce il rischio con stop e uscita progressiva.',
+            needs:'La raccolta ora richiede sei anni giornalieri. Restano necessari test walk-forward e osservazione paper di diversi mesi.'
+          },
+          momentum:{
+            idea:'Confronta ETF azionari, obbligazionari, oro e liquidità e privilegia quelli con trend più forte.',
+            action:'Rivaluta l’allocazione a intervalli definiti e aumenta la liquidità quando il regime è sfavorevole.',
+            needs:'La raccolta ora richiede sei anni per l’intero paniere. Resta necessario un ciclo di validazione paper completo.'
+          },
+          bitcoin:{
+            idea:'Studia il trend di Bitcoin separatamente dal portafoglio tradizionale.',
+            action:'Propone esposizioni molto limitate solo se trend breve e regime più ampio concordano.',
+            needs:'Dati spot Bitcoin a 4 ore, consenso separato e controlli specifici per l’elevata volatilità.'
+          }
+        };
+        const statusLabels = {
+          paused:'In pausa', killed:'Arrestata', active:'Simulazione attiva', ready:'Simulazione pronta',
+          research_only:'Solo ricerca', reconciliation_required:'In pausa: sincronizzazione richiesta'
+        };
+        const signalLabels = {
+          ENTER:'Ingresso proposto', EXIT:'Uscita proposta', HOLD:'Nessuna azione', BLOCKED:'Segnale bloccato',
+          research_signal_requires_risk_review:'Condizioni di ingresso soddisfatte',
+          entry_conditions_not_met:'Condizioni di ingresso non soddisfatte',
+          existing_position_no_averaging:'Posizione già aperta: nessun ulteriore acquisto',
+          insufficient_displayed_liquidity:'Liquidità disponibile insufficiente',
+          no_entries_near_close:'Troppo vicino alla chiusura della sessione',
+          volatility_missing_or_extreme:'Volatilità assente o eccessiva',
+          time_stop:'Tempo massimo della posizione raggiunto',
+          price_or_trailing_stop:'Stop di prezzo o trailing stop raggiunto',
+          risk_off_cash:'Regime difensivo: mantenere liquidità',
+          loss_limit_exit_proposal:'Limite di perdita raggiunto',
+          session_end_exit_proposal:'Uscita proposta a fine sessione'
+        };
+        const segmentLabels = {in_sample:'In-sample 60%', validation:'Validation 20%', out_of_sample:'Out-of-sample 20%'};
+        const signalText = key => signalLabels[key] || String(key || '').replaceAll('_', ' ');
+        const researchDate = value => typeof value === 'number' && Number.isFinite(value)
+          ? new Date(value * 1000).toLocaleString('it-IT', {dateStyle:'medium', timeStyle:'short'}) : 'Da calcolare';
+        const metric = (label, value) => <div><dt>{label}</dt><dd className={value === 'Da calcolare' ? 'research-empty-value' : ''}>{value}</dd></div>;
+        return (
+          <section className="macro-section-shell macro-research" id="research-section">
+            <div className="macro-shell-heading">
+              <div className="macro-title-line">
+                <span className="macro-number">04</span>
+                <div><h2>Laboratorio strategie</h2><span className="small">Studio e simulazione · nessun ordine viene inviato al broker</span></div>
+              </div>
+              <SectionToggle isOpen={open} onToggle={() => setOpen(!open)} label="laboratorio strategie" />
+            </div>
+            {open && <>
+              <div className="research-intro">
+                <div className="wealth-panel research-status-card">
+                  <span className="research-kicker">Stato del laboratorio</span>
+                  <div className="research-stage">Test storico manuale</div>
+                  <p className="research-explainer"><strong>Nessuna strategia gira continuamente.</strong> Con un solo comando raccogli i dati e provi insieme tutte le strategie compatibili. L’affidabilità futura resta <strong>da calcolare</strong>.</p>
+                </div>
+                <div className="wealth-panel research-guide-card">
+                  <h3>Come si arriva a una valutazione</h3>
+                  <div className="research-steps">
+                    <div className="research-step"><span className="research-step-number">1</span><strong>Premere un solo pulsante</strong><span>TWS paper fornisce i prezzi storici. Non avvengono acquisti.</span></div>
+                    <div className="research-step"><span className="research-step-number">2</span><strong>Test automatico insieme</strong><span>Mean Reversion, Breakout, Swing e Momentum vengono provate una dopo l’altra.</span></div>
+                    <div className="research-step"><span className="research-step-number">3</span><strong>Simulare costi</strong><span>Il test include commissioni, spread e ordini che non si eseguono.</span></div>
+                    <div className="research-step"><span className="research-step-number">4</span><strong>Validazione futura</strong><span>Il monitoraggio continuo su paper non è ancora attivo e richiederà una fase separata.</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="wealth-panel research-collector">
+                <div>
+                  <span className="research-kicker">Passaggio 1 · Dati</span>
+                  <h3>Raccolta e test storico automatico</h3>
+                  <p className="research-explainer">{paper?.message || 'Apri TWS sul conto paper e avvia la raccolta dei prezzi necessari ai test.'}</p>
+                  <p className="small">Una raccolta dura normalmente pochi minuti e poi termina. Prova insieme le quattro strategie compatibili; non invia ordini e non abilita il conto reale.</p>
+                </div>
+                <div className="actions">
+                  <button disabled={busy || ['connecting','collecting'].includes(paper?.status)} onClick={() => paperControl('collect')}>Raccogli dati e prova strategie</button>
+                  <button className="secondary" disabled={busy || !['connecting','collecting'].includes(paper?.status)} onClick={() => paperControl('stop')}>Ferma</button>
+                </div>
+              </div>
+              {!!paper?.datasets?.length && <details className="research-details"><summary>Mostra i dati disponibili ({paper.datasets.reduce((total, data) => total + (Number(data.bars_count) || 0), 0).toLocaleString('it-IT')} barre)</summary>
+                <ul>{paper.datasets.map((data, index) => <li key={index}>
+                  <strong>{data.symbol}</strong> · {data.bar_size}: {Number(data.bars_count || 0).toLocaleString('it-IT')} barre · {data.complete ? 'raccolta completata' : 'da verificare'}
+                  {(data.errors || []).map((item, n) => <div className="small" key={n}>{item.message}</div>)}
+                </li>)}</ul>
+              </details>}
+              {error && <p role="alert" className="negative">{error}</p>}
+              <div>
+                <span className="research-kicker">Passaggi 2–4 · Strategie e risultati</span>
+                <h3 style={{marginBottom:6}}>Cosa prova ogni strategia</h3>
+                <p className="research-explainer">Non devi avviare queste schede una per volta: il test parte per tutte dopo la raccolta. Il risultato storico mostra come si sono comportate le regole sui dati disponibili. La validazione è per ora una lista dei controlli ancora necessari, non un bot in esecuzione.</p>
+              </div>
+              <div className="research-grid">
+                {(snapshot?.bots || []).map(bot => {
+                  const spec = catalog.find(item => (item.id || item.strategy_id) === (bot.id || bot.strategy));
+                  const validation = paper?.validation?.find(item => item.strategy === (bot.id || bot.strategy));
+                  const screening = paper?.screening?.find(item => item.strategy === (bot.id || bot.strategy));
+                  const id = bot.id || bot.strategy;
+                  const help = strategyHelp[id] || {idea:'Regole deterministiche in fase di studio.', action:'Produce solo proposte simulate.', needs:'Servono dati e prove paper sufficienti.'};
+                  const historicalReady = screening?.baseline?.status === 'exploratory_only';
+                  const validated = validation?.status === 'ready_for_independent_review';
+                  const threeSegments = screening?.segments;
+                  return <article className="wealth-panel strategy-card" key={id}>
+                    <div className="strategy-card-head">
+                      <div className="strategy-card-title">
+                        <h3>{spec?.name || bot.name || id}</h3>
+                        <div className="strategy-badges">
+                          <span className="strategy-badge">Orizzonte: {spec?.timeframe || bot.horizon || 'da definire'}</span>
+                          <span className="strategy-badge">Rischio: {spec?.risk || bot.risk || 'da validare'}</span>
+                        </div>
+                      </div>
+                      <span className={`strategy-status ${validated ? 'ready' : ''}`}>{validated ? 'Pronta per revisione indipendente' : 'Validazione: da completare'}</span>
+                    </div>
+                    <div className="strategy-description">
+                      <div><strong>Che cosa cerca</strong><span>{help.idea}</span></div>
+                      <div><strong>Come agisce</strong><span>{help.action}</span></div>
+                      <div><strong>Cosa manca</strong><span>{help.needs}</span></div>
+                    </div>
+                    <dl className="research-metrics">
+                      {metric('Stato del test storico', historicalReady ? 'Completato' : 'Da eseguire')}
+                      {metric('Operazioni storiche chiuse', historicalReady ? String(screening.baseline.closed_trades) : 'Da calcolare')}
+                      {metric('Risultato del primo test', historicalReady ? formatPercent(screening.baseline.net_return) : 'Da calcolare')}
+                      {metric('Affidabilità futura', 'Da calcolare')}
+                    </dl>
+                    <div className="strategy-result-note">Il risultato del primo test descrive solo questo campione storico e include una simulazione dei costi. Non è una previsione di rendimento.</div>
+                    {screening && <details className="research-details">
+                      <summary>Dettagli del primo test storico</summary>
+                      {screening.baseline.status === 'exploratory_only' ? <>
+                        <h4>Periodo e suddivisione del campione</h4>
+                        <p className="research-explainer">Queste regole hanno parametri fissi: <strong>non è stato addestrato alcun modello</strong> e non è stata fatta ottimizzazione sul periodo finale. {threeSegments ? 'I dati sono divisi cronologicamente in 60% in-sample diagnostico, 20% validation e 20% out-of-sample finale. I tre segmenti non si sovrappongono.' : 'Questo report precedente usa un singolo holdout: primo 70% come storico di riferimento e ultimo 30% come test. Esegui una nuova raccolta per ottenere la divisione 60/20/20.'}</p>
+                        {threeSegments && <dl className="research-metrics">
+                          {metric('In-sample 60%', threeSegments.in_sample?.status === 'exploratory_only' ? `${researchDate(threeSegments.in_sample.start)} → ${researchDate(threeSegments.in_sample.end)}` : 'Dati insufficienti')}
+                          {metric('Validation 20%', threeSegments.validation?.status === 'exploratory_only' ? `${researchDate(threeSegments.validation.start)} → ${researchDate(threeSegments.validation.end)}` : 'Dati insufficienti')}
+                          {metric('Out-of-sample 20%', threeSegments.out_of_sample?.status === 'exploratory_only' ? `${researchDate(threeSegments.out_of_sample.start)} → ${researchDate(threeSegments.out_of_sample.end)}` : 'Dati insufficienti')}
+                          {metric('Training/ottimizzazione', 'Nessuno')}
+                        </dl>}
+                        <dl className="research-metrics">
+                          {metric('Inizio periodo test', researchDate(screening.baseline.start))}
+                          {metric('Fine periodo test', researchDate(screening.baseline.end))}
+                          {metric('Osservazioni nel test', String(screening.baseline.observations))}
+                          {metric('Segmento mostrato', threeSegments ? 'Out-of-sample finale 20%' : 'Holdout finale 30%')}
+                          {metric('Operazioni chiuse', String(screening.baseline.closed_trades))}
+                          {metric('Variazione netta', formatPercent(screening.baseline.net_return))}
+                          {metric('Con costi doppi', formatPercent(screening.double_costs.net_return))}
+                          {metric('Massima discesa', formatPercent(screening.baseline.maximum_drawdown))}
+                          {metric('Proposte non eseguite', String(screening.baseline.unfilled))}
+                        </dl>
+                        <h4>Tutti i tipi di segnale del segmento finale</h4>
+                        <div className="signal-summary">
+                          {Object.entries(screening.baseline.signals || {}).map(([key, count]) => {
+                            const [action, reason] = key.split(':');
+                            return <span key={key}><strong>{signalText(action)}</strong> · {signalText(reason)}: {count}</span>;
+                          })}
+                        </div>
+                        {screening.baseline.signal_events?.length ? <details className="research-details">
+                          <summary>Mostra il registro cronologico completo ({screening.baseline.signal_events.length} decisioni)</summary>
+                          <div className="signal-list">
+                            {screening.baseline.signal_events.map((event, index) => <div className="signal-row" key={`${event.timestamp}-${event.symbol}-${index}`}>
+                              <span>{researchDate(event.timestamp)}</span>
+                              <strong>{event.symbol}</strong>
+                              <span>{signalText(event.action)}</span>
+                              <span>{signalText(event.reason)}</span>
+                              <span>{Number(event.price).toLocaleString('it-IT', {maximumFractionDigits:4})}</span>
+                            </div>)}
+                          </div>
+                        </details> : <p className="small">Il conteggio completo per tipo è disponibile sopra. Per ottenere anche data, strumento e prezzo di ogni decisione, esegui una nuova raccolta con questa versione dell’app.</p>}
+                        {threeSegments && <details className="research-details">
+                          <summary>Mostra segnali e decisioni di tutti e tre i segmenti</summary>
+                          {Object.entries(threeSegments).map(([segmentId, segment]) => <div key={segmentId}>
+                            <h4>{segmentLabels[segmentId] || segmentId}</h4>
+                            {segment.status === 'exploratory_only' ? <>
+                              <div className="signal-summary">{Object.entries(segment.signals || {}).map(([key, count]) => {
+                                const [action, reason] = key.split(':');
+                                return <span key={key}><strong>{signalText(action)}</strong> · {signalText(reason)}: {count}</span>;
+                              })}</div>
+                              <details onToggle={(event) => setOpenLedgers(current => ({...current, [`${id}-${segmentId}`]: event.currentTarget.open}))}>
+                                <summary>Registro cronologico ({(segment.signal_events || []).length} decisioni)</summary>
+                                {openLedgers[`${id}-${segmentId}`] && <div className="signal-list">{(segment.signal_events || []).map((event, index) => <div className="signal-row" key={`${segmentId}-${event.timestamp}-${event.symbol}-${index}`}>
+                                  <span>{researchDate(event.timestamp)}</span><strong>{event.symbol}</strong>
+                                  <span>{signalText(event.action)}</span><span>{signalText(event.reason)}</span>
+                                  <span>{Number(event.price).toLocaleString('it-IT', {maximumFractionDigits:4})}</span>
+                                </div>)}</div>}
+                              </details>
+                            </> : <p className="small">Dati insufficienti per questo segmento.</p>}
+                          </div>)}
+                        </details>}
+                        {!!screening.baseline.limitations?.length && <ul>{screening.baseline.limitations.map(item => <li key={item}>{item}</li>)}</ul>}
+                      </> : <p>Dati adeguati non disponibili: i risultati restano da calcolare.</p>}
+                    </details>}
+                    {validation && <details className="research-details">
+                      <summary>Perché la validazione non è ancora completa</summary>
+                      <p><strong>{validation.closed_trades}</strong> operazioni paper osservate su almeno <strong>{validation.minimum_trades}</strong> richieste; <strong>{validation.observed_sessions || 0}</strong> sessioni su almeno <strong>{validation.minimum_sessions}</strong>.</p>
+                      {!!validation.data_blockers?.length && <><strong>Dati ancora necessari</strong><ul>{validation.data_blockers.map(item => <li key={item}>{item}</li>)}</ul></>}
+                      {!!validation.blockers?.length && <><strong>Controlli ancora da superare</strong><ul>{validation.blockers.map(item => <li key={item}>{gateLabels[item] || item}</li>)}</ul></>}
+                    </details>}
+                    <details className="research-details"><summary>Metriche tecniche predisposte per la futura simulazione continua</summary>
+                      <dl className="research-metrics">
+                        {metric('Stato interno', statusLabels[bot.status] || shown(bot.status))}
+                        {metric('Ultimo aggiornamento', shown(bot.heartbeat || bot.last_heartbeat))}
+                        {metric('Capitale simulato', shown(bot.capital))}
+                        {metric('Esposizione', shown(bot.exposure))}
+                        {metric('P/L realizzato', shown(bot.realized_pnl))}
+                        {metric('P/L non realizzato', shown(bot.unrealized_pnl))}
+                        {metric('Drawdown', shown(bot.drawdown))}
+                        {metric('Costi', shown(bot.costs))}
+                        {metric('Ultimo segnale', shown(bot.last_signal))}
+                        {metric('Proposte bloccate', shown(bot.blocked))}
+                        {metric('Proposte create', shown(bot.proposed))}
+                        {metric('Accettate dal simulatore', shown(bot.submitted))}
+                        {metric('Eseguite nel simulatore', shown(bot.fills))}
+                        {metric('Ordini inviati al broker', 'Disabilitati')}
+                      </dl>
+                    </details>
+                  </article>;
+                })}
+              </div>
+              <p className="small">Strategia con uno specifico profilo di rischio e potenziale rendimento, senza garanzia di risultato. Il capitale investito può subire perdite, anche rilevanti.</p>
+              <details className="research-details"><summary>Registro tecnico e limiti predisposti per gli sviluppi futuri</summary>
+                <pre className="research-log">{JSON.stringify({status:snapshot?.status, limits:snapshot?.limits, orders:snapshot?.orders, audit:snapshot?.audit}, null, 2)}</pre>
+              </details>
+            </>}
+          </section>
+        );
+      }
+
       function App() {
         const [state, setState] = useState(loadState);
         const [isSalaryPanelOpen, setIsSalaryPanelOpen] = useState(() => localStorage.getItem("salary-estimate-panel-open") !== "false");
@@ -1224,9 +1660,19 @@
         const [editingMonthId, setEditingMonthId] = useState("");
         const [persistenceStatus, setPersistenceStatus] = useState("loading");
         const persistenceReady = useRef(false);
+        const persistenceQueue = useRef(Promise.resolve());
+        const persistenceTimer = useRef(null);
         const ibkrPollers = useRef({});
         const [ibkrPaper, setIbkrPaper] = useState({ reachable: false, loading: true, data: null, error: "" });
         const [ibkrLive, setIbkrLive] = useState({ reachable: false, loading: true, data: null, error: "" });
+        const [banking, setBanking] = useState({ loading: true, busy: false, data: null, error: "", callbackUrl: "" });
+        const [bankRename, setBankRename] = useState({ id: "", value: "" });
+        const [wallet, setWallet] = useState({ loading: true, busy: false, data: null, error: "" });
+        const [walletDraft, setWalletDraft] = useState(() => ({
+          walletRecordId: "", recordType: "expense", accountId: "", categoryId: "",
+          date: new Date().toLocaleDateString("sv-SE"), amount: "", counterParty: "",
+          note: "", paymentType: "debit_card"
+        }));
 
         useEffect(() => {
           localStorage.setItem(storageKey, JSON.stringify(state));
@@ -1253,6 +1699,7 @@
                 if (typeof ui.portfolioPanelOpen === "boolean") setIsPortfolioPanelOpen(ui.portfolioPanelOpen);
               } else if (!cancelled) {
                 const initialPayload = {
+                  _csrf: csrfToken,
                   state: {
                     ...state,
                     budgetModelVersion: 4,
@@ -1284,7 +1731,7 @@
               }
             } catch {
               if (!cancelled) {
-                persistenceReady.current = true;
+                persistenceReady.current = false;
                 setPersistenceStatus("error");
               }
             }
@@ -1293,6 +1740,7 @@
         }, []);
 
         const persistencePayload = useMemo(() => ({
+          _csrf: csrfToken,
           state: {
             ...state,
             budgetModelVersion: 4,
@@ -1312,23 +1760,51 @@
           }
         }), [state, entry, editingMonthId, isSalaryPanelOpen, isFinanceSectionOpen, isWealthSectionOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isMonthlySummaryOpen, isPortfolioPanelOpen]);
 
-        useEffect(() => {
-          if (!persistenceReady.current) return;
-          setPersistenceStatus("saving");
-          const timer = setTimeout(async () => {
+        const queueStateSave = (payload) => {
+          persistenceQueue.current = persistenceQueue.current.catch(() => {}).then(async () => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
             try {
               const response = await fetch(`${ibkrBridgeBaseUrl}/api/state`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(persistencePayload)
+                body: JSON.stringify(payload),
+                signal: controller.signal
               });
               if (!response.ok) throw new Error("Salvataggio non riuscito");
+            } finally {
+              clearTimeout(timeout);
+            }
+          });
+          return persistenceQueue.current;
+        };
+
+        useEffect(() => {
+          window.dashboardFlushState = async () => {
+            clearTimeout(persistenceTimer.current);
+            if (!persistenceReady.current) return false;
+            try {
+              await queueStateSave(persistencePayload);
               setPersistenceStatus("saved");
+              return true;
             } catch {
               setPersistenceStatus("error");
+              return false;
             }
+          };
+          return () => { delete window.dashboardFlushState; };
+        }, [persistencePayload]);
+
+        useEffect(() => {
+          if (!persistenceReady.current) return;
+          setPersistenceStatus("saving");
+          persistenceTimer.current = setTimeout(() => {
+            queueStateSave(persistencePayload).then(
+              () => setPersistenceStatus("saved"),
+              () => setPersistenceStatus("error")
+            );
           }, 350);
-          return () => clearTimeout(timer);
+          return () => clearTimeout(persistenceTimer.current);
         }, [persistencePayload]);
 
         useEffect(() => {
@@ -1387,6 +1863,99 @@
           Object.values(pollers).forEach(poller => poller.refresh());
           return () => Object.values(pollers).forEach(poller => poller.stop());
         }, []);
+
+        async function refreshWallet() {
+          try {
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/wallet/snapshot`, { cache: "no-store" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Sincronizzazione Wallet non disponibile");
+            setWallet(current => ({ ...current, loading: false, data, error: data.error || "" }));
+          } catch (error) {
+            setWallet(current => ({ ...current, loading: false, error: error.message }));
+          }
+        }
+
+        async function refreshBanking() {
+          try {
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/enable-banking/snapshot`, { cache: "no-store" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Collegamento bancario non disponibile");
+            setBanking(current => ({ ...current, loading: false, data, error: data.error || "" }));
+          } catch (error) {
+            setBanking(current => ({ ...current, loading: false, error: error.message }));
+          }
+        }
+
+        async function bankingControl(action, extra = {}) {
+          setBanking(current => ({ ...current, busy: true, error: "" }));
+          try {
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/enable-banking/control`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ _csrf: csrfToken, action, ...extra })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Operazione bancaria non riuscita");
+            if (data.url) {
+              window.location.assign(data.url);
+              await refreshBanking();
+            }
+            else setBanking(current => ({ ...current, busy: false, data, error: data.error || "", callbackUrl: action === "complete" ? "" : current.callbackUrl }));
+            if (!data.url) await refreshBanking();
+            return true;
+          } catch (error) {
+            setBanking(current => ({ ...current, busy: false, error: error.message }));
+            return false;
+          } finally {
+            setBanking(current => ({ ...current, busy: false }));
+          }
+        }
+
+        useEffect(() => {
+          refreshBanking();
+          const timer = setInterval(refreshBanking, 30000);
+          return () => clearInterval(timer);
+        }, []);
+
+        useEffect(() => {
+          refreshWallet();
+          const timer = setInterval(refreshWallet, 30000);
+          return () => clearInterval(timer);
+        }, []);
+
+        async function walletControl(action, record = undefined) {
+          setWallet(current => ({ ...current, busy: true, error: "" }));
+          try {
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/wallet/control`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ _csrf: csrfToken, action, ...(record ? { record } : {}) })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Operazione Wallet non riuscita");
+            setWallet(current => ({ ...current, busy: false, data, error: data.error || "" }));
+            if (action === "create" || action === "update") {
+              setWalletDraft(current => ({ ...current, walletRecordId: "", amount: "", counterParty: "", note: "" }));
+            }
+            if (["sync", "create", "update"].includes(action)) await refreshWallet();
+          } catch (error) {
+            setWallet(current => ({ ...current, busy: false, error: error.message }));
+          }
+        }
+
+        function editWalletRecord(record) {
+          setWalletDraft({
+            walletRecordId: record.walletRecordId, recordType: record.recordType,
+            accountId: record.accountId, categoryId: record.categoryId || "", date: record.date,
+            amount: String(record.amount), counterParty: record.counterParty || "",
+            note: record.note || "", paymentType: record.paymentType || "debit_card"
+          });
+        }
+
+        function saveWalletRecord() {
+          if (!walletDraft.accountId || !walletDraft.amount || !walletDraft.date) return;
+          return walletControl(walletDraft.walletRecordId ? "update" : "create", walletDraft);
+        }
 
         function refreshIbkr(mode) {
           return ibkrPollers.current[mode]?.refresh();
@@ -1462,22 +2031,142 @@
           };
         }, [state, editingMonthId]);
 
+        const currentWalletExpenses = useMemo(() => (wallet.data?.expenses || [])
+          .filter(expense => bankExpenseMatchesMonth(expense, state)), [wallet.data, state.monthName, state.year]);
+        const currentWalletRecords = useMemo(() => (wallet.data?.records || [])
+          .filter(record => bankExpenseMatchesMonth(record, state)), [wallet.data, state.monthName, state.year]);
+        const currentWalletIncome = currentWalletRecords.filter(record => record.recordType === "income" && record.currency === "EUR")
+          .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+        const currentWalletOutflow = currentWalletRecords.filter(record => record.recordType === "expense" && record.currency === "EUR")
+          .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+        const importedBankIds = useMemo(() => new Set((state.notes || [])
+          .map(note => note.bankTransactionId).filter(Boolean)), [state.notes]);
+        const walletExpensesToReview = currentWalletExpenses
+          .filter(expense => !importedBankIds.has(expense.id) && (expense.needsReview || expense.currency !== "EUR"));
+        const importedBankTotal = currentWalletExpenses
+          .filter(expense => importedBankIds.has(expense.id) && expense.currency === "EUR")
+          .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+        const currentBankRecords = useMemo(() => (banking.data?.records || [])
+          .filter(record => bankExpenseMatchesMonth(record, state)), [banking.data, state.monthName, state.year]);
+        const currentBankExpenses = currentBankRecords.filter(record => record.recordType === "expense");
+        const currentBankIncome = currentBankRecords.filter(record => record.recordType === "income" && record.currency === "EUR")
+          .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+        const currentBankOutflow = currentBankExpenses.filter(record => record.currency === "EUR")
+          .reduce((sum, record) => sum + Number(record.amount || 0), 0);
+        const importedBankCategories = useMemo(() => new Map((state.notes || [])
+          .filter(note => note.bankTransactionId)
+          .map(note => [note.bankTransactionId, normalizeCategory(note.category)])), [state.notes]);
+
         function updateField(field, value) {
           setState((current) => ({ ...current, [field]: value }));
         }
 
-        function addEntry() {
+        function commitMoneyField(field) {
+          setState((current) => ({ ...current, [field]: roundMoney(current[field]).toFixed(2) }));
+        }
+
+        function bankExpenseMatchesMonth(expense, current) {
+          const month = months.indexOf(current.monthName) + 1;
+          const match = String(expense.date || "").match(/^(\d{4})-(\d{2})-/);
+          return Boolean(match && Number(match[1]) === Number(current.year) && Number(match[2]) === month);
+        }
+
+        function importWalletExpenses(expenses) {
+          setState((current) => {
+            const eligible = expenses.filter(expense => expense.currency === "EUR" && bankExpenseMatchesMonth(expense, current));
+            const replacements = new Map(eligible.map(expense => [expense.id, normalizeNote({
+                id: `bank-${expense.id}`,
+                bankTransactionId: expense.id,
+                bank: expense.bank,
+                transactionDate: expense.date,
+                autoImported: !expense.needsReview,
+                label: `${expense.suggestedCategory} · ${expense.description}`,
+                amount: expense.amount,
+                category: "Costo Variabile"
+              })]));
+            const seen = new Set();
+            const notes = (current.notes || []).map(note => {
+              const replacement = replacements.get(note.bankTransactionId);
+              if (!replacement) return note;
+              seen.add(note.bankTransactionId);
+              return replacement;
+            });
+            replacements.forEach((note, id) => { if (!seen.has(id)) notes.push(note); });
+            if (!replacements.size) return current;
+            const detailedVariableCosts = notes
+              .filter(note => normalizeCategory(note.category) === "Costo Variabile")
+              .reduce((sum, note) => sum + Math.max(0, Number(note.amount) || 0), 0);
+            return { ...current, notes, variableCosts: detailedVariableCosts };
+          });
+        }
+
+        function classifyBankExpense(expense, category) {
+          if (expense.recordType !== "expense" || expense.currency !== "EUR") return;
+          setState(current => {
+            const bankNote = normalizeNote({
+              id: `bank-${expense.id}`,
+              bankTransactionId: expense.id,
+              bank: expense.bank,
+              transactionDate: expense.date,
+              originalBankDescription: expense.description,
+              autoImported: false,
+              label: expense.customName || expense.description,
+              amount: expense.amount,
+              category
+            });
+            let replaced = false;
+            const notes = (current.notes || []).map(note => {
+              if (note.bankTransactionId !== expense.id) return note;
+              replaced = true;
+              return bankNote;
+            });
+            if (!replaced) notes.push(bankNote);
+            const fixedCosts = notes.filter(note => normalizeCategory(note.category) === "Costo Fisso")
+              .reduce((sum, note) => roundMoney(sum + Math.max(0, Number(note.amount) || 0)), 0);
+            const variableCosts = notes.filter(note => normalizeCategory(note.category) === "Costo Variabile")
+              .reduce((sum, note) => roundMoney(sum + Math.max(0, Number(note.amount) || 0)), 0);
+            return { ...current, notes, fixedCosts: fixedCosts.toFixed(2), variableCosts: variableCosts.toFixed(2) };
+          });
+        }
+
+        async function saveBankRename(record) {
+          const customName = bankRename.value.trim();
+          if (!customName) return;
+          const saved = await bankingControl("rename", { recordId: record.id, customName });
+          if (!saved) return;
+          setState(current => ({
+            ...current,
+            notes: (current.notes || []).map(note => note.bankTransactionId === record.id ? { ...note, label: customName } : note)
+          }));
+          setBankRename({ id: "", value: "" });
+        }
+
+        useEffect(() => {
+          if (persistenceStatus !== "saved" || !wallet.data?.expenses) return;
+          importWalletExpenses(wallet.data.expenses.filter(expense => !expense.needsReview && expense.currency === "EUR"));
+        }, [wallet.data, state.monthName, state.year, persistenceStatus]);
+
+        async function addEntry() {
           const isInvestment = entry.category === "Investimento";
           const isIbkrInvestment = isInvestment && entry.managementSource === "IBKR";
           if ((!isIbkrInvestment && !entry.label.trim()) || !entry.amount) return;
+          if (entry.bankTransactionId) {
+            const renamed = await bankingControl("rename", { recordId: entry.bankTransactionId, customName: entry.label.trim() });
+            if (!renamed) return;
+          }
           const isManualInvestment = isInvestment && entry.managementSource === "Manuale";
           const entryPrice = Number(entry.entryPrice) || 0;
-          const amount = Number(entry.amount) || 0;
+          const amount = roundMoney(entry.amount);
           const quantity = Number(entry.quantity) || (entryPrice > 0 ? amount / entryPrice : 1);
           const item = normalizeNote({
             id: entry.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
             label: isIbkrInvestment ? "Capitale versato su IBKR" : entry.label.trim(),
             amount,
+            bankTransactionId: entry.bankTransactionId,
+            bank: entry.bank,
+            transactionDate: entry.transactionDate,
+            originalBankDescription: entry.originalBankDescription,
+            autoImported: entry.autoImported,
             category: entry.category,
             managementSource: isInvestment ? entry.managementSource : "",
             currentValue: isManualInvestment ? Math.max(0, numberOrFallback(entry.currentValue, amount)) : 0,
@@ -1502,10 +2191,18 @@
 
         function editEntry(item) {
           const normalized = normalizeNote(item);
+          const bankRecord = normalized.bankTransactionId
+            ? (banking.data?.records || []).find(record => record.id === normalized.bankTransactionId)
+            : null;
           setEntry({
             id: normalized.id,
             label: normalized.managementSource === "IBKR" ? "Capitale versato su IBKR" : normalized.label || "",
-            amount: normalized.amount || "",
+            amount: normalized.amount === "" ? "" : roundMoney(normalized.amount).toFixed(2),
+            bankTransactionId: normalized.bankTransactionId || "",
+            bank: normalized.bank || bankRecord?.bank || "",
+            transactionDate: normalized.transactionDate || bankRecord?.date || "",
+            originalBankDescription: normalized.originalBankDescription || bankRecord?.description || "",
+            autoImported: Boolean(normalized.autoImported),
             category: normalized.category || "Costo Variabile",
             managementSource: normalized.managementSource || "Manuale",
             currentValue: normalized.currentValue ?? normalized.amount ?? "",
@@ -1522,12 +2219,12 @@
         }
 
         function removeEntry(index) {
-          setState((current) => ({ ...current, notes: current.notes.filter((_, i) => i !== index) }));
+          setState((current) => removeDetailedEntriesFromState(current, (_note, itemIndex) => itemIndex === index));
         }
 
         function resetCustomEntries() {
           if (!window.confirm("Eliminare soltanto le voci dettagliate del mese corrente? Lo storico mensile non verra' modificato.")) return;
-          setState((current) => ({ ...current, notes: [] }));
+          setState((current) => removeDetailedEntriesFromState(current, () => true));
           setEntry(createEmptyEntry());
         }
 
@@ -1590,16 +2287,20 @@
           const nextPeriod = nextMonth(state.monthName, state.year);
           persistMonthSnapshot(buildSnapshot(), editingMonthId);
           setEditingMonthId("");
+          setEntry(createEmptyEntry());
+          setBankRename({ id: "", value: "" });
           setState((current) => ({
             ...current,
             monthName: nextPeriod.monthName,
             year: nextPeriod.year,
+            income: "0.00",
+            fixedCosts: "0.00",
             emergencyFundAllocation: 0,
             investedCapital: 0,
             flexibleCashFunds: 0,
             variableCosts: 0,
             decemberBonusNet: 0,
-            notes: current.notes.filter((item) => item.category === "Costo Fisso")
+            notes: []
           }));
         }
 
@@ -1991,6 +2692,7 @@
                 <a href="#salary-section"><span className="workspace-nav-index">01</span><span>Stima stipendio</span></a>
                 <a href="#finance-section"><span className="workspace-nav-index">02</span><span>Gestione delle finanze</span></a>
                 <a href="#wealth-section"><span className="workspace-nav-index">03</span><span>Wealth management</span></a>
+                <a href="#research-section"><span className="workspace-nav-index">04</span><span>Laboratorio strategie</span></a>
               </nav>
 
               <section className="grid">
@@ -2150,7 +2852,7 @@
                     </div>
                     <div className="field third">
                       <label>Stipendio netto (€)</label>
-                      <input type="number" value={state.income} onChange={(e) => updateField("income", e.target.value)} />
+                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.income} onChange={(e) => updateField("income", e.target.value)} onBlur={() => commitMoneyField("income")} />
                     </div>
                     {String(state.monthName).toLowerCase() === "dicembre" && (
                       <div className="field full-field">
@@ -2177,17 +2879,72 @@
                     )}
                     <div className="field third">
                       <label>Costi fissi totali del mese (€)</label>
-                      <input type="number" min="0" value={state.fixedCosts} onChange={(e) => updateField("fixedCosts", e.target.value)} />
+                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.fixedCosts} onChange={(e) => updateField("fixedCosts", e.target.value)} onBlur={() => commitMoneyField("fixedCosts")} />
                     </div>
                     <div className="field third">
                       <label>Costi variabili totali del mese (€)</label>
-                      <input type="number" min="0" value={state.variableCosts} onChange={(e) => updateField("variableCosts", e.target.value)} />
+                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.variableCosts} onChange={(e) => updateField("variableCosts", e.target.value)} onBlur={() => commitMoneyField("variableCosts")} />
                     </div>
                     <div className="field third">
                       <label>Quota fondo emergenza del mese (€)</label>
-                      <input type="number" min="0" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} />
+                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} onBlur={() => commitMoneyField("emergencyFundAllocation")} />
                     </div>
                   </div>
+
+                  <section className="monthly-input-block bank-sync" aria-label="Conti bancari collegati in sola lettura">
+                    <div className="section-head">
+                      <div className="title-with-info">
+                        <div className="title">Conti bancari · Enable Banking</div>
+                        <InfoTip label="sicurezza del collegamento bancario">
+                          Collegamento PSD2 in sola lettura. La Dashboard può leggere saldi e movimenti autorizzati, ma non può inviare bonifici, pagamenti o modifiche ai conti.
+                        </InfoTip>
+                      </div>
+                      <div className="actions">
+                        <button className="secondary" disabled={banking.busy || !banking.data?.configured} onClick={() => bankingControl("verify")}>Verifica collegamento</button>
+                        <button className="secondary" disabled={banking.busy || banking.data?.authorizationRequired} onClick={() => bankingControl("sync")}>{banking.busy || banking.data?.syncing ? "Aggiornamento..." : "Aggiorna movimenti"}</button>
+                      </div>
+                    </div>
+                    <div className="bank-sync-status"><div className="bank-connections">
+                      <span className={`badge ${banking.data?.application?.active ? "allocation-ok" : ""}`}>{banking.data?.application?.active ? "Enable Banking attivo · sola lettura" : "Collegamento da completare"}</span>
+                      {(banking.data?.accounts || []).map(account => <span className="badge" key={account.id}>{account.bank || account.name} · {account.currency}{account.identifierMasked ? ` · ${account.identifierMasked}` : ""}{account.balance == null ? "" : ` · ${accountMoney(account.balance, account.currency)}`}</span>)}
+                    </div></div>
+                    <div className={banking.data?.authorizationRequired ? "decision-box warn" : "decision-box"}>
+                      <strong>{banking.data?.authorizationRequired ? "Autorizza i conti nell’app della banca" : "Aggiungi o rinnova un conto"}</strong>
+                      <div className="small" style={{ marginTop: 6 }}>Esegui l’accesso per ogni banca. Enable Banking mostrerà soltanto i conti già consentiti nella tua applicazione Restricted.</div>
+                      <div className="actions" style={{ marginTop: 10 }}>
+                        <button disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: "UniCredit", country: "IT" })}>Collega UniCredit</button>
+                        <button disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: "Revolut", country: "IT" })}>Collega Revolut</button>
+                      </div>
+                      {banking.data?.authorizationPending && <React.Fragment><div className="field" style={{ marginTop: 12 }}><label>Indirizzo finale di autorizzazione</label><input value={banking.callbackUrl} onChange={event => setBanking(current => ({ ...current, callbackUrl: event.target.value }))} placeholder="https://localhost:8766/api/enable-banking/callback?code=…&state=…" /></div>
+                      <button className="secondary" disabled={banking.busy || !banking.callbackUrl} onClick={() => bankingControl("complete", { callbackUrl: banking.callbackUrl })}>Completa collegamento</button></React.Fragment>}
+                    </div>
+                    {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}
+                    {banking.error && <div className="decision-box bad"><strong>Collegamento non riuscito</strong><div className="small" style={{ marginTop: 6 }}>{banking.error}</div></div>}
+                    <div className="wallet-kpis">
+                      <div className="wallet-kpi"><span className="eyebrow">Entrate bancarie · mese</span><strong className="wallet-income">{money(currentBankIncome)}</strong></div>
+                      <div className="wallet-kpi"><span className="eyebrow">Uscite bancarie · mese</span><strong className="wallet-expense">{money(currentBankOutflow)}</strong></div>
+                      <div className="wallet-kpi"><span className="eyebrow">Movimenti · mese</span><strong>{currentBankRecords.length}</strong></div>
+                    </div>
+                    {currentBankRecords.length > 0 && <div className="bank-movement-window"><strong>{currentBankRecords.length} movimenti del mese</strong>{currentBankRecords.map(record => {
+                      const selectedCategory = importedBankCategories.get(record.id) || "";
+                      const isRenaming = bankRename.id === record.id;
+                      return <div className="bank-movement-row" key={record.id}>
+                        <div className="bank-review-main">
+                          <strong className="bank-movement-name">{record.customName || record.description}</strong>
+                          {record.customName && record.customName !== record.description && <div className="bank-original-name">Movimento originale: {record.description}</div>}
+                          <div className="bank-review-meta"><span>{record.bank}</span><span>{record.accountName} · {record.currency}</span><span>{record.date.split("-").reverse().join("/")}</span><span>Sola lettura</span></div>
+                          {isRenaming && <div className="bank-rename-form"><input maxLength="120" value={bankRename.value} onChange={event => setBankRename({ id: record.id, value: event.target.value })} placeholder="Nome personalizzato" /><button disabled={banking.busy || !bankRename.value.trim()} onClick={() => saveBankRename(record)}>Salva nome</button><button className="secondary" onClick={() => setBankRename({ id: "", value: "" })}>Annulla</button></div>}
+                        </div>
+                        <div className="bank-movement-side">
+                          <strong className={record.recordType === "income" ? "wallet-income" : "wallet-expense"}>{record.recordType === "income" ? "+" : "−"}{accountMoney(record.amount, record.currency)}</strong>
+                          <div className="bank-movement-actions">
+                            {record.recordType === "expense" && <React.Fragment><button className={`secondary ${selectedCategory === "Costo Fisso" ? "selected" : ""}`} disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Fisso")}>Fisso</button><button className={`secondary ${selectedCategory === "Costo Variabile" ? "selected" : ""}`} disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Variabile")}>Variabile</button></React.Fragment>}
+                            {!isRenaming && <button className="secondary" onClick={() => setBankRename({ id: record.id, value: "" })}>Rinomina</button>}
+                          </div>
+                        </div>
+                      </div>;
+                    })}</div>}
+                  </section>
 
                   <section className="monthly-input-block">
                   <div className="section-head">
@@ -2214,11 +2971,11 @@
                     </div>
                     <div className="field third">
                       <label>Investimenti totali del mese (€)</label>
-                      <input type="number" min="0" value={state.investedCapital} onChange={(e) => updateField("investedCapital", e.target.value)} />
+                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.investedCapital} onChange={(e) => updateField("investedCapital", e.target.value)} onBlur={() => commitMoneyField("investedCapital")} />
                     </div>
                     <div className="field third">
                       <label>Flexible cash funds a fine mese (€)</label>
-                      <input type="number" min="0" value={state.flexibleCashFunds} onChange={(e) => updateField("flexibleCashFunds", e.target.value)} />
+                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.flexibleCashFunds} onChange={(e) => updateField("flexibleCashFunds", e.target.value)} onBlur={() => commitMoneyField("flexibleCashFunds")} />
                     </div>
                   </div>
                   </section>
@@ -2275,7 +3032,7 @@
                         </div>
                       )}
                       <div className="field">
-                        <label>{entry.category === "Investimento" ? entry.managementSource === "IBKR" ? "Descrizione quota IBKR" : "Nome asset / societa'" : entry.category === "Flexible Cash" ? "Nome fondo / liquidita'" : "Nome voce"}</label>
+                        <label>{entry.bankTransactionId ? "Nome personalizzato" : entry.category === "Investimento" ? entry.managementSource === "IBKR" ? "Descrizione quota IBKR" : "Nome asset / societa'" : entry.category === "Flexible Cash" ? "Nome fondo / liquidita'" : "Nome voce"}</label>
                         <input
                           value={entry.category === "Investimento" && entry.managementSource === "IBKR" ? "Capitale versato su IBKR" : entry.label}
                           onChange={(e) => setEntry((c) => ({ ...c, label: e.target.value }))}
@@ -2288,10 +3045,12 @@
                               ? "es. Conto deposito svincolabile, liquidita' Revolut"
                               : "es. Cene fuori"}
                         />
+                        {entry.bankTransactionId && entry.originalBankDescription && <div className="bank-original-name" style={{ marginTop: 7 }}>Movimento originale: {entry.originalBankDescription}</div>}
                       </div>
                       <div className="field quarter">
                         <label>{["Investimento", "Flexible Cash"].includes(entry.category) ? "Capitale allocato nel mese (€)" : "Importo mensile (€)"}</label>
-                        <input type="number" min="0" value={entry.amount} onChange={(e) => setEntry((c) => ({ ...c, amount: e.target.value }))} />
+                        <input type="number" min="0" max="999999999.99" step="0.01" value={entry.amount} readOnly={Boolean(entry.bankTransactionId)} onChange={(e) => setEntry((c) => ({ ...c, amount: e.target.value }))} />
+                        {entry.bankTransactionId && <div className="small" style={{ marginTop: 6 }}>Importo identico al movimento bancario.</div>}
                       </div>
                       <div className="field">
                         <div className={`detail-gap-preview ${detailGapTone(projectedDetailGap)}`}>
@@ -2427,7 +3186,11 @@
                               <strong>{item.label}</strong>
                               <span className="entry-kind">{item.category}</span>
                             </div>
+                            {item.bankTransactionId && item.originalBankDescription && item.label !== item.originalBankDescription && <div className="bank-original-name">Movimento originale: {item.originalBankDescription}</div>}
                             <div className="entry-list-meta">
+                              {item.bank && <span>{item.bank}</span>}
+                              {item.transactionDate && <span>{item.transactionDate.split("-").reverse().join("/")}</span>}
+                              {item.bankTransactionId && <span>{item.autoImported ? "Importato automaticamente" : "Importato dopo conferma"}</span>}
                               {item.category === "Investimento" && item.managementSource && <span>{item.managementSource === "Manuale" ? "Illiquido / non IBKR" : "IBKR Live"}</span>}
                               {item.category === "Investimento" && item.ticker && <span>{item.ticker}</span>}
                               {item.category === "Investimento" && item.investmentType && <span>{item.investmentType}</span>}
@@ -2447,7 +3210,7 @@
                           <div className="entry-list-value">
                             <strong>{money(item.amount)}</strong>
                             <div className="entry-list-actions">
-                              <button className="secondary" onClick={() => editEntry(item)}>Modifica</button>
+                              {!item.bankTransactionId && <button className="secondary" onClick={() => editEntry(item)}>Modifica</button>}
                               <button className="secondary" onClick={() => removeEntry(index)}>Rimuovi</button>
                             </div>
                           </div>
@@ -3040,14 +3803,14 @@
                         </div>
                         <div className="indicator-row">
                           <div className="title-with-info">
-                            <strong>Value at Risk parametrico</strong>
+                            <strong>Rischio storico del portafoglio</strong>
                             <InfoTip label="calcolo del Value at Risk">
-                              Stima a un mese con confidenza 99%, basata sulla volatilità dei rendimenti mensili salvati. Servono almeno tre rilevazioni patrimoniali.
+                              Calcolo sospeso: le variazioni del patrimonio includono entrate e prelievi. Servono rendimenti depurati dai flussi e una storia adeguata prima di stimare il rischio del portafoglio.
                             </InfoTip>
                           </div>
-                          <div className="indicator-value negative">{wealthOverview.hasVarData ? money(wealthOverview.parametricVarAmount) : "n/d"}</div>
+                          <div className="indicator-value negative">Non calcolato</div>
                           <div className="indicator-status">
-                            {wealthOverview.hasVarData ? `${plainPct(wealthOverview.parametricVarPct)} del patrimonio` : "Servono almeno 3 rilevazioni patrimoniali"}
+                            Servono rendimenti depurati dai flussi
                           </div>
                         </div>
                       </div>
@@ -3057,6 +3820,7 @@
                 </>
                 )}
                 </section>
+                <ResearchPanel />
               </section>
             </div>
           </div>

@@ -1,0 +1,49 @@
+{
+  "date": "2026-09-10",
+  "baseline_commit": "0b2e8a1",
+  "unit_python": {
+    "passed": 68
+  },
+  "http_integration": {
+    "passed": 4
+  },
+  "node_polling": {
+    "passed": 4
+  },
+  "ruff": "passed E9/F",
+  "mypy": "passed 7 modules check_untyped_defs, not strict",
+  "macos_build": "1.8 build9 local only; signed ad hoc; minos13.0",
+  "browser_visual": "blocked: auto-review usage limit",
+  "deployment": "not performed",
+  "historical_performance": "not calculated",
+  "python_dependencies": {
+    "dependencies": [
+      {
+        "name": "ibapi",
+        "version": "9.81.1.post1",
+        "vulns": []
+      }
+    ],
+    "fixes": []
+  },
+  "npm_osv": {
+    "results": [
+      {},
+      {},
+      {}
+    ]
+  },
+  "bandit": {
+    "CONFIDENCE.HIGH": 5,
+    "CONFIDENCE.LOW": 0,
+    "CONFIDENCE.MEDIUM": 0,
+    "CONFIDENCE.UNDEFINED": 0,
+    "SEVERITY.HIGH": 0,
+    "SEVERITY.LOW": 5,
+    "SEVERITY.MEDIUM": 0,
+    "SEVERITY.UNDEFINED": 0,
+    "loc": 2415,
+    "nosec": 0,
+    "skipped_tests": 0
+  }
+}

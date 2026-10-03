@@ -1,12 +1,15 @@
 #import <Cocoa/Cocoa.h>
+#import <Security/Security.h>
 #import <WebKit/WebKit.h>
 
-@interface DashboardAppDelegate : NSObject <NSApplicationDelegate, WKNavigationDelegate>
+@interface DashboardAppDelegate : NSObject <NSApplicationDelegate, WKNavigationDelegate, NSWindowDelegate>
 @property(nonatomic, strong) NSWindow *window;
 @property(nonatomic, strong) WKWebView *webView;
 @property(nonatomic, strong) NSTask *bridgeTask;
 @property(nonatomic) BOOL ownsBridge;
 @property(nonatomic) BOOL terminationPending;
+@property(nonatomic) BOOL switchingBroker;
+@property(nonatomic, copy) NSString *brokerMode;
 @end
 
 @implementation DashboardAppDelegate
@@ -15,6 +18,37 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    self.brokerMode = @"offline";
+    NSMenu *menuBar = [[NSMenu alloc] init];
+    NSMenuItem *appItem = [[NSMenuItem alloc] init];
+    [menuBar addItem:appItem];
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Dashboard Finanziaria"];
+    [menu addItemWithTitle:@"Informazioni su Dashboard Finanziaria" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+    [menu addItem:NSMenuItem.separatorItem];
+    NSMenuItem *connect = [menu addItemWithTitle:@"Collega TWS — sola lettura" action:@selector(connectReadOnly:) keyEquivalent:@""];
+    connect.target = self;
+    NSMenuItem *paperConnect = [menu addItemWithTitle:@"Collega TWS paper — sola lettura" action:@selector(connectPaperReadOnly:) keyEquivalent:@""];
+    paperConnect.target = self;
+    NSMenuItem *disconnect = [menu addItemWithTitle:@"Disconnetti TWS — modalità offline" action:@selector(disconnectBroker:) keyEquivalent:@""];
+    disconnect.target = self;
+    [menu addItem:NSMenuItem.separatorItem];
+    NSMenuItem *wallet = [menu addItemWithTitle:@"Configura Wallet API…" action:@selector(configureWallet:) keyEquivalent:@""];
+    wallet.target = self;
+    [menu addItem:NSMenuItem.separatorItem];
+    [menu addItemWithTitle:@"Esci da Dashboard Finanziaria" action:@selector(terminate:) keyEquivalent:@"q"];
+    appItem.submenu = menu;
+
+    NSMenuItem *editItem = [[NSMenuItem alloc] init];
+    [menuBar addItem:editItem];
+    NSMenu *editMenu = [[NSMenu alloc] initWithTitle:@"Modifica"];
+    [editMenu addItemWithTitle:@"Annulla" action:@selector(undo:) keyEquivalent:@"z"];
+    [editMenu addItem:NSMenuItem.separatorItem];
+    [editMenu addItemWithTitle:@"Taglia" action:@selector(cut:) keyEquivalent:@"x"];
+    [editMenu addItemWithTitle:@"Copia" action:@selector(copy:) keyEquivalent:@"c"];
+    [editMenu addItemWithTitle:@"Incolla" action:@selector(paste:) keyEquivalent:@"v"];
+    [editMenu addItemWithTitle:@"Seleziona tutto" action:@selector(selectAll:) keyEquivalent:@"a"];
+    editItem.submenu = editMenu;
+    NSApp.mainMenu = menuBar;
     NSURL *iconURL = [NSBundle.mainBundle URLForResource:@"AppIcon" withExtension:@"icns"];
     NSImage *appIcon = [[NSImage alloc] initWithContentsOfURL:iconURL];
     if (appIcon) [NSApp setApplicationIconImage:appIcon];
@@ -30,6 +64,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
         backing:NSBackingStoreBuffered
         defer:NO];
     self.window.title = @"Dashboard Finanziaria";
+    self.window.delegate = self;
     self.window.contentView = self.webView;
     [self.window center];
     [self.window makeKeyAndOrderFront:nil];
@@ -41,15 +76,90 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     return YES;
 }
 
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+    [NSApp terminate:nil];
+    return NO;
+}
+
+- (void)connectReadOnly:(id)sender { [self changeBrokerMode:@"monitor-readonly"]; }
+- (void)connectPaperReadOnly:(id)sender { [self changeBrokerMode:@"paper-readonly"]; }
+- (void)disconnectBroker:(id)sender { [self changeBrokerMode:@"offline"]; }
+
+- (void)configureWallet:(id)sender {
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = @"Collega Wallet by BudgetBakers";
+    alert.informativeText = @"Incolla il token creato in Wallet Web → Impostazioni → REST API. Verrà salvato soltanto nel Portachiavi di questo Mac.";
+    [alert addButtonWithTitle:@"Salva nel Portachiavi"];
+    [alert addButtonWithTitle:@"Annulla"];
+    NSSecureTextField *field = [[NSSecureTextField alloc] initWithFrame:NSMakeRect(0, 0, 420, 24)];
+    field.placeholderString = @"Token API Wallet Premium";
+    alert.accessoryView = field;
+    if ([alert runModal] != NSAlertFirstButtonReturn) return;
+    NSString *token = [field.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (token.length < 20 || token.length > 4096 || [token rangeOfCharacterFromSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].location != NSNotFound) {
+        [self showError:@"Token Wallet non valido. Nessuna modifica è stata eseguita."];
+        return;
+    }
+    NSString *service = @"it.alemaro.dashboard-finanziaria.wallet-api";
+    NSString *account = @"wallet-api";
+    NSDictionary *lookup = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+                             (__bridge id)kSecAttrService: service,
+                             (__bridge id)kSecAttrAccount: account};
+    SecItemDelete((__bridge CFDictionaryRef)lookup);
+    NSMutableDictionary *item = lookup.mutableCopy;
+    item[(__bridge id)kSecValueData] = [token dataUsingEncoding:NSUTF8StringEncoding];
+    item[(__bridge id)kSecAttrAccessible] = (__bridge id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly;
+    OSStatus status = SecItemAdd((__bridge CFDictionaryRef)item, NULL);
+    if (status != errSecSuccess) {
+        [self showError:[NSString stringWithFormat:@"Impossibile salvare il token nel Portachiavi (errore %d).", (int)status]];
+        return;
+    }
+    [self.webView reload];
+}
+
+- (void)changeBrokerMode:(NSString *)mode {
+    if ([mode isEqualToString:self.brokerMode]) return;
+    if (!self.ownsBridge || !self.bridgeTask.running || self.terminationPending || self.switchingBroker) {
+        [self showError:@"Il servizio locale non è gestito da questa finestra. Chiudi le altre copie della dashboard e riapri l'app."];
+        return;
+    }
+    self.switchingBroker = YES;
+    __weak typeof(self) weakSelf = self;
+    [self.webView callAsyncJavaScript:@"return window.dashboardFlushState ? await window.dashboardFlushState() : false;"
+                           arguments:@{} inFrame:nil inContentWorld:WKContentWorld.pageWorld
+                   completionHandler:^(id result, NSError *error) {
+        if (error || ![result boolValue]) {
+            weakSelf.switchingBroker = NO;
+            [weakSelf showError:@"Salvataggio non confermato. La connessione resta invariata."];
+            return;
+        }
+        weakSelf.brokerMode = mode;
+        weakSelf.bridgeTask.terminationHandler = ^(NSTask *task) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                weakSelf.switchingBroker = NO;
+                [weakSelf startBridge];
+            });
+        };
+        [weakSelf stopOwnedBridge];
+    }];
+}
+
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-    if (self.terminationPending) return NSTerminateNow;
+    if (self.switchingBroker) return NSTerminateCancel;
+    if (self.terminationPending) return NSTerminateLater;
     self.terminationPending = YES;
     __weak typeof(self) weakSelf = self;
-    [self.webView evaluateJavaScript:@"window.dispatchEvent(new PageTransitionEvent('pagehide'))" completionHandler:^(id result, NSError *error) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    [self.webView callAsyncJavaScript:@"return window.dashboardFlushState ? await window.dashboardFlushState() : true;"
+                           arguments:@{} inFrame:nil inContentWorld:WKContentWorld.pageWorld
+                   completionHandler:^(id result, NSError *error) {
+        if (error || ![result boolValue]) {
+            weakSelf.terminationPending = NO;
+            [NSApp replyToApplicationShouldTerminate:NO];
+            [weakSelf showError:@"Il salvataggio non è stato confermato. L'app resta aperta: verifica il servizio locale e riprova a chiudere."];
+        } else {
             [weakSelf stopOwnedBridge];
             [NSApp replyToApplicationShouldTerminate:YES];
-        });
+        }
     }];
     return NSTerminateLater;
 }
@@ -89,7 +199,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     }
     NSTask *task = [[NSTask alloc] init];
     task.executableURL = python;
-    task.arguments = @[bridge.path, @"--no-browser", @"--http-port", @"8766"];
+    task.arguments = @[bridge.path, @"--no-browser", @"--broker-mode", self.brokerMode, @"--http-port", @"8766"];
     task.currentDirectoryURL = runtime;
     NSURL *logDirectory = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
     logDirectory = [logDirectory URLByAppendingPathComponent:@"Dashboard Finanziaria" isDirectory:YES];
@@ -130,6 +240,18 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
 - (void)loadDashboard {
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:[DashboardURL stringByAppendingString:@"/"]] cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15];
     [self.webView loadRequest:request];
+}
+
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    NSURL *url = navigationAction.request.URL;
+    NSString *host = url.host.lowercaseString;
+    BOOL isLocal = [host isEqualToString:@"127.0.0.1"] || [host isEqualToString:@"localhost"];
+    if (url && !isLocal && ([url.scheme isEqualToString:@"https"] || [url.scheme isEqualToString:@"http"])) {
+        [NSWorkspace.sharedWorkspace openURL:url];
+        decisionHandler(WKNavigationActionPolicyCancel);
+        return;
+    }
+    decisionHandler(WKNavigationActionPolicyAllow);
 }
 
 - (void)stopOwnedBridge {

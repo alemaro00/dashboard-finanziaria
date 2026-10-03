@@ -5,3 +5,8 @@ __pycache__/
 patrimonio-*.json
 dist/
 .build/
+
+web-build/
+*.sqlite3
+*.sqlite3-*
+*.json.bak
