@@ -229,7 +229,10 @@
       .stack-form{grid-template-columns:1fr}
       .monthly-period-fields .field{grid-column:span 4;padding:12px;border:1px solid rgba(215,180,106,.55);border-radius:8px;background:rgba(215,180,106,.09)}
       .monthly-period-fields label{color:var(--accent)}
-      .monthly-period-fields input,.monthly-period-fields select{border-color:rgba(215,180,106,.55);color:var(--accent)}
+      .monthly-period-fields input,.monthly-period-fields select{
+        height:54px;min-height:54px;padding:0 14px;border-color:rgba(215,180,106,.55);
+        color:var(--accent);font-family:inherit;font-size:16px;line-height:1.2
+      }
       .monthly-flow-inputs > .field.third{padding:12px;border:1px solid #283344;border-radius:8px;background:#0b1119}
       .monthly-flow-inputs output{display:block;padding:10px 0;color:#e5eaf2;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums}
       .entry-detail-layout{align-items:start}
