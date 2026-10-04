@@ -12,8 +12,11 @@ test('beta exposes only the two authorized collapsible sections', () => {
   assert.doesNotMatch(source, /research-section|Laboratorio strategie/);
 });
 
-test('both beta sections share the blue visual system', () => {
-  assert.match(source, /\.macro-finance,\.macro-wealth\{--macro-accent:#69c8ee/);
+test('beta preserves the original complete-dashboard color system', () => {
+  assert.match(source, /--accent:#d7b46a/);
+  assert.match(source, /\.macro-finance\{--macro-accent:#d7b46a/);
+  assert.match(source, /\.macro-wealth\{--macro-accent:#a482ef/);
+  assert.match(source, /border:1px solid #c0a25e/);
   assert.match(source, /grid-template-columns:repeat\(2,1fr\)/);
   assert.doesNotMatch(source, /macro-salary|macro-research/);
 });

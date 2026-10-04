@@ -94,7 +94,9 @@ La versione completa conserva invece nome, bundle identifier, porta e directory
 dati originali. Le due applicazioni possono quindi essere aperte insieme senza
 condividere processi o scritture.
 
-La beta è versione `1.14.0`, build `59`, e mostra chiaramente `Beta` nell’interfaccia.
+La beta è versione `1.14.0`, build `60`, mostra chiaramente `Beta` nell’interfaccia
+e conserva la palette originale della dashboard completa per sezioni, riquadri e
+controlli condivisi.
 
 ## Verifica
 
