@@ -46,10 +46,13 @@ for required in ('127.0.0.1:8767', 'Dashboard Finanziaria Beta', 'DASHBOARD_DATA
     if required not in native_wrapper:
         errors.append('Separate beta runtime boundary missing: '+required)
 banking_sync=(ROOT/'enable_banking_sync.py').read_text()
-if 'localhost:8767/api/enable-banking/callback' not in banking_sync:
+if '127.0.0.1:8767/api/enable-banking/callback' not in banking_sync:
     errors.append('Beta banking callback does not use the separate beta port')
 if 'DASHBOARD_DATA_DIR' not in banking_sync or 'DEFAULT_KEY_PATH = (\n    DEFAULT_DATA_DIR' not in banking_sync:
     errors.append('Beta banking key does not follow the separate beta data directory')
+for required in ('Configurazione iniziale · una sola volta', 'loadBankOptions', 'non devi copiare alcun indirizzo'):
+    if required not in frontend:
+        errors.append('Guided banking setup missing: '+required)
 patterns=[re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
           re.compile(r'gh[pousr]_[A-Za-z0-9]{30,}'),re.compile(r'AKIA[A-Z0-9]{16}')]
 skip={'.git','.venv','.build','dist','vendor','web-build','__pycache__','.ruff_cache'}

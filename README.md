@@ -27,6 +27,9 @@ versione completa 1.13.28 resta disponibile dal tag Git annotato
 - Quota fondo emergenza positiva o negativa.
 - Resoconto dei mesi salvati aggregato solo per nome e categoria; i movimenti
   originali rimangono distinti nella modifica del mese.
+- Configurazione guidata dei conti bancari: Application ID e chiave PEM restano
+  locali, l’elenco banche arriva dal provider e il ritorno dell’autorizzazione è
+  completato automaticamente senza copiare URL.
 
 ### Wealth management
 
@@ -64,6 +67,24 @@ scrittura il servizio conserva anche `dashboard-state.json.bak`; stato e backup
 hanno permessi privati. I vecchi campi delle funzioni rimosse sono tollerati e
 conservati quando presenti, senza essere mostrati o usati nei calcoli correnti.
 
+I dati della dashboard vengono salvati automaticamente in modo atomico e il file
+precedente viene mantenuto come backup. Il pulsante `Salva mese` crea o aggiorna lo
+snapshot del mese nello storico; non sostituisce il salvataggio automatico, che
+protegge anche la bozza corrente.
+
+## Prima configurazione bancaria
+
+La sezione `Conti bancari` guida l’utente in tre passaggi:
+
+1. creare una propria applicazione AIS in sola lettura nel pannello Enable Banking;
+2. registrare l’indirizzo di ritorno locale mostrato dalla dashboard;
+3. inserire l’Application ID e selezionare la chiave privata PEM.
+
+La chiave viene inviata soltanto al servizio loopback sullo stesso computer e
+salvata con permessi privati. Dopo la scelta della banca, l’autorizzazione avviene
+nel sito o nell’app della banca e il callback locale conclude automaticamente il
+collegamento. Non bisogna incollare l’indirizzo finale.
+
 ## Avvio locale
 
 Requisiti: Python 3.9+, Node.js e le dipendenze di `requirements.txt`.
@@ -94,7 +115,7 @@ La versione completa conserva invece nome, bundle identifier, porta e directory
 dati originali. Le due applicazioni possono quindi essere aperte insieme senza
 condividere processi o scritture.
 
-La beta è versione `1.14.0`, build `60`, mostra chiaramente `Beta` nell’interfaccia
+La beta è versione `1.14.0`, build `61`, mostra chiaramente `Beta` nell’interfaccia
 e conserva la palette originale della dashboard completa per sezioni, riquadri e
 controlli condivisi.
 
@@ -111,7 +132,7 @@ python3 tests/http_smoke.py
 python3 scripts/check_repository.py
 .build/check-env/bin/ruff check .
 .build/check-env/bin/mypy
-.build/check-env/bin/bandit -r research local_security.py ibkr_paper_bridge.py -ll
+.build/check-env/bin/bandit -r research local_security.py ibkr_paper_bridge.py enable_banking_sync.py -ll
 .build/check-env/bin/pip-audit --no-deps --disable-pip -r requirements.txt
 ```
 
@@ -131,6 +152,13 @@ salvataggio/ripristino, backup, sicurezza HTTP, disconnessioni e sola lettura IB
   certificate.
 - La beta non è uno strumento fiscale, non offre consulenza finanziaria e non esegue
   trading.
+- Il pacchetto macOS corrente è firmato ad hoc e arm64: va firmato con Developer ID,
+  reso autosufficiente e notarizzato prima di distribuirlo a utenti finali. La
+  `.app` macOS non funziona su Windows; per Windows serve un pacchetto MSIX distinto.
+
+Le procedure e i limiti di distribuzione sono descritti in `docs/DISTRIBUTION.md`;
+la verifica di sicurezza, privacy e persistenza è in
+`docs/SECURITY_PRIVACY_REVIEW.md`.
 
 Per privacy, non aggiungere al repository archivi di backup, movimenti, saldi,
 identificativi conto o chiavi.

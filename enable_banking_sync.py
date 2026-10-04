@@ -8,6 +8,7 @@ import math
 import os
 import re
 import secrets
+import shutil
 import stat
 import subprocess
 import threading
@@ -20,14 +21,24 @@ from urllib.request import Request, urlopen
 
 
 API_ORIGIN = "https://api.enablebanking.com"
-APPLICATION_ID = "832f4ca4-67b0-4054-8ebd-ed0518198791"
-DEFAULT_REDIRECT_URL = "https://localhost:8767/api/enable-banking/callback"
-DEFAULT_DATA_DIR = Path(
-    os.environ.get(
-        "DASHBOARD_DATA_DIR",
-        Path.home() / "Library" / "Application Support" / "Dashboard Finanziaria",
-    )
-).expanduser()
+LEGACY_APPLICATION_ID = "832f4ca4-67b0-4054-8ebd-ed0518198791"
+DEFAULT_REDIRECT_URL = os.environ.get(
+    "DASHBOARD_BANKING_REDIRECT_URL",
+    "http://127.0.0.1:8767/api/enable-banking/callback",
+)
+
+
+def _default_data_dir():
+    configured = os.environ.get("DASHBOARD_DATA_DIR")
+    if configured:
+        return Path(configured).expanduser()
+    if os.name == "nt":
+        local_app_data = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        return local_app_data / "Dashboard Finanziaria Beta"
+    return Path.home() / "Library" / "Application Support" / "Dashboard Finanziaria Beta"
+
+
+DEFAULT_DATA_DIR = _default_data_dir()
 DEFAULT_KEY_PATH = (
     DEFAULT_DATA_DIR
     / "Secrets"
@@ -49,7 +60,7 @@ def _atomic_json_write(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     path.parent.chmod(0o700)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0), 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
         stream.flush()
@@ -61,6 +72,8 @@ def _atomic_json_write(path: Path, value: object) -> None:
 def _read_json(path: Path, fallback: object) -> object:
     if not path.is_file():
         return fallback
+    if path.is_symlink():
+        raise ValueError("Archivio locale non sicuro")
     if path.stat().st_size > 20 * 1024 * 1024:
         raise ValueError("Archivio Enable Banking troppo grande")
     return json.loads(path.read_text(encoding="utf-8"))
@@ -183,7 +196,7 @@ def normalize_transaction(transaction: dict, account: dict) -> dict | None:
 
 
 class EnableBankingClient:
-    def __init__(self, key_path: Path = DEFAULT_KEY_PATH, application_id: str = APPLICATION_ID, timeout: int = 25):
+    def __init__(self, key_path: Path = DEFAULT_KEY_PATH, application_id: str = "", timeout: int = 25):
         self.key_path = Path(key_path)
         self.application_id = str(application_id)
         self.timeout = timeout
@@ -199,12 +212,17 @@ class EnableBankingClient:
 
     def jwt(self, now: int | None = None) -> str:
         self._validate_key()
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,160}", self.application_id):
+            raise ValueError("Application ID Enable Banking non valido")
+        openssl = os.environ.get("OPENSSL_BIN") or shutil.which("openssl")
+        if not openssl:
+            raise RuntimeError("OpenSSL non disponibile: installalo o configura OPENSSL_BIN")
         issued = int(time.time() if now is None else now)
         header = _b64url(_json_bytes({"alg": "RS256", "kid": self.application_id, "typ": "JWT"}))
         payload = _b64url(_json_bytes({"aud": "api.enablebanking.com", "exp": issued + 300, "iat": issued, "iss": "enablebanking.com"}))
         signing_input = f"{header}.{payload}".encode("ascii")
         completed = subprocess.run(
-            ["/usr/bin/openssl", "dgst", "-sha256", "-sign", str(self.key_path)],
+            [openssl, "dgst", "-sha256", "-sign", str(self.key_path)],
             input=signing_input,
             capture_output=True,
             timeout=10,
@@ -227,7 +245,10 @@ class EnableBankingClient:
         if body is not None:
             headers["Content-Type"] = "application/json"
         try:
-            with urlopen(Request(url, data=body, method=method, headers=headers), timeout=self.timeout) as response:
+            # URL origin is fixed above and paths are restricted to the API allowlist.
+            with urlopen(  # nosec B310
+                Request(url, data=body, method=method, headers=headers), timeout=self.timeout
+            ) as response:
                 raw = response.read(8_000_000)
         except HTTPError as error:
             detail = error.read(4096).decode("utf-8", "replace")
@@ -256,10 +277,12 @@ class EnableBankingClient:
 
 
 class EnableBankingService:
-    def __init__(self, directory: Path, key_path: Path = DEFAULT_KEY_PATH):
+    def __init__(self, directory: Path, key_path: Path = DEFAULT_KEY_PATH, redirect_url: str = DEFAULT_REDIRECT_URL):
         self.directory = Path(directory)
         self.data_path = self.directory / "bank-transactions.json"
+        self.configuration_path = self.directory / "configuration.json"
         self.key_path = Path(key_path)
+        self.redirect_url = str(redirect_url)
         self.lock = threading.RLock()
         self.sync_lock = threading.Lock()
         self.last_error = ""
@@ -279,8 +302,48 @@ class EnableBankingService:
     def _save(self, value: dict) -> None:
         _atomic_json_write(self.data_path, value)
 
+    def _configuration(self) -> dict:
+        value = _read_json(self.configuration_path, {})
+        if isinstance(value, dict) and value.get("applicationId"):
+            return {"applicationId": str(value["applicationId"])}
+        if self.key_path.is_file():
+            return {"applicationId": LEGACY_APPLICATION_ID, "legacy": True}
+        return {}
+
     def _client(self) -> EnableBankingClient:
-        return EnableBankingClient(self.key_path)
+        configuration = self._configuration()
+        return EnableBankingClient(self.key_path, str(configuration.get("applicationId") or ""))
+
+    def configure(self, application_id: object, private_key: object) -> dict:
+        identifier = str(application_id or "").strip()
+        key_text = str(private_key or "").strip() + "\n"
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,160}", identifier):
+            raise ValueError("Application ID non valido")
+        if not (1_500 <= len(key_text.encode("utf-8")) <= 20_000):
+            raise ValueError("Chiave privata non valida")
+        if not re.search(r"-----BEGIN (?:RSA )?PRIVATE KEY-----", key_text):
+            raise ValueError("Seleziona la chiave privata PEM scaricata da Enable Banking")
+        self.key_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self.key_path.parent.chmod(0o700)
+        temporary = self.key_path.with_suffix(self.key_path.suffix + ".tmp")
+        fd = os.open(
+            temporary,
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+        )
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(key_text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            EnableBankingClient(temporary, identifier).jwt()
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise
+        temporary.replace(self.key_path)
+        self.key_path.chmod(0o600)
+        _atomic_json_write(self.configuration_path, {"applicationId": identifier})
+        return self.verify()
 
     @staticmethod
     def _session_account_ids(session: dict) -> list[str]:
@@ -304,22 +367,27 @@ class EnableBankingService:
 
     def configured(self) -> bool:
         try:
-            self._client()._validate_key()
-            return True
-        except (OSError, ValueError):
+            client = self._client()
+            client._validate_key()
+            identifier = str(getattr(client, "application_id", "test-client"))
+            return bool(re.fullmatch(r"[A-Za-z0-9_-]{8,160}", identifier))
+        except (OSError, ValueError, RuntimeError):
             return False
 
     def snapshot(self) -> dict:
         with self.lock:
             data = self._data()
         records = data.get("records") if isinstance(data.get("records"), list) else []
+        is_configured = self.configured()
         return {
             "provider": "Enable Banking",
-            "configured": self.configured(),
+            "configured": is_configured,
             "readOnly": True,
             "writesEnabled": False,
             "environment": "PRODUCTION",
             "restricted": True,
+            "redirectUrl": self.redirect_url,
+            "configurationRequired": not is_configured,
             "application": data.get("application"),
             "authorizationRequired": not bool(data.get("sessions")),
             "authorizationPending": bool(data.get("pending")),
@@ -346,6 +414,38 @@ class EnableBankingService:
             data = self._data()
             data["application"] = safe
             self._save(data)
+            self.last_error = ""
+        return self.snapshot()
+
+    def list_banks(self, country: object) -> dict:
+        country_code = str(country or "IT").upper()
+        if not re.fullmatch(r"[A-Z]{2}", country_code):
+            raise ValueError("Paese non valido")
+        response = self._client().get("/aspsps", {"country": country_code})
+        raw_banks = response.get("aspsps") or response.get("items") or []
+        banks: list[dict[str, object]] = []
+        for item in raw_banks:
+            if not isinstance(item, dict):
+                continue
+            name = _clean_text(item.get("name"), 100)
+            item_country = str(item.get("country") or country_code).upper()
+            if not name or not re.fullmatch(r"[A-Z]{2}", item_country):
+                continue
+            try:
+                maximum_days = int(item.get("maximum_consent_validity") or 90)
+            except (TypeError, ValueError):
+                maximum_days = 90
+            banks.append({
+                "name": name,
+                "country": item_country,
+                "maximumConsentDays": max(1, min(180, maximum_days)),
+            })
+        unique = {(item["name"], item["country"]): item for item in banks}
+        return {"country": country_code, "banks": sorted(unique.values(), key=lambda item: str(item["name"]).casefold())}
+
+    def forget_bank_data(self) -> dict:
+        with self.lock:
+            self._save(self._empty())
             self.last_error = ""
         return self.snapshot()
 
@@ -387,7 +487,7 @@ class EnableBankingService:
                 "access": {"valid_until": valid_until, "balances": True, "transactions": True},
                 "aspsp": {"name": name, "country": country_code},
                 "state": state,
-                "redirect_url": DEFAULT_REDIRECT_URL,
+                "redirect_url": self.redirect_url,
                 "psu_type": "personal",
                 "language": "it",
             },
@@ -406,7 +506,8 @@ class EnableBankingService:
     def complete_authorization(self, callback_url: object) -> dict:
         value = str(callback_url or "").strip()
         parsed = urlparse(value)
-        if parsed.scheme != "https" or parsed.hostname not in {"localhost", "127.0.0.1"}:
+        expected = urlparse(self.redirect_url)
+        if (parsed.scheme, parsed.hostname, parsed.port, parsed.path) != (expected.scheme, expected.hostname, expected.port, expected.path):
             raise ValueError("Indirizzo di ritorno Enable Banking non valido")
         query = parse_qs(parsed.query)
         if query.get("error"):

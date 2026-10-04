@@ -28,5 +28,5 @@ jobs:
         run: |
           .build/check-env/bin/ruff check .
           .build/check-env/bin/mypy
-          .build/check-env/bin/bandit -r research local_security.py ibkr_paper_bridge.py -ll
+          .build/check-env/bin/bandit -r research local_security.py ibkr_paper_bridge.py enable_banking_sync.py -ll
           .build/check-env/bin/pip-audit --no-deps --disable-pip -r requirements.txt

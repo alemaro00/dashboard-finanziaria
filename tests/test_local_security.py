@@ -28,6 +28,13 @@ class BoundaryTests(unittest.TestCase):
         self.assertTrue(g.allowed({'Host':'127.0.0.1:8765','Origin':'http://127.0.0.1:8765'},8765))
         self.assertTrue(g.allowed({'Host':'localhost:8765','Sec-Fetch-Site':'none'},8765))
 
+    def test_bank_callback_accepts_navigation_but_rejects_origins_and_rebinding(self):
+        g = RequestGuard()
+        self.assertTrue(g.allowed_callback({'Host':'127.0.0.1:8767','Sec-Fetch-Mode':'navigate','Sec-Fetch-Site':'cross-site'},8767))
+        self.assertFalse(g.allowed_callback({'Host':'evil.example:8767','Sec-Fetch-Mode':'navigate'},8767))
+        self.assertFalse(g.allowed_callback({'Host':'127.0.0.1:8767','Origin':'https://attacker.invalid','Sec-Fetch-Mode':'navigate'},8767))
+        self.assertFalse(g.allowed_callback({'Host':'127.0.0.1:8767','Sec-Fetch-Mode':'cors'},8767))
+
     def test_rate_limit_and_token(self):
         g = RequestGuard()
         with patch('local_security.time.monotonic',return_value=100):

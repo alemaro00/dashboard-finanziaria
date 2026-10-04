@@ -28,11 +28,10 @@ I dati non sono venduti e non sono usati per pubblicità. I soggetti tecnici coi
 
 ## Sicurezza
 
-La chiave privata dell'integrazione e gli eventuali token non devono essere inseriti nel codice pubblico o nell'interfaccia web. Sono conservati fuori dal repository e protetti sul dispositivo. L'accesso viene richiesto con il minimo insieme di permessi necessario.
+La chiave privata dell'integrazione e gli eventuali token non devono essere inseriti nel codice pubblico o condivisi con altri utenti. La procedura guidata può leggere localmente il file PEM scelto dall'utente e lo consegna soltanto al servizio loopback sullo stesso computer; la chiave non viene restituita al frontend. È conservata fuori dal repository e dal pacchetto dell'app, con permessi privati sul dispositivo. L'accesso viene richiesto con il minimo insieme di permessi necessario.
 
 ## Contatti
 
 Per richieste relative ai dati trattati da Dashboard Finanziaria, scrivere all'indirizzo di contatto indicato nell'applicazione registrata nel pannello Enable Banking.
 
 Le richieste relative all'autenticazione bancaria, ai dati detenuti dalla banca o al servizio Enable Banking devono essere rivolte anche al rispettivo fornitore.
-

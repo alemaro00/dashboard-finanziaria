@@ -190,6 +190,11 @@
       .bank-kpi strong{display:block;font-size:21px;margin-top:6px}
       .bank-income{color:#44d7a8}.bank-expense{color:#ff7d83}
       .bank-connections{display:flex;gap:7px;flex-wrap:wrap}
+      .bank-setup-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+      .bank-setup-step{padding:13px;border:1px solid #283344;border-radius:8px;background:#0b1119}
+      .bank-setup-step strong{display:block;margin-bottom:6px;color:#f0d58d}
+      .bank-setup-fields{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);gap:10px;margin-top:12px}
+      .bank-privacy-note{margin-top:12px;padding:11px 12px;border-left:3px solid var(--good);background:rgba(66,211,146,.06);color:#b8cbc8;font-size:12px;line-height:1.5}
       .bank-review-list{display:grid;gap:8px;max-height:340px;overflow:auto;padding:10px;border:1px solid #253244;border-radius:8px;background:#091019;overscroll-behavior:contain;scrollbar-gutter:stable}
       .bank-review-list>strong{position:sticky;top:-10px;z-index:1;padding:10px 2px 8px;background:#091019;border-bottom:1px solid #253244}
       .bank-review-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:11px 12px;border:1px solid #2a3748;border-radius:7px;background:#0c131c}
@@ -515,6 +520,7 @@
         .bank-review-action{text-align:left}
         .bank-movement-side{justify-items:start;min-width:0}
         .bank-movement-actions{justify-content:flex-start}
+        .bank-setup-grid,.bank-setup-fields{grid-template-columns:1fr}
       }
     </style>
   </head>
@@ -1436,7 +1442,11 @@
         const ibkrPollers = useRef({});
         const [ibkrPaper, setIbkrPaper] = useState({ reachable: false, loading: true, data: null, error: "" });
         const [ibkrLive, setIbkrLive] = useState({ reachable: false, loading: true, data: null, error: "" });
-        const [banking, setBanking] = useState({ loading: true, busy: false, data: null, error: "", callbackUrl: "" });
+        const [banking, setBanking] = useState({ loading: true, busy: false, data: null, error: "" });
+        const [bankSetup, setBankSetup] = useState({ applicationId: "", country: "IT", bank: "", validDays: 90 });
+        const [bankOptions, setBankOptions] = useState([]);
+        const [bankSetupMessage, setBankSetupMessage] = useState("");
+        const bankKeyFile = useRef(null);
         const [bankRename, setBankRename] = useState({ id: "", value: "" });
         useEffect(() => {
           localStorage.setItem(storageKey, JSON.stringify(state));
@@ -1639,12 +1649,12 @@
               window.location.assign(data.url);
               await refreshBanking();
             }
-            else setBanking(current => ({ ...current, busy: false, data, error: data.error || "", callbackUrl: action === "complete" ? "" : current.callbackUrl }));
+            else if (!data.banks) setBanking(current => ({ ...current, busy: false, data, error: data.error || "" }));
             if (!data.url) await refreshBanking();
-            return true;
+            return data;
           } catch (error) {
             setBanking(current => ({ ...current, busy: false, error: error.message }));
-            return false;
+            return null;
           } finally {
             setBanking(current => ({ ...current, busy: false }));
           }
@@ -1655,6 +1665,44 @@
           const timer = setInterval(refreshBanking, 30000);
           return () => clearInterval(timer);
         }, []);
+
+        useEffect(() => {
+          if (!banking.data?.authorizationPending) return undefined;
+          const timer = setInterval(refreshBanking, 1500);
+          return () => clearInterval(timer);
+        }, [banking.data?.authorizationPending]);
+
+        async function configureBanking() {
+          const file = bankKeyFile.current?.files?.[0];
+          if (!bankSetup.applicationId.trim() || !file) {
+            setBanking(current => ({ ...current, error: "Inserisci l’Application ID e seleziona la chiave privata PEM." }));
+            return;
+          }
+          if (file.size > 20000) {
+            setBanking(current => ({ ...current, error: "La chiave selezionata è troppo grande." }));
+            return;
+          }
+          const privateKey = await file.text();
+          const configured = await bankingControl("configure", { applicationId: bankSetup.applicationId.trim(), privateKey });
+          if (configured) {
+            setBankSetupMessage("Configurazione verificata. Ora scegli la banca da collegare.");
+            setBankSetup(current => ({ ...current, applicationId: "" }));
+            if (bankKeyFile.current) bankKeyFile.current.value = "";
+          }
+        }
+
+        async function loadBankOptions(country = bankSetup.country) {
+          setBankSetupMessage("Caricamento banche disponibili...");
+          const result = await bankingControl("banks", { country });
+          const banks = result?.banks || [];
+          setBankOptions(banks);
+          setBankSetup(current => ({ ...current, country, bank: banks.some(item => item.name === current.bank) ? current.bank : (banks[0]?.name || "") }));
+          setBankSetupMessage(banks.length ? `${banks.length} banche disponibili.` : "Nessuna banca disponibile per il Paese selezionato.");
+        }
+
+        useEffect(() => {
+          if (banking.data?.configured && bankOptions.length === 0 && !banking.data?.authorizationPending) loadBankOptions(bankSetup.country);
+        }, [banking.data?.configured]);
 
         function refreshIbkr(mode) {
           return ibkrPollers.current[mode]?.refresh();
@@ -2429,16 +2477,32 @@
                       {cashBalance < 0 && <div className="bank-expense" style={{ marginTop: 8 }}>Saldo cash negativo: verifica saldo iniziale, prelievi e voci manuali.</div>}
                       {cashWithdrawals.map(note => <div className="bank-movement-row" key={note.id}><div><strong>{note.label}</strong><div className="small">{note.bank} → Cash · {note.transactionDate}</div></div><div className="actions"><strong className="bank-income">+{money(note.amount)}</strong><button className="secondary" onClick={() => setState(current => removeDetailedEntriesFromState(current, item => item.id === note.id))}>Rimuovi</button></div></div>)}
                     </details>
-                    <div className={banking.data?.authorizationRequired ? "decision-box warn" : "decision-box"}>
-                      <strong>{banking.data?.authorizationRequired ? "Autorizza i conti nell’app della banca" : "Aggiungi o rinnova un conto"}</strong>
-                      <div className="small" style={{ marginTop: 6 }}>Esegui l’accesso per ogni banca. Enable Banking mostrerà soltanto i conti già consentiti nella tua applicazione Restricted.</div>
-                      <div className="actions" style={{ marginTop: 10 }}>
-                        <button disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: "UniCredit", country: "IT" })}>Collega UniCredit</button>
-                        <button disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: "Revolut", country: "IT" })}>Collega Revolut</button>
+                    {!banking.data?.configured ? <div className="decision-box warn">
+                      <strong>Configurazione iniziale · una sola volta</strong>
+                      <div className="small" style={{ marginTop: 6 }}>Ogni persona usa la propria applicazione Enable Banking. La chiave resta esclusivamente su questo computer e non viene inclusa quando condividi l’app.</div>
+                      <div className="bank-setup-grid">
+                        <div className="bank-setup-step"><strong>1 · Crea l’app</strong><span className="small">Apri Enable Banking e crea un’applicazione personale con accesso AIS in sola lettura.</span></div>
+                        <div className="bank-setup-step"><strong>2 · Registra il ritorno</strong><span className="small">Inserisci nel provider l’indirizzo locale mostrato qui sotto, identico carattere per carattere.</span></div>
+                        <div className="bank-setup-step"><strong>3 · Importa la chiave</strong><span className="small">Inserisci l’Application ID e seleziona il file PEM scaricato. Non inserire mai le credenziali della banca.</span></div>
                       </div>
-                      {banking.data?.authorizationPending && <React.Fragment><div className="field" style={{ marginTop: 12 }}><label>Indirizzo finale di autorizzazione</label><input value={banking.callbackUrl} onChange={event => setBanking(current => ({ ...current, callbackUrl: event.target.value }))} placeholder="https://localhost:8767/api/enable-banking/callback?code=…&state=…" /></div>
-                      <button className="secondary" disabled={banking.busy || !banking.callbackUrl} onClick={() => bankingControl("complete", { callbackUrl: banking.callbackUrl })}>Completa collegamento</button></React.Fragment>}
-                    </div>
+                      <div className="field full-field" style={{ marginTop: 12 }}><label>Indirizzo di ritorno da registrare</label><input readOnly value={banking.data?.redirectUrl || "http://127.0.0.1:8767/api/enable-banking/callback"} /></div>
+                      <div className="bank-setup-fields">
+                        <div className="field full-field"><label>Application ID Enable Banking</label><input autoComplete="off" value={bankSetup.applicationId} onChange={event => setBankSetup(current => ({ ...current, applicationId: event.target.value }))} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" /></div>
+                        <div className="field full-field"><label>Chiave privata PEM</label><input ref={bankKeyFile} type="file" accept=".pem,.key,text/plain" /></div>
+                      </div>
+                      <div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy} onClick={configureBanking}>Salva e verifica configurazione</button><a className="pill" href="https://enablebanking.com/" target="_blank" rel="noreferrer">Apri Enable Banking</a></div>
+                      <div className="bank-privacy-note">La configurazione viene consegnata soltanto al servizio locale della Dashboard e salvata con permessi privati nella cartella dati della beta. Il file PEM non lascia questo computer e non viene incluso nel pacchetto condiviso.</div>
+                    </div> : <div className={banking.data?.authorizationPending ? "decision-box warn" : "decision-box"}>
+                      <strong>{banking.data?.authorizationPending ? "Completa l’accesso nella banca" : "Collega o rinnova un conto"}</strong>
+                      <div className="small" style={{ marginTop: 6 }}>{banking.data?.authorizationPending ? "La pagina della banca è aperta nel browser. Al termine tornerai automaticamente alla dashboard: non devi copiare alcun indirizzo." : "Scegli il Paese e la banca. L’accesso avviene esclusivamente sul sito o nell’app della banca."}</div>
+                      <div className="small" style={{ marginTop: 6 }}>Ritorno automatico registrato: {banking.data?.redirectUrl}</div>
+                      {!banking.data?.authorizationPending && <React.Fragment><div className="bank-setup-fields">
+                        <div className="field full-field"><label>Paese</label><select value={bankSetup.country} onChange={event => { const country = event.target.value; setBankSetup(current => ({ ...current, country, bank: "" })); setBankOptions([]); loadBankOptions(country); }}><option value="IT">Italia</option><option value="DE">Germania</option><option value="ES">Spagna</option><option value="FR">Francia</option><option value="NL">Paesi Bassi</option><option value="PT">Portogallo</option></select></div>
+                        <div className="field full-field"><label>Banca</label><select value={bankSetup.bank} onChange={event => setBankSetup(current => ({ ...current, bank: event.target.value }))}><option value="">Seleziona una banca</option>{bankOptions.map(bank => <option key={`${bank.country}-${bank.name}`} value={bank.name}>{bank.name}</option>)}</select></div>
+                      </div><div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy || !bankSetup.bank} onClick={() => bankingControl("authorize", { bank: bankSetup.bank, country: bankSetup.country, validDays: bankSetup.validDays })}>Collega il conto</button><button className="secondary" disabled={banking.busy} onClick={() => loadBankOptions(bankSetup.country)}>Aggiorna elenco banche</button></div></React.Fragment>}
+                      {bankSetupMessage && <div className="small" style={{ marginTop: 10 }}>{bankSetupMessage}</div>}
+                      <details style={{ marginTop: 12 }}><summary>Privacy e gestione dati bancari</summary><div className="small" style={{ marginTop: 8 }}>Saldi, movimenti e riferimenti alle sessioni sono conservati soltanto nella cartella dati locale. La Dashboard non può disporre pagamenti.</div><button className="secondary" style={{ marginTop: 10 }} onClick={() => { if (window.confirm("Cancellare sessioni, conti e movimenti bancari salvati localmente? I mesi già salvati non saranno eliminati.")) bankingControl("forget"); }}>Dimentica dati bancari locali</button></details>
+                    </div>}
                     {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}
                     {banking.error && <div className="decision-box bad"><strong>Collegamento non riuscito</strong><div className="small" style={{ marginTop: 6 }}>{banking.error}</div></div>}
                     <div className="bank-kpis">

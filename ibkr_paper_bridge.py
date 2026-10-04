@@ -8,6 +8,7 @@ import queue
 import secrets
 import shutil
 import hashlib
+import html
 import re
 import subprocess
 import threading
@@ -28,12 +29,19 @@ from ibapi.wrapper import EWrapper
 SCRIPT_DIR = Path(__file__).resolve().parent
 DASHBOARD_FILE = SCRIPT_DIR / "salary-planner-react.html"
 ARCHIVE_FILE_PATTERN = re.compile(r"^patrimonio-[0-9]{4}-[a-z0-9-]+\.json$")
-APP_DATA_DIR = Path(
-    os.environ.get(
-        "DASHBOARD_DATA_DIR",
-        Path.home() / "Library" / "Application Support" / "Dashboard Finanziaria",
-    )
-).expanduser()
+
+
+def _default_data_dir():
+    configured = os.environ.get("DASHBOARD_DATA_DIR")
+    if configured:
+        return Path(configured).expanduser()
+    if os.name == "nt":
+        local_app_data = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        return local_app_data / "Dashboard Finanziaria Beta"
+    return Path.home() / "Library" / "Application Support" / "Dashboard Finanziaria Beta"
+
+
+APP_DATA_DIR = _default_data_dir()
 APP_STATE_FILE = APP_DATA_DIR / "dashboard-state.json"
 APP_STATE_LOCK = threading.Lock()
 # Account updates normally arrive every three minutes; allow a five-minute gap.
@@ -157,17 +165,22 @@ def save_dashboard_state(payload: dict[str, object]) -> dict[str, object]:
         "ui": payload.get("ui") if isinstance(payload.get("ui"), dict) else {},
     }
     APP_DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    APP_DATA_DIR.chmod(0o700)
     temporary = APP_STATE_FILE.with_suffix(".json.tmp")
     with APP_STATE_LOCK:
         # Never overwrite a corrupt but potentially recoverable previous document.
         if APP_STATE_FILE.exists():
+            if APP_STATE_FILE.is_symlink() or APP_STATE_FILE.stat().st_size > 20 * 1024 * 1024:
+                raise ValueError("Memoria esistente non sicura o troppo grande")
             previous = json.loads(APP_STATE_FILE.read_text(encoding="utf-8"))
             if not isinstance(previous, dict) or not isinstance(previous.get("state"), dict):
                 raise ValueError("Memoria esistente non valida: recuperare il backup prima di salvare")
             backup = APP_STATE_FILE.with_suffix(".json.bak")
+            if backup.is_symlink():
+                raise ValueError("Percorso backup non sicuro")
             shutil.copyfile(APP_STATE_FILE, backup)
             backup.chmod(0o600)
-        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0), 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             json.dump(document, stream, ensure_ascii=False, indent=2, allow_nan=False)
             stream.flush()
@@ -181,6 +194,8 @@ def load_dashboard_state() -> dict[str, object] | None:
     with APP_STATE_LOCK:
         if not APP_STATE_FILE.exists():
             return None
+        if APP_STATE_FILE.is_symlink() or APP_STATE_FILE.stat().st_size > 20 * 1024 * 1024:
+            raise ValueError("Stato dashboard non sicuro o troppo grande")
         document = json.loads(APP_STATE_FILE.read_text(encoding="utf-8"))
     if not isinstance(document, dict) or not isinstance(document.get("state"), dict):
         raise ValueError("Stato dashboard non valido")
@@ -889,6 +904,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def _authorize_callback(self):
+        if not self.guard.allowed_callback(self.headers, self.server.server_port):
+            self._send_json({"error": "Ritorno bancario non autorizzato"}, 403)
+            return False
+        if not self.guard.admit():
+            self._send_json({"error": "Troppe richieste"}, 429)
+            return False
+        return True
+
     def _read_json_body(self, maximum_size: int = 10 * 1024 * 1024) -> dict[str, object]:
         if self.headers.get_content_type() != "application/json":
             raise ValueError("Content-Type JSON richiesto")
@@ -971,6 +995,18 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         self._send_headers(status, "application/json; charset=utf-8", len(body))
         self.wfile.write(body)
 
+    def _send_callback_page(self, title: str, message: str, status: int = 200) -> None:
+        body = ("<!doctype html><html lang='it'><meta charset='utf-8'>"
+                "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+                f"<title>{html.escape(title)}</title>"
+                "<style>body{margin:0;background:#080a0f;color:#e8edf5;font:16px system-ui;display:grid;place-items:center;min-height:100vh}"
+                ".box{max-width:560px;margin:24px;padding:28px;border:1px solid #263141;border-radius:12px;background:#10151d}"
+                "h1{font-size:24px}p{color:#b5c0cf;line-height:1.55}</style>"
+                f"<div class='box'><h1>{html.escape(title)}</h1><p>{html.escape(message)}</p>"
+                "<p>Puoi chiudere questa scheda e tornare alla Dashboard Finanziaria.</p></div></html>").encode("utf-8")
+        self._send_headers(status, "text/html; charset=utf-8", len(body))
+        self.wfile.write(body)
+
     def do_OPTIONS(self):
         if self._authorize():
             self._send_headers(204, "text/plain", 0)
@@ -985,19 +1021,23 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                 service = getattr(self, "enable_banking_service", None)
                 if service is None:
                     raise ValueError("Servizio Enable Banking non disponibile")
-                if set(payload) - {"action", "bank", "country", "callbackUrl", "recordId", "customName"}:
+                if set(payload) - {"action", "bank", "country", "recordId", "customName", "applicationId", "privateKey", "validDays"}:
                     raise ValueError("Campi non ammessi")
                 action = payload.get("action")
                 if action == "verify":
                     result = service.verify()
+                elif action == "configure":
+                    result = service.configure(payload.get("applicationId"), payload.get("privateKey"))
+                elif action == "banks":
+                    result = service.list_banks(payload.get("country"))
                 elif action == "authorize":
-                    result = service.start_authorization(payload.get("bank"), payload.get("country"))
-                elif action == "complete":
-                    result = service.complete_authorization(payload.get("callbackUrl"))
+                    result = service.start_authorization(payload.get("bank"), payload.get("country"), payload.get("validDays", 90))
                 elif action == "sync":
                     result = service.sync()
                 elif action == "rename":
                     result = service.rename_record(payload.get("recordId"), payload.get("customName"))
+                elif action == "forget":
+                    result = service.forget_bank_data()
                 else:
                     raise ValueError("Azione Enable Banking non ammessa")
                 self._send_json(result)
@@ -1040,6 +1080,20 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/enable-banking/callback":
+            if not self._authorize_callback():
+                return
+            service = getattr(self, "enable_banking_service", None)
+            if service is None:
+                self._send_callback_page("Collegamento non disponibile", "Il servizio bancario locale non è attivo.", 503)
+                return
+            try:
+                callback_url = service.redirect_url + (("?" + parsed.query) if parsed.query else "")
+                service.complete_authorization(callback_url)
+                self._send_callback_page("Conto collegato", "Autorizzazione completata e dati sincronizzati.")
+            except (ValueError, RuntimeError, OSError) as error:
+                self._send_callback_page("Collegamento non riuscito", str(error), 400)
+            return
         if not self._authorize():
             return
         if path == "/api/enable-banking/snapshot":
@@ -1201,7 +1255,14 @@ def main() -> int:
     for client in enabled.values():
         client.start()
     from enable_banking_sync import EnableBankingService
-    DashboardHandler.enable_banking_service = EnableBankingService(APP_DATA_DIR / "enable-banking")
+    redirect_url = os.environ.get(
+        "DASHBOARD_BANKING_REDIRECT_URL",
+        f"http://127.0.0.1:{args.http_port}/api/enable-banking/callback",
+    )
+    DashboardHandler.enable_banking_service = EnableBankingService(
+        APP_DATA_DIR / "enable-banking",
+        redirect_url=redirect_url,
+    )
     DashboardHandler.clients = clients
     server = ThreadingHTTPServer(("127.0.0.1", args.http_port), DashboardHandler)
     dashboard_url = f"http://127.0.0.1:{args.http_port}/"

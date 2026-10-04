@@ -92,4 +92,22 @@ class HttpTests(unittest.TestCase):
         self.assertTrue(health['readOnlyBridge'])
         self.assertTrue(all(c['status']=='disconnected' for c in health['connections'].values()))
 
+    def test_banking_callback_is_automatic_and_cross_origin_posts_stay_blocked(self):
+        class FakeBanking:
+            redirect_url=f'http://127.0.0.1:{self.port}/api/enable-banking/callback'
+            completed=[]
+            def complete_authorization(inner, url):
+                inner.completed.append(url)
+                return {'status':'ok'}
+        service=FakeBanking()
+        self.handler.enable_banking_service=service
+        try:
+            status,headers,body=self.request('GET','/api/enable-banking/callback?code=test&state=safe',headers={'Sec-Fetch-Mode':'navigate','Sec-Fetch-Site':'cross-site'})
+            self.assertEqual(status,200)
+            self.assertIn(b'Conto collegato',body)
+            self.assertEqual(service.completed,[service.redirect_url+'?code=test&state=safe'])
+            self.assertEqual(self.request('GET','/api/enable-banking/callback?code=x&state=y',headers={'Origin':'https://attacker.invalid','Sec-Fetch-Mode':'navigate'})[0],403)
+        finally:
+            self.handler.enable_banking_service=None
+
 if __name__=='__main__':unittest.main()

@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_DIR="${0:A:h:h}"
 INSTALL_DIR="/Applications/Beta Dashboard Finanziaria.app"
 APP_VERSION="1.14.0"
-APP_BUILD="60"
+APP_BUILD="61"
 # Beta releases update only the separately installed beta application.
 if [[ -f "$INSTALL_DIR/Contents/Info.plist" ]]; then
   INSTALLED_BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INSTALL_DIR/Contents/Info.plist")

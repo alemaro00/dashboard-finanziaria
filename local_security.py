@@ -25,6 +25,15 @@ class RequestGuard:
             return False
         return True
 
+    def allowed_callback(self, headers, port):
+        """Allow only the provider's GET redirect to the exact loopback listener."""
+        hosts = {f'127.0.0.1:{port}', f'localhost:{port}'}
+        if headers.get('Host', '') not in hosts:
+            return False
+        if headers.get('Origin') is not None:
+            return False
+        return headers.get('Sec-Fetch-Mode', '') in ('', 'navigate')
+
     def admit(self):
         with self._lock:
             now = time.monotonic()

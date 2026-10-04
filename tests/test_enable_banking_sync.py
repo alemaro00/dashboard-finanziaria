@@ -17,6 +17,8 @@ class FakeClient:
     def get(self, path, query=None):
         if path == "/application":
             return {"name": "Dashboard Finanziaria", "environment": "PRODUCTION", "active": True, "services": ["AIS"]}
+        if path == "/aspsps":
+            return {"aspsps": [{"name": "Revolut", "country": "IT", "maximum_consent_validity": 180}, {"name": "UniCredit", "country": "IT"}]}
         if path == "/sessions/session-1":
             return {"accounts": ["eur-account", "usd-account"], "aspsp": {"name": "Revolut", "country": "IT"}}
         if path.endswith("/details"):
@@ -67,20 +69,20 @@ class EnableBankingTests(unittest.TestCase):
 
     def test_state_mismatch_and_expiry_are_rejected_before_exchange(self):
         with tempfile.TemporaryDirectory() as temporary:
-            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem", "http://127.0.0.1:8767/api/enable-banking/callback")
             service._save({**service._empty(), "pending": {"stateHash": "wrong", "createdAt": time.time()}})
             with self.assertRaisesRegex(ValueError, "Stato"):
-                service.complete_authorization("https://localhost:8766/api/enable-banking/callback?code=abc&state=bad")
+                service.complete_authorization("http://127.0.0.1:8767/api/enable-banking/callback?code=abc&state=bad")
 
     def test_authorization_and_sync_preserve_same_iban_accounts_by_uid(self):
         with tempfile.TemporaryDirectory() as temporary:
-            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem", "http://127.0.0.1:8767/api/enable-banking/callback")
             client = FakeClient()
             service._client = lambda: client
             with patch("enable_banking_sync.secrets.token_urlsafe", return_value="state-value"):
                 result = service.start_authorization("Revolut", "IT")
             self.assertEqual(result["status"], "authorization_required")
-            snapshot = service.complete_authorization("https://localhost:8766/api/enable-banking/callback?code=abc&state=state-value")
+            snapshot = service.complete_authorization("http://127.0.0.1:8767/api/enable-banking/callback?code=abc&state=state-value")
             self.assertEqual(len(snapshot["accounts"]), 2)
             self.assertEqual({a["currency"] for a in snapshot["accounts"]}, {"EUR", "USD"})
             self.assertEqual(len(snapshot["records"]), 2)
@@ -94,6 +96,27 @@ class EnableBankingTests(unittest.TestCase):
             snapshot = service.verify()
             self.assertTrue(snapshot["application"]["active"])
             self.assertEqual(snapshot["application"]["services"], ["AIS"])
+
+    def test_available_banks_are_normalized_for_simple_setup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            service._client = lambda: FakeClient()
+            result = service.list_banks("it")
+            self.assertEqual([item["name"] for item in result["banks"]], ["Revolut", "UniCredit"])
+            self.assertEqual(result["banks"][0]["maximumConsentDays"], 180)
+
+    def test_callback_must_match_configured_loopback_exactly(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem", "http://127.0.0.1:8767/api/enable-banking/callback")
+            service._save({**service._empty(), "pending": {"stateHash": "wrong", "createdAt": time.time()}})
+            for callback in (
+                "https://127.0.0.1:8767/api/enable-banking/callback?code=a&state=b",
+                "http://127.0.0.1:8766/api/enable-banking/callback?code=a&state=b",
+                "http://localhost:8767/api/enable-banking/callback?code=a&state=b",
+                "http://127.0.0.1:8767/other?code=a&state=b",
+            ):
+                with self.assertRaisesRegex(ValueError, "Indirizzo"):
+                    service.complete_authorization(callback)
 
     def test_custom_name_is_local_and_survives_sync(self):
         with tempfile.TemporaryDirectory() as temporary:
