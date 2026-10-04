@@ -819,7 +819,10 @@
             group.count += 1;
           } else groups.set(key, { ...note, label, amount: roundMoney(note.amount), count: 1, groupKey: key });
         }
-        return [...groups.values()];
+        return [...groups.values()].sort((left, right) => (
+          roundMoney(right.amount) - roundMoney(left.amount)
+          || String(left.label).localeCompare(String(right.label), "it-IT", { sensitivity: "base" })
+        ));
       }
 
       function aggregateMonthlyReports(records) {
