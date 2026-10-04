@@ -1,10 +1,17 @@
 import tempfile
 import time
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from enable_banking_sync import EnableBankingClient, EnableBankingService, normalize_account, normalize_transaction
+from enable_banking_sync import (
+    EnableBankingAPIError,
+    EnableBankingClient,
+    EnableBankingService,
+    normalize_account,
+    normalize_transaction,
+)
 
 
 class FakeClient:
@@ -133,6 +140,50 @@ class EnableBankingTests(unittest.TestCase):
             matching = next(item for item in refreshed["records"] if item["id"] == record["id"])
             self.assertEqual(matching["customName"], "Pantaloni Zalando")
             self.assertEqual(matching["description"], original_description)
+
+    def test_sync_retries_supported_transaction_period_and_preserves_older_history(self):
+        class LimitedHistoryClient(FakeClient):
+            def __init__(self):
+                super().__init__()
+                self.transaction_queries = []
+
+            def get(self, path, query=None):
+                if path == "/sessions/session-1":
+                    return {"accounts": ["eur-account"], "aspsp": {"name": "Revolut", "country": "IT"}}
+                if path.endswith("/transactions"):
+                    self.transaction_queries.append(query.copy())
+                    minimum = (datetime.now(timezone.utc) - timedelta(days=60)).date().isoformat()
+                    if query["date_from"] < minimum:
+                        raise EnableBankingAPIError(422, "Requested time period out of bound", "WRONG_TRANSACTIONS_PERIOD")
+                return super().get(path, query)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            client = LimitedHistoryClient()
+            service._client = lambda: client
+            old_record = {
+                "id": "old-record",
+                "accountId": "eur-account",
+                "date": "2020-01-02",
+                "recordType": "expense",
+                "customName": "Storico conservato",
+            }
+            service._save({
+                **service._empty(),
+                "sessions": [{"id": "session-1", "bank": "Revolut"}],
+                "records": [old_record],
+            })
+
+            snapshot = service.sync()
+
+            expected_start = (datetime.now(timezone.utc) - timedelta(days=60)).date().isoformat()
+            self.assertEqual([item["date_from"] for item in client.transaction_queries], [
+                (datetime.now(timezone.utc) - timedelta(days=90)).date().isoformat(),
+                expected_start,
+            ])
+            self.assertEqual(snapshot["transactionHistoryFrom"], expected_start)
+            self.assertIn("old-record", {item["id"] for item in snapshot["records"]})
+            self.assertIn("tx-eur-account", {item.get("bankRecordId") for item in snapshot["records"]})
 
 
 if __name__ == "__main__":

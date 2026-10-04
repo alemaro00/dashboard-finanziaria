@@ -46,6 +46,16 @@ DEFAULT_KEY_PATH = (
 )
 ALLOWED_METHODS = {"GET", "POST"}
 ALLOWED_PREFIXES = ("/application", "/aspsps", "/auth", "/sessions", "/accounts/")
+# Ninety days covers the current and previous months for normal use and avoids
+# predictable 422 responses from banks that reject year-long AIS queries.
+TRANSACTION_LOOKBACK_DAYS = (90, 60, 30, 14, 7)
+
+
+class EnableBankingAPIError(RuntimeError):
+    def __init__(self, status: int, detail: str, error_code: str = ""):
+        super().__init__(f"Enable Banking ha risposto {status}: {detail[:500]}")
+        self.status = status
+        self.error_code = error_code
 
 
 def _b64url(value: bytes) -> str:
@@ -258,7 +268,17 @@ class EnableBankingClient:
                 raise RuntimeError("Operazione non consentita dall'app Production Restricted") from error
             if error.code == 429:
                 raise RuntimeError("Limite Enable Banking raggiunto. Riprova più tardi") from error
-            raise RuntimeError(f"Enable Banking ha risposto {error.code}: {detail[:500]}") from error
+            error_code = ""
+            try:
+                error_payload = json.loads(detail)
+                nested_detail = error_payload.get("detail") if isinstance(error_payload, dict) else {}
+                if isinstance(nested_detail, dict):
+                    error_code = str(nested_detail.get("error") or "")
+                if not error_code and isinstance(error_payload, dict):
+                    error_code = str(error_payload.get("error") or "")
+            except json.JSONDecodeError:
+                pass
+            raise EnableBankingAPIError(error.code, detail, error_code) from error
         except (URLError, TimeoutError) as error:
             raise RuntimeError(f"Enable Banking non raggiungibile: {error}") from error
         try:
@@ -289,7 +309,15 @@ class EnableBankingService:
 
     @staticmethod
     def _empty() -> dict:
-        return {"sessions": [], "pending": None, "accounts": [], "records": [], "lastSync": None, "application": None}
+        return {
+            "sessions": [],
+            "pending": None,
+            "accounts": [],
+            "records": [],
+            "lastSync": None,
+            "transactionHistoryFrom": None,
+            "application": None,
+        }
 
     def _data(self) -> dict:
         value = _read_json(self.data_path, self._empty())
@@ -397,6 +425,7 @@ class EnableBankingService:
             "expenses": [item for item in records if item.get("recordType") == "expense"],
             "incomes": [item for item in records if item.get("recordType") == "income"],
             "lastSync": data.get("lastSync"),
+            "transactionHistoryFrom": data.get("transactionHistoryFrom"),
             "syncing": self.sync_lock.locked(),
             "error": self.last_error,
         }
@@ -539,19 +568,40 @@ class EnableBankingService:
             self._save(data)
         return self.sync()
 
-    def _transactions(self, client: EnableBankingClient, account: dict, date_from: str) -> list[dict]:
-        records: list[dict] = []
-        continuation = None
-        for _ in range(100):
-            query = {"date_from": date_from}
-            if continuation:
-                query["continuation_key"] = continuation
-            page = client.get(f"/accounts/{account['id']}/transactions", query)
-            records.extend(item for item in (normalize_transaction(raw, account) for raw in (page.get("transactions") or [])) if item)
-            continuation = page.get("continuation_key")
-            if not continuation:
-                return records
-        raise RuntimeError("Paginazione Enable Banking eccessiva")
+    def _transactions(self, client: EnableBankingClient, account: dict) -> tuple[list[dict], str]:
+        today = datetime.now(timezone.utc).date()
+        last_period_error: EnableBankingAPIError | None = None
+        for lookback_days in TRANSACTION_LOOKBACK_DAYS:
+            date_from = (today - timedelta(days=lookback_days)).isoformat()
+            records: list[dict] = []
+            continuation = None
+            try:
+                for _ in range(100):
+                    query = {"date_from": date_from}
+                    if continuation:
+                        query["continuation_key"] = continuation
+                    page = client.get(f"/accounts/{account['id']}/transactions", query)
+                    records.extend(
+                        item
+                        for item in (
+                            normalize_transaction(raw, account)
+                            for raw in (page.get("transactions") or [])
+                        )
+                        if item
+                    )
+                    continuation = page.get("continuation_key")
+                    if not continuation:
+                        return records, date_from
+            except EnableBankingAPIError as error:
+                if error.status != 422 or error.error_code != "WRONG_TRANSACTIONS_PERIOD":
+                    raise
+                last_period_error = error
+                continue
+            raise RuntimeError("Paginazione Enable Banking eccessiva")
+        raise RuntimeError(
+            "La banca non accetta neppure una richiesta degli ultimi 7 giorni. "
+            "Rinnova il consenso del conto e riprova."
+        ) from last_period_error
 
     def sync(self) -> dict:
         if not self.sync_lock.acquire(blocking=False):
@@ -565,7 +615,8 @@ class EnableBankingService:
             client = self._client()
             all_accounts: list[dict] = []
             all_records: list[dict] = []
-            date_from = (datetime.now(timezone.utc) - timedelta(days=365)).date().isoformat()
+            previous_records = [item for item in data.get("records", []) if isinstance(item, dict)]
+            history_starts: list[str] = []
             for stored in sessions:
                 session = client.get(f"/sessions/{stored['id']}")
                 aspsp = session.get("aspsp") if isinstance(session.get("aspsp"), dict) else {}
@@ -581,7 +632,16 @@ class EnableBankingService:
                     account["balance"] = round(available[0], 2) if available else None
                     account["currency"] = available[1] if available else account["currency"]
                     all_accounts.append(account)
-                    all_records.extend(self._transactions(client, account, date_from))
+                    new_records, date_from = self._transactions(client, account)
+                    history_starts.append(date_from)
+                    all_records.extend(new_records)
+                    all_records.extend(
+                        item
+                        for item in previous_records
+                        if item.get("accountId") == account["id"]
+                        and isinstance(item.get("date"), str)
+                        and item["date"] < date_from
+                    )
             unique_accounts = {item["id"]: item for item in all_accounts}
             previous_names = {
                 item.get("id"): item.get("customName")
@@ -595,6 +655,7 @@ class EnableBankingService:
             data["accounts"] = sorted(unique_accounts.values(), key=lambda item: (item["bank"].casefold(), item["currency"], item["name"].casefold()))
             data["records"] = sorted(unique_records.values(), key=lambda item: (item["date"], item["id"]), reverse=True)
             data["lastSync"] = datetime.now(timezone.utc).isoformat()
+            data["transactionHistoryFrom"] = min(history_starts) if history_starts else None
             with self.lock:
                 self._save(data)
                 self.last_error = ""
