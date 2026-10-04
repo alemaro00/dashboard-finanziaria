@@ -59,7 +59,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
         styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
         backing:NSBackingStoreBuffered
         defer:NO];
-    self.window.title = @"Dashboard Finanziaria";
+    self.window.title = @"Dashboard Finanziaria — Beta";
     self.window.delegate = self;
     self.window.contentView = self.webView;
     [self.window center];

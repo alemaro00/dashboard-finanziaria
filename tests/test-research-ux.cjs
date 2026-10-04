@@ -4,25 +4,21 @@ const fs = require('node:fs');
 
 const source = fs.readFileSync('salary-planner-react.html', 'utf8');
 
-test('strategy laboratory is the fourth distinct dashboard section', () => {
-  assert.match(source, /href="#research-section"[\s\S]*?>04<[\s\S]*?Laboratorio strategie/);
-  assert.match(source, /macro-section-shell macro-research/);
+test('beta exposes only the two authorized collapsible sections', () => {
+  assert.match(source, /href="#finance-section"[\s\S]*?>01<[\s\S]*?Gestione delle finanze/);
+  assert.match(source, /href="#wealth-section"[\s\S]*?>02<[\s\S]*?Wealth management/);
+  assert.match(source, /Dashboard finanziaria <span className="beta-badge">Beta<\/span>/);
+  assert.doesNotMatch(source, /salary-section|Stima stipendio netto da RAL/);
+  assert.doesNotMatch(source, /research-section|Laboratorio strategie/);
 });
 
-test('strategy laboratory explains the validation path in plain language', () => {
-  for (const label of ['Premere un solo pulsante', 'Test automatico insieme', 'Simulare costi', 'Validazione futura']) {
-    assert.match(source, new RegExp(label));
-  }
-  assert.match(source, /Affidabilità futura[\s\S]*?Da calcolare/i);
-  assert.match(source, /Non è una previsione di rendimento/);
-  assert.match(source, /Nessuna strategia gira continuamente/);
-  assert.match(source, /Raccogli dati e prova strategie/);
-  assert.doesNotMatch(source, />Metti questa strategia in pausa</);
-  assert.match(source, /60% in-sample diagnostico, 20% validation e 20% out-of-sample finale/);
-  assert.match(source, /Mostra segnali e decisioni di tutti e tre i segmenti/);
+test('both beta sections share the blue visual system', () => {
+  assert.match(source, /\.macro-finance,\.macro-wealth\{--macro-accent:#69c8ee/);
+  assert.match(source, /grid-template-columns:repeat\(2,1fr\)/);
+  assert.doesNotMatch(source, /macro-salary|macro-research/);
 });
 
-test('strategy results use full-width cards and responsive metrics', () => {
-  assert.match(source, /\.research-grid\{display:grid;grid-template-columns:1fr/);
-  assert.match(source, /@media \(max-width:700px\)[\s\S]*?\.research-steps,\.research-metrics\{grid-template-columns:1fr\}/);
+test('salary-category cashflow remains independent from the removed salary estimator', () => {
+  assert.match(source, /value: "Stipendio", label: "Stipendio"/);
+  assert.doesNotMatch(source, /calculateIrpef|salaryEstimate|grossSalary/);
 });

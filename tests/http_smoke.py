@@ -14,7 +14,6 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_bridge_status import bridge
-from research.engine import ResearchEngine
 from local_security import RequestGuard
 
 
@@ -26,15 +25,7 @@ class HttpTests(unittest.TestCase):
         cls.patches=[patch.object(bridge,'APP_DATA_DIR',cls.directory),
                      patch.object(bridge,'APP_STATE_FILE',cls.directory/'dashboard-state.json')]
         for p in cls.patches: p.start()
-        cls.engine=ResearchEngine(cls.directory/'research.sqlite3')
-        class FakePaperLab:
-            def snapshot(self): return {'mode':'paper_data_readonly','live_enabled':False,'orders_enabled':False}
-            def start(self,port):
-                if port not in (7497,4002): raise ValueError('Paper port required')
-                return self.snapshot()
-            def stop(self): return self.snapshot()
-        cls.handler=type('TestHandler',(bridge.DashboardHandler,),{'research_engine':cls.engine,'guard':RequestGuard(),
-            'paper_lab':FakePaperLab(),
+        cls.handler=type('TestHandler',(bridge.DashboardHandler,),{'guard':RequestGuard(),
             'clients':{k:bridge.IbkrAccountClient('127.0.0.1',p,i,k.upper()) for k,p,i in [('live',7496,70),('paper',7497,71)]}})
         cls.server=bridge.ThreadingHTTPServer(('127.0.0.1',0),cls.handler)
         cls.port=cls.server.server_port
@@ -43,7 +34,7 @@ class HttpTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.server.shutdown();cls.server.server_close();cls.worker.join();cls.engine.close()
+        cls.server.shutdown();cls.server.server_close();cls.worker.join()
         for p in cls.patches:p.stop()
         cls.tmp.cleanup()
 
@@ -66,17 +57,6 @@ class HttpTests(unittest.TestCase):
             self.assertEqual(self.request('GET',asset.decode())[0],200)
         self.assertEqual(self.request('GET','/assets/../../ibkr_paper_bridge.py')[0],404)
 
-    def test_paper_collection_has_no_trading_or_live_switch(self):
-        self.assertEqual(self.request('GET','/api/paper-lab/snapshot')[0],200)
-        _,_,body=self.request('GET','/')
-        token=re.search(rb'name="csrf-token" content="([^"]+)"',body)[1].decode()
-        headers={'Content-Type':'application/json','X-CSRF-Token':token}
-        for payload in ({'action':'live'}, {'action':'submit'}, {'action':'collect','port':7496}, {'action':'collect','account':'U123'}):
-            self.assertEqual(self.request('POST','/api/paper-lab/control',json.dumps(payload),headers)[0],400)
-        code,_,body=self.request('POST','/api/paper-lab/control',json.dumps({'action':'collect'}),headers)
-        self.assertEqual(code,200)
-        self.assertFalse(json.loads(body)['orders_enabled'])
-
     def test_retired_wallet_routes_are_unavailable(self):
         self.assertEqual(self.request('GET', '/api/wallet/snapshot')[0], 404)
         headers = {'Content-Type': 'application/json', 'X-CSRF-Token': self.handler.csrf_token}
@@ -85,7 +65,7 @@ class HttpTests(unittest.TestCase):
                 json.dumps({'action': action}), headers)[0], 404)
 
     def test_cross_origin_reads_and_dns_rebinding_denied(self):
-        for path in ('/api/state','/api/research/snapshot','/api/live/snapshot','/'):
+        for path in ('/api/state','/api/live/snapshot','/'):
             self.assertEqual(self.request('GET',path,headers={'Origin':'https://attacker.invalid'})[0],403)
             self.assertEqual(self.request('GET',path,headers={'Host':f'rebound.invalid:{self.port}'})[0],403)
 
@@ -101,14 +81,12 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(stored['entry'],document['entry'])
         self.assertEqual(stored['state'],document['state'])
 
-    def test_research_controls_and_no_live_routes(self):
+    def test_removed_laboratory_routes_and_live_order_routes_are_unavailable(self):
         headers={'Content-Type':'application/json','X-CSRF-Token':self.handler.csrf_token}
-        snapshot=json.loads(self.request('GET','/api/research/snapshot')[2])
-        self.assertFalse(snapshot['live_enabled'])
-        self.assertEqual(len(snapshot['bots']),6)
-        self.assertEqual(len(json.loads(self.request('GET','/api/research/strategies')[2])['strategies']),6)
-        self.assertEqual(self.request('POST','/api/research/control',json.dumps({'action':'pause'}),headers)[0],200)
-        self.assertEqual(self.request('POST','/api/research/control',json.dumps({'action':'enable_live'}),headers)[0],400)
+        for path in ('/api/research/snapshot', '/api/research/strategies', '/api/paper-lab/snapshot'):
+            self.assertEqual(self.request('GET',path)[0],404)
+        for path in ('/api/research/control', '/api/paper-lab/control'):
+            self.assertEqual(self.request('POST',path,json.dumps({'action':'pause'}),headers)[0],404)
         self.assertEqual(self.request('POST','/api/live/orders','{}',headers)[0],404)
         health=json.loads(self.request('GET','/api/health')[2])
         self.assertTrue(health['readOnlyBridge'])

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio Operations | Planner React</title>
+    <title>Dashboard Finanziaria Beta</title>
     <script src="vendor/react-18.3.1.min.js"></script>
     <script src="vendor/react-dom-18.3.1.min.js"></script>
     <script src="vendor/babel-7.28.5.min.js"></script>
@@ -17,7 +17,7 @@
         --muted:#7f8b9c;
         --line:#263141;
         --line-soft:rgba(255,255,255,.06);
-        --accent:#d7b46a;
+        --accent:#69c8ee;
         --accent-2:#6fb2d2;
         --selected-surface:#162536;
         --selected-border:#527792;
@@ -26,47 +26,6 @@
         --warn:#e9b949;
         --shadow:0 18px 48px rgba(0,0,0,.34);
       }
-      .research-grid{display:grid;grid-template-columns:1fr;gap:14px;min-width:0}
-      .research-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:0}
-      .research-metrics>div{min-width:0;padding:11px;border:1px solid #283746;border-radius:8px;background:#0b131a}
-      .research-metrics dt{margin:0 0 7px;color:#8da0af;font-size:10px;text-transform:uppercase;letter-spacing:.065em}
-      .research-metrics dd{margin:0;color:#ecf5f5;font-size:14px;font-weight:750;overflow-wrap:anywhere}
-      .research-log{max-height:320px;overflow:auto;white-space:pre-wrap;font-size:12px}
-      .research-intro{display:grid;grid-template-columns:1.05fr 1.95fr;gap:12px}
-      .research-status-card,.research-guide-card,.strategy-card{border-color:rgba(51,206,181,.28)!important;background:linear-gradient(145deg,#10201f,#0b1218 68%)!important}
-      .research-status-card{display:grid;align-content:center;gap:9px;padding:18px}
-      .research-kicker{color:#72e0cd;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.1em}
-      .research-status-card h3,.research-guide-card h3,.strategy-card h3{margin:0}
-      .research-stage{font-size:24px;font-weight:800;line-height:1.15}
-      .research-explainer{margin:0;color:#aab9c3;line-height:1.55}
-      .research-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
-      .research-step{min-width:0;padding:12px;border:1px solid #29413f;border-radius:8px;background:rgba(8,20,20,.72)}
-      .research-step-number{display:grid;place-items:center;width:24px;height:24px;margin-bottom:9px;border-radius:7px;background:#153b37;color:#7ce8d5;font-size:10px;font-weight:850}
-      .research-step strong{display:block;margin-bottom:5px;font-size:12px}
-      .research-step span{display:block;color:#91a6aa;font-size:11px;line-height:1.45}
-      .research-collector{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
-      .strategy-card{display:grid;gap:14px;padding:17px!important;min-width:0}
-      .strategy-card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
-      .strategy-card-title{display:grid;gap:6px;min-width:0}
-      .strategy-badges{display:flex;gap:6px;flex-wrap:wrap}
-      .strategy-badge{display:inline-flex;padding:5px 7px;border-radius:999px;border:1px solid #33504d;background:#102422;color:#b5d7d2;font-size:10px}
-      .strategy-status{flex:0 0 auto;max-width:260px;padding:7px 9px;border-radius:6px;border:1px solid rgba(233,185,73,.34);background:rgba(233,185,73,.08);color:#f2cf7c;font-size:11px;font-weight:750;text-align:right}
-      .strategy-status.ready{border-color:rgba(66,211,146,.38);background:rgba(66,211,146,.08);color:#8de6bd}
-      .strategy-description{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-      .strategy-description>div{padding:12px;border-left:2px solid #2f6f66;background:rgba(13,25,28,.72)}
-      .strategy-description strong{display:block;margin-bottom:6px;color:#d9f3ee;font-size:11px;text-transform:uppercase;letter-spacing:.055em}
-      .strategy-description span{color:#a9b8c1;font-size:12px;line-height:1.5}
-      .strategy-result-note{padding:10px 12px;border:1px solid rgba(111,178,210,.25);border-radius:7px;background:rgba(111,178,210,.06);color:#abc5d3;font-size:12px;line-height:1.5}
-      .research-empty-value{color:#f2cf7c!important}
-      .research-details{border-top:1px solid rgba(51,206,181,.18);padding-top:12px}
-      .research-details summary{color:#b8d7d2;font-size:12px;font-weight:750}
-      .signal-summary{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
-      .signal-summary span{padding:6px 8px;border:1px solid #30433f;border-radius:6px;background:#0b1717;color:#b8cbc8;font-size:11px}
-      .signal-list{display:grid;gap:5px;max-height:360px;overflow:auto;margin-top:10px;padding-right:5px}
-      .signal-row{display:grid;grid-template-columns:150px 70px 90px minmax(0,1fr) 90px;gap:9px;align-items:center;padding:7px 9px;border:1px solid #233532;border-radius:5px;background:#091311;color:#afc1be;font-size:11px}
-      .signal-row strong{color:#e1f1ee}
-      .research-controls{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;border:1px solid #263846;border-radius:8px;background:#0b1218}
-      .research-controls .actions{margin:0}
       *{box-sizing:border-box}
       html{scroll-behavior:smooth}
       body{
@@ -84,9 +43,10 @@
         box-shadow:var(--shadow);
       }
       .dashboard-title{padding:6px 2px 2px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-      .dashboard-title h1{margin:0;font-size:28px}
+      .dashboard-title h1{margin:0;font-size:28px;display:flex;align-items:center;gap:10px}
+      .beta-badge{padding:5px 8px;border:1px solid #4b8aa8;border-radius:999px;background:#102b3a;color:#bcecff;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
       .workspace-nav{
-        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
         margin:12px 0;padding:7px;border:1px solid #2a3545;border-radius:12px;
         background:rgba(9,13,19,.9);box-shadow:0 14px 34px rgba(0,0,0,.28);backdrop-filter:blur(16px);
       }
@@ -100,10 +60,7 @@
         display:grid;place-items:center;width:28px;height:28px;flex:0 0 auto;border-radius:7px;
         font-size:10px;font-weight:850;background:#202b39;border:1px solid #3a485c;color:#dce7f5;
       }
-      .workspace-nav a:nth-child(1) .workspace-nav-index{color:#bcecff;border-color:#41748b;background:#102734}
-      .workspace-nav a:nth-child(2) .workspace-nav-index{color:#f4d98d;border-color:#745f30;background:#2b2414}
-      .workspace-nav a:nth-child(3) .workspace-nav-index{color:#d9c7ff;border-color:#67548e;background:#251d3a}
-      .workspace-nav a:nth-child(4) .workspace-nav-index{color:#a9f4e7;border-color:#34796e;background:#102b28}
+      .workspace-nav .workspace-nav-index{color:#bcecff;border-color:#41748b;background:#102734}
       .macro-title-line{display:flex;align-items:center;gap:11px;min-width:0}
       .macro-number{
         display:grid;place-items:center;width:34px;height:34px;flex:0 0 auto;border-radius:9px;
@@ -114,18 +71,11 @@
         content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--macro-accent);
         box-shadow:0 0 20px var(--macro-glow);
       }
-      .macro-salary{--macro-accent:#69c8ee;--macro-glow:rgba(105,200,238,.5);border-color:rgba(105,200,238,.34)}
-      .macro-salary .macro-number{color:#aee8ff;background:rgba(31,101,130,.2)}
-      .macro-finance{--macro-accent:#d7b46a;--macro-glow:rgba(215,180,106,.46);border-color:rgba(215,180,106,.38)}
-      .macro-finance .macro-number{color:#f2d58d;background:rgba(126,91,26,.2)}
-      .macro-wealth{--macro-accent:#a482ef;--macro-glow:rgba(164,130,239,.48);border-color:rgba(164,130,239,.38)}
-      .macro-wealth .macro-number{color:#dfd0ff;background:rgba(92,61,151,.22)}
-      .macro-research{--macro-accent:#33ceb5;--macro-glow:rgba(51,206,181,.48);border-color:rgba(51,206,181,.4)}
-      .macro-research .macro-number{color:#a9f4e7;background:rgba(29,111,99,.22)}
-      .macro-section-shell.macro-research{border-color:rgba(51,206,181,.4);background:linear-gradient(145deg,rgba(15,48,44,.58),rgba(11,16,24,.95) 34%)}
+      .macro-finance,.macro-wealth{--macro-accent:#69c8ee;--macro-glow:rgba(105,200,238,.5);border-color:rgba(105,200,238,.34)}
+      .macro-finance .macro-number,.macro-wealth .macro-number{color:#aee8ff;background:rgba(31,101,130,.2)}
       .macro-section-shell{
-        grid-column:span 12;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;padding:14px;border:1px solid rgba(164,130,239,.38);
-        border-radius:12px;background:linear-gradient(145deg,rgba(31,24,47,.62),rgba(11,16,24,.94) 32%);
+        grid-column:span 12;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;padding:14px;border:1px solid rgba(105,200,238,.34);
+        border-radius:12px;background:linear-gradient(145deg,rgba(16,39,52,.72),rgba(11,16,24,.94) 32%);
         box-shadow:0 20px 52px rgba(0,0,0,.28);
       }
       .macro-section-shell > *{min-width:0;width:100%}
@@ -189,8 +139,8 @@
       input:focus, select:focus{border-color:var(--accent-2);box-shadow:0 0 0 2px rgba(111,178,210,.14)}
       .actions{display:flex;gap:8px;flex-wrap:wrap}
       button{
-        border:1px solid #c0a25e;border-radius:4px;padding:9px 12px;font-weight:700;cursor:pointer;
-        color:#080a0f;background:linear-gradient(180deg,#e2c67f,#b99448);font-size:12px;text-transform:uppercase;letter-spacing:.04em;
+        border:1px solid #69c8ee;border-radius:4px;padding:9px 12px;font-weight:700;cursor:pointer;
+        color:#07131a;background:linear-gradient(180deg,#9cdef7,#55acd0);font-size:12px;text-transform:uppercase;letter-spacing:.04em;
       }
       button.secondary{
         color:#c9d3df;background:#101722;border:1px solid #344155;
@@ -253,7 +203,7 @@
       .bank-movement-side{display:grid;justify-items:end;gap:8px;min-width:230px}
       .bank-movement-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
       .bank-movement-actions button{padding:7px 10px}
-      .bank-movement-actions button.selected{border-color:#d7b46a;background:rgba(215,180,106,.2);color:#f4d98d}
+      .bank-movement-actions button.selected{border-color:#69c8ee;background:rgba(105,200,238,.18);color:#bcecff}
       .bank-rename-form{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}
       .bank-rename-form input{min-width:260px;flex:1}
       .muted{color:var(--muted)}
@@ -263,15 +213,15 @@
         padding:10px 12px;border-radius:6px;background:#0c1118;border:1px solid #202a38;
       }
       .readout{
-        padding:14px;border:1px solid rgba(215,180,106,.55);border-radius:6px;
-        background:linear-gradient(180deg, rgba(215,180,106,.16), rgba(215,180,106,.06));
+        padding:14px;border:1px solid rgba(105,200,238,.55);border-radius:6px;
+        background:linear-gradient(180deg, rgba(105,200,238,.16), rgba(105,200,238,.06));
       }
       .readout .value{font-size:34px;color:#f3d48d}
       .allocation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
       .stack-form{grid-template-columns:1fr}
-      .monthly-period-fields .field{grid-column:span 4;padding:12px;border:1px solid rgba(215,180,106,.55);border-radius:8px;background:rgba(215,180,106,.09)}
+      .monthly-period-fields .field{grid-column:span 4;padding:12px;border:1px solid rgba(105,200,238,.55);border-radius:8px;background:rgba(105,200,238,.09)}
       .monthly-period-fields label{color:var(--accent)}
-      .monthly-period-fields input,.monthly-period-fields select{border-color:rgba(215,180,106,.55);color:var(--accent)}
+      .monthly-period-fields input,.monthly-period-fields select{border-color:rgba(105,200,238,.55);color:var(--accent)}
       .monthly-flow-inputs > .field.third{padding:12px;border:1px solid #283344;border-radius:8px;background:#0b1119}
       .monthly-flow-inputs output{display:block;padding:10px 0;color:#e5eaf2;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums}
       .entry-detail-layout{align-items:start}
@@ -289,12 +239,12 @@
       .allocation-warning{color:var(--bad)}
       .allocation-ok{color:var(--good)}
       .allocation-pending{color:var(--warn)}
-      .monthly-input-card{border-color:rgba(215,180,106,.42);box-shadow:0 16px 40px rgba(0,0,0,.28)}
-      .monthly-flow-inputs + .bank-sync{margin-top:24px;padding-top:20px;border-top:1px solid rgba(215,180,106,.18)}
-      .monthly-input-block + .monthly-input-block{margin-top:22px;padding-top:22px;border-top:1px solid rgba(215,180,106,.18)}
+      .monthly-input-card{border-color:rgba(105,200,238,.42);box-shadow:0 16px 40px rgba(0,0,0,.28)}
+      .monthly-flow-inputs + .bank-sync{margin-top:24px;padding-top:20px;border-top:1px solid rgba(105,200,238,.18)}
+      .monthly-input-block + .monthly-input-block{margin-top:22px;padding-top:22px;border-top:1px solid rgba(105,200,238,.18)}
       .monthly-save-bar{
         display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:22px;padding:14px;
-        border-radius:6px;border:1px solid rgba(215,180,106,.34);background:rgba(215,180,106,.07);
+        border-radius:6px;border:1px solid rgba(105,200,238,.34);background:rgba(105,200,238,.07);
       }
       .entry-category-grid{display:flex;flex-wrap:nowrap;gap:8px;margin-bottom:14px;padding:2px;overflow-x:auto;overscroll-behavior-x:contain}
       .entry-category-chip{
@@ -528,9 +478,6 @@
         .history-summary{grid-template-columns:1fr repeat(2,.7fr) auto}
         .history-summary .history-optional{display:none}
         .history-detail-grid{grid-template-columns:repeat(2,1fr)}
-        .research-intro{grid-template-columns:1fr}
-        .research-steps,.research-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
-        .strategy-description{grid-template-columns:1fr}
       }
       @media (max-width:700px){
         .app{padding:16px}
@@ -559,12 +506,6 @@
         .monthly-save-bar,.history-actions{align-items:flex-start;flex-direction:column}
         .history-summary{grid-template-columns:1fr auto}
         .history-summary .history-kpi{display:none}
-        .research-steps,.research-metrics{grid-template-columns:1fr}
-        .research-collector,.research-controls,.strategy-card-head{grid-template-columns:1fr;align-items:flex-start}
-        .research-collector{display:grid}
-        .research-controls,.strategy-card-head{display:flex;flex-direction:column}
-        .strategy-status{max-width:none;text-align:left}
-        .signal-row{grid-template-columns:1fr 1fr}
         .history-detail-grid{grid-template-columns:1fr}
         .detail-gap-preview-grid{grid-template-columns:1fr}
         .bank-review-item,.bank-movement-row{grid-template-columns:1fr}
@@ -639,13 +580,6 @@
         cashOpeningBalance: 0,
         investedCapital: 0,
         flexibleCashFunds: 0,
-        grossSalary: 0,
-        paychecks: 13,
-        employeeContributionPct: 0,
-        regionalTaxPct: 0,
-        municipalTaxPct: 0,
-        workDays: 365,
-        superminimoAbsorbability: "",
         monthName: "Agosto",
         year: 2026,
         monthlyHistory: [],
@@ -1024,35 +958,6 @@
           });
           return merged;
         }, {});
-      }
-
-      function calculateIrpef(income) {
-        if (income <= 28000) return income * 0.23;
-        if (income <= 50000) return 6440 + ((income - 28000) * 0.33);
-        return 13700 + ((income - 50000) * 0.43);
-      }
-
-      function calculateEmployeeDeduction(income, days) {
-        const dayRatio = Math.min(365, Math.max(0, Number(days) || 0)) / 365;
-        let deduction = 0;
-
-        if (income <= 15000) deduction = 1955;
-        else if (income <= 28000) deduction = 1910 + (1190 * ((28000 - income) / 13000));
-        else if (income <= 50000) deduction = 1910 * ((50000 - income) / 22000);
-
-        if (income > 25000 && income <= 35000) deduction += 65;
-        return Math.max(0, deduction * dayRatio);
-      }
-
-      function calculateWageSupport(income, days) {
-        const dayRatio = Math.min(365, Math.max(0, Number(days) || 0)) / 365;
-        if (income <= 0) return 0;
-        if (income <= 8500) return income * 0.071;
-        if (income <= 15000) return income * 0.053;
-        if (income <= 20000) return income * 0.048;
-        if (income <= 32000) return 1000 * dayRatio;
-        if (income <= 40000) return 1000 * ((40000 - income) / 8000) * dayRatio;
-        return 0;
       }
 
       const months = [
@@ -1510,317 +1415,8 @@
         };
       }
 
-      function ResearchPanel() {
-        const [open, setOpen] = useState(() => window.location.hash === '#research-section');
-        const [snapshot, setSnapshot] = useState(null);
-        const [paper, setPaper] = useState(null);
-        const [catalog, setCatalog] = useState([]);
-        const [error, setError] = useState("");
-        const [busy, setBusy] = useState(false);
-        const [openLedgers, setOpenLedgers] = useState({});
-        useEffect(() => {
-          if (!open) return;
-          let stopped = false;
-          let timer;
-          let controller;
-          async function poll() {
-            controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 8000);
-            try {
-              const response = await fetch("/api/research/snapshot", {signal:controller.signal});
-              if (!response.ok) throw new Error("Laboratorio non raggiungibile");
-              const data = await response.json();
-              if (!stopped) {setSnapshot(data); setError("");}
-              const paperResponse = await fetch('/api/paper-lab/snapshot', {signal:controller.signal});
-              if (!paperResponse.ok) throw new Error('Validazione paper non raggiungibile');
-              const paperData = await paperResponse.json();
-              if (!stopped) setPaper(paperData);
-            } catch (e) { if (!stopped) setError("Stato non aggiornato: " + e.message); }
-            finally {clearTimeout(timeout); if (!stopped) timer = setTimeout(poll, 5000);}
-          }
-          poll();
-          fetch("/api/research/strategies").then(r => {if (!r.ok) throw new Error(); return r.json();})
-            .then(data => {if (!stopped) setCatalog(data.strategies || []);}).catch(() => {});
-          return () => {stopped = true; clearTimeout(timer); controller?.abort();};
-        }, [open]);
-        async function control(action, strategy) {
-          setBusy(true);
-          try {
-            const response = await fetch("/api/research/control", {
-              method:"POST", headers:{"Content-Type":"application/json", "X-CSRF-Token":csrfToken},
-              body:JSON.stringify({action, ...(strategy ? {strategy} : {})})
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Controllo non riuscito");
-            setSnapshot(result); setError("");
-          } catch(e) {setError(e.message);} finally {setBusy(false);}
-        }
-        const shown = value => value == null || value === "" ? "Da calcolare" : String(value);
-        const formatPercent = value => typeof value === 'number' && Number.isFinite(value)
-          ? value.toLocaleString('it-IT', {style:'percent', maximumFractionDigits:2}) : 'Da calcolare';
-        async function paperControl(action) {
-          setBusy(true);
-          try {
-            const response = await fetch('/api/paper-lab/control', {
-              method:'POST', headers:{'Content-Type':'application/json', 'X-CSRF-Token':csrfToken},
-              body:JSON.stringify({action})
-            });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Raccolta non disponibile');
-            setPaper(result); setError('');
-          } catch(e) {setError(e.message);} finally {setBusy(false);}
-        }
-        const gateLabels = {
-          broker_paper_observed:'Operazioni delle strategie osservate nel conto paper',
-          sample_size:'Numero di operazioni chiuse sufficiente', observation_period:'Periodo osservato sufficiente',
-          costs_complete:'Costi completi', data_quality:'Qualità dei dati verificata', reconciliation:'Eseguiti riconciliati',
-          out_of_sample:'Verifica fuori campione', stress_tests:'Stress test', net_positive:'Risultato netto positivo',
-          expectancy_lower_bound_positive:'Intervallo della media netta sopra zero',
-          drawdown_within_limit:'Drawdown entro limite', double_costs_positive:'Risultato positivo con costi doppi',
-          profit_not_one_trade:'Profitto non concentrato in una sola operazione'
-        };
-        const strategyHelp = {
-          scalping:{
-            idea:'Cerca movimenti molto brevi leggendo prezzi denaro/lettera, volumi e velocità del mercato.',
-            action:'Propone ingressi limitati solo con spread stretto e dati tick completi; chiude entro pochi minuti.',
-            needs:'Dati tick e profondità di mercato affidabili. Le normali barre non bastano per valutarla.'
-          },
-          mean_reversion:{
-            idea:'Cerca un prezzo che si è allontanato troppo dalla propria media durante la giornata.',
-            action:'Propone un ingresso quando lo scostamento è anomalo e il mercato non è in forte trend; esce al ritorno verso la media, allo stop o a fine sessione.',
-            needs:'Molte giornate con barre a 1 minuto, costi reali e operazioni paper attribuibili alla strategia.'
-          },
-          breakout:{
-            idea:'Cerca la rottura di un intervallo di prezzo accompagnata da aumento del volume.',
-            action:'Propone l’ingresso dopo una conferma, applica uno stop e non rincorre ripetutamente i falsi segnali.',
-            needs:'Barre a 5 minuti, volume attendibile e un campione paper in regimi di mercato differenti.'
-          },
-          swing:{
-            idea:'Segue tendenze che possono durare giorni o settimane su strumenti liquidi.',
-            action:'Propone l’ingresso quando trend e rottura di canale coincidono; riduce il rischio con stop e uscita progressiva.',
-            needs:'La raccolta ora richiede sei anni giornalieri. Restano necessari test walk-forward e osservazione paper di diversi mesi.'
-          },
-          momentum:{
-            idea:'Confronta ETF azionari, obbligazionari, oro e liquidità e privilegia quelli con trend più forte.',
-            action:'Rivaluta l’allocazione a intervalli definiti e aumenta la liquidità quando il regime è sfavorevole.',
-            needs:'La raccolta ora richiede sei anni per l’intero paniere. Resta necessario un ciclo di validazione paper completo.'
-          },
-          bitcoin:{
-            idea:'Studia il trend di Bitcoin separatamente dal portafoglio tradizionale.',
-            action:'Propone esposizioni molto limitate solo se trend breve e regime più ampio concordano.',
-            needs:'Dati spot Bitcoin a 4 ore, consenso separato e controlli specifici per l’elevata volatilità.'
-          }
-        };
-        const statusLabels = {
-          paused:'In pausa', killed:'Arrestata', active:'Simulazione attiva', ready:'Simulazione pronta',
-          research_only:'Solo ricerca', reconciliation_required:'In pausa: sincronizzazione richiesta'
-        };
-        const signalLabels = {
-          ENTER:'Ingresso proposto', EXIT:'Uscita proposta', HOLD:'Nessuna azione', BLOCKED:'Segnale bloccato',
-          research_signal_requires_risk_review:'Condizioni di ingresso soddisfatte',
-          entry_conditions_not_met:'Condizioni di ingresso non soddisfatte',
-          existing_position_no_averaging:'Posizione già aperta: nessun ulteriore acquisto',
-          insufficient_displayed_liquidity:'Liquidità disponibile insufficiente',
-          no_entries_near_close:'Troppo vicino alla chiusura della sessione',
-          volatility_missing_or_extreme:'Volatilità assente o eccessiva',
-          time_stop:'Tempo massimo della posizione raggiunto',
-          price_or_trailing_stop:'Stop di prezzo o trailing stop raggiunto',
-          risk_off_cash:'Regime difensivo: mantenere liquidità',
-          loss_limit_exit_proposal:'Limite di perdita raggiunto',
-          session_end_exit_proposal:'Uscita proposta a fine sessione'
-        };
-        const segmentLabels = {in_sample:'In-sample 60%', validation:'Validation 20%', out_of_sample:'Out-of-sample 20%'};
-        const signalText = key => signalLabels[key] || String(key || '').replaceAll('_', ' ');
-        const researchDate = value => typeof value === 'number' && Number.isFinite(value)
-          ? new Date(value * 1000).toLocaleString('it-IT', {dateStyle:'medium', timeStyle:'short'}) : 'Da calcolare';
-        const metric = (label, value) => <div><dt>{label}</dt><dd className={value === 'Da calcolare' ? 'research-empty-value' : ''}>{value}</dd></div>;
-        return (
-          <section className="macro-section-shell macro-research" id="research-section">
-            <div className="macro-shell-heading">
-              <div className="macro-title-line">
-                <span className="macro-number">04</span>
-                <div><h2>Laboratorio strategie</h2><span className="small">Studio e simulazione · nessun ordine viene inviato al broker</span></div>
-              </div>
-              <SectionToggle isOpen={open} onToggle={() => setOpen(!open)} label="laboratorio strategie" />
-            </div>
-            {open && <>
-              <div className="research-intro">
-                <div className="wealth-panel research-status-card">
-                  <span className="research-kicker">Stato del laboratorio</span>
-                  <div className="research-stage">Test storico manuale</div>
-                  <p className="research-explainer"><strong>Nessuna strategia gira continuamente.</strong> Con un solo comando raccogli i dati e provi insieme tutte le strategie compatibili. L’affidabilità futura resta <strong>da calcolare</strong>.</p>
-                </div>
-                <div className="wealth-panel research-guide-card">
-                  <h3>Come si arriva a una valutazione</h3>
-                  <div className="research-steps">
-                    <div className="research-step"><span className="research-step-number">1</span><strong>Premere un solo pulsante</strong><span>TWS paper fornisce i prezzi storici. Non avvengono acquisti.</span></div>
-                    <div className="research-step"><span className="research-step-number">2</span><strong>Test automatico insieme</strong><span>Mean Reversion, Breakout, Swing e Momentum vengono provate una dopo l’altra.</span></div>
-                    <div className="research-step"><span className="research-step-number">3</span><strong>Simulare costi</strong><span>Il test include commissioni, spread e ordini che non si eseguono.</span></div>
-                    <div className="research-step"><span className="research-step-number">4</span><strong>Validazione futura</strong><span>Il monitoraggio continuo su paper non è ancora attivo e richiederà una fase separata.</span></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="wealth-panel research-collector">
-                <div>
-                  <span className="research-kicker">Passaggio 1 · Dati</span>
-                  <h3>Raccolta e test storico automatico</h3>
-                  <p className="research-explainer">{paper?.message || 'Apri TWS sul conto paper e avvia la raccolta dei prezzi necessari ai test.'}</p>
-                  <p className="small">Una raccolta dura normalmente pochi minuti e poi termina. Prova insieme le quattro strategie compatibili; non invia ordini e non abilita il conto reale.</p>
-                </div>
-                <div className="actions">
-                  <button disabled={busy || ['connecting','collecting'].includes(paper?.status)} onClick={() => paperControl('collect')}>Raccogli dati e prova strategie</button>
-                  <button className="secondary" disabled={busy || !['connecting','collecting'].includes(paper?.status)} onClick={() => paperControl('stop')}>Ferma</button>
-                </div>
-              </div>
-              {!!paper?.datasets?.length && <details className="research-details"><summary>Mostra i dati disponibili ({paper.datasets.reduce((total, data) => total + (Number(data.bars_count) || 0), 0).toLocaleString('it-IT')} barre)</summary>
-                <ul>{paper.datasets.map((data, index) => <li key={index}>
-                  <strong>{data.symbol}</strong> · {data.bar_size}: {Number(data.bars_count || 0).toLocaleString('it-IT')} barre · {data.complete ? 'raccolta completata' : 'da verificare'}
-                  {(data.errors || []).map((item, n) => <div className="small" key={n}>{item.message}</div>)}
-                </li>)}</ul>
-              </details>}
-              {error && <p role="alert" className="negative">{error}</p>}
-              <div>
-                <span className="research-kicker">Passaggi 2–4 · Strategie e risultati</span>
-                <h3 style={{marginBottom:6}}>Cosa prova ogni strategia</h3>
-                <p className="research-explainer">Non devi avviare queste schede una per volta: il test parte per tutte dopo la raccolta. Il risultato storico mostra come si sono comportate le regole sui dati disponibili. La validazione è per ora una lista dei controlli ancora necessari, non un bot in esecuzione.</p>
-              </div>
-              <div className="research-grid">
-                {(snapshot?.bots || []).map(bot => {
-                  const spec = catalog.find(item => (item.id || item.strategy_id) === (bot.id || bot.strategy));
-                  const validation = paper?.validation?.find(item => item.strategy === (bot.id || bot.strategy));
-                  const screening = paper?.screening?.find(item => item.strategy === (bot.id || bot.strategy));
-                  const id = bot.id || bot.strategy;
-                  const help = strategyHelp[id] || {idea:'Regole deterministiche in fase di studio.', action:'Produce solo proposte simulate.', needs:'Servono dati e prove paper sufficienti.'};
-                  const historicalReady = screening?.baseline?.status === 'exploratory_only';
-                  const validated = validation?.status === 'ready_for_independent_review';
-                  const threeSegments = screening?.segments;
-                  return <article className="wealth-panel strategy-card" key={id}>
-                    <div className="strategy-card-head">
-                      <div className="strategy-card-title">
-                        <h3>{spec?.name || bot.name || id}</h3>
-                        <div className="strategy-badges">
-                          <span className="strategy-badge">Orizzonte: {spec?.timeframe || bot.horizon || 'da definire'}</span>
-                          <span className="strategy-badge">Rischio: {spec?.risk || bot.risk || 'da validare'}</span>
-                        </div>
-                      </div>
-                      <span className={`strategy-status ${validated ? 'ready' : ''}`}>{validated ? 'Pronta per revisione indipendente' : 'Validazione: da completare'}</span>
-                    </div>
-                    <div className="strategy-description">
-                      <div><strong>Che cosa cerca</strong><span>{help.idea}</span></div>
-                      <div><strong>Come agisce</strong><span>{help.action}</span></div>
-                      <div><strong>Cosa manca</strong><span>{help.needs}</span></div>
-                    </div>
-                    <dl className="research-metrics">
-                      {metric('Stato del test storico', historicalReady ? 'Completato' : 'Da eseguire')}
-                      {metric('Operazioni storiche chiuse', historicalReady ? String(screening.baseline.closed_trades) : 'Da calcolare')}
-                      {metric('Risultato del primo test', historicalReady ? formatPercent(screening.baseline.net_return) : 'Da calcolare')}
-                      {metric('Affidabilità futura', 'Da calcolare')}
-                    </dl>
-                    <div className="strategy-result-note">Il risultato del primo test descrive solo questo campione storico e include una simulazione dei costi. Non è una previsione di rendimento.</div>
-                    {screening && <details className="research-details">
-                      <summary>Dettagli del primo test storico</summary>
-                      {screening.baseline.status === 'exploratory_only' ? <>
-                        <h4>Periodo e suddivisione del campione</h4>
-                        <p className="research-explainer">Queste regole hanno parametri fissi: <strong>non è stato addestrato alcun modello</strong> e non è stata fatta ottimizzazione sul periodo finale. {threeSegments ? 'I dati sono divisi cronologicamente in 60% in-sample diagnostico, 20% validation e 20% out-of-sample finale. I tre segmenti non si sovrappongono.' : 'Questo report precedente usa un singolo holdout: primo 70% come storico di riferimento e ultimo 30% come test. Esegui una nuova raccolta per ottenere la divisione 60/20/20.'}</p>
-                        {threeSegments && <dl className="research-metrics">
-                          {metric('In-sample 60%', threeSegments.in_sample?.status === 'exploratory_only' ? `${researchDate(threeSegments.in_sample.start)} → ${researchDate(threeSegments.in_sample.end)}` : 'Dati insufficienti')}
-                          {metric('Validation 20%', threeSegments.validation?.status === 'exploratory_only' ? `${researchDate(threeSegments.validation.start)} → ${researchDate(threeSegments.validation.end)}` : 'Dati insufficienti')}
-                          {metric('Out-of-sample 20%', threeSegments.out_of_sample?.status === 'exploratory_only' ? `${researchDate(threeSegments.out_of_sample.start)} → ${researchDate(threeSegments.out_of_sample.end)}` : 'Dati insufficienti')}
-                          {metric('Training/ottimizzazione', 'Nessuno')}
-                        </dl>}
-                        <dl className="research-metrics">
-                          {metric('Inizio periodo test', researchDate(screening.baseline.start))}
-                          {metric('Fine periodo test', researchDate(screening.baseline.end))}
-                          {metric('Osservazioni nel test', String(screening.baseline.observations))}
-                          {metric('Segmento mostrato', threeSegments ? 'Out-of-sample finale 20%' : 'Holdout finale 30%')}
-                          {metric('Operazioni chiuse', String(screening.baseline.closed_trades))}
-                          {metric('Variazione netta', formatPercent(screening.baseline.net_return))}
-                          {metric('Con costi doppi', formatPercent(screening.double_costs.net_return))}
-                          {metric('Massima discesa', formatPercent(screening.baseline.maximum_drawdown))}
-                          {metric('Proposte non eseguite', String(screening.baseline.unfilled))}
-                        </dl>
-                        <h4>Tutti i tipi di segnale del segmento finale</h4>
-                        <div className="signal-summary">
-                          {Object.entries(screening.baseline.signals || {}).map(([key, count]) => {
-                            const [action, reason] = key.split(':');
-                            return <span key={key}><strong>{signalText(action)}</strong> · {signalText(reason)}: {count}</span>;
-                          })}
-                        </div>
-                        {screening.baseline.signal_events?.length ? <details className="research-details">
-                          <summary>Mostra il registro cronologico completo ({screening.baseline.signal_events.length} decisioni)</summary>
-                          <div className="signal-list">
-                            {screening.baseline.signal_events.map((event, index) => <div className="signal-row" key={`${event.timestamp}-${event.symbol}-${index}`}>
-                              <span>{researchDate(event.timestamp)}</span>
-                              <strong>{event.symbol}</strong>
-                              <span>{signalText(event.action)}</span>
-                              <span>{signalText(event.reason)}</span>
-                              <span>{Number(event.price).toLocaleString('it-IT', {maximumFractionDigits:4})}</span>
-                            </div>)}
-                          </div>
-                        </details> : <p className="small">Il conteggio completo per tipo è disponibile sopra. Per ottenere anche data, strumento e prezzo di ogni decisione, esegui una nuova raccolta con questa versione dell’app.</p>}
-                        {threeSegments && <details className="research-details">
-                          <summary>Mostra segnali e decisioni di tutti e tre i segmenti</summary>
-                          {Object.entries(threeSegments).map(([segmentId, segment]) => <div key={segmentId}>
-                            <h4>{segmentLabels[segmentId] || segmentId}</h4>
-                            {segment.status === 'exploratory_only' ? <>
-                              <div className="signal-summary">{Object.entries(segment.signals || {}).map(([key, count]) => {
-                                const [action, reason] = key.split(':');
-                                return <span key={key}><strong>{signalText(action)}</strong> · {signalText(reason)}: {count}</span>;
-                              })}</div>
-                              <details onToggle={(event) => setOpenLedgers(current => ({...current, [`${id}-${segmentId}`]: event.currentTarget.open}))}>
-                                <summary>Registro cronologico ({(segment.signal_events || []).length} decisioni)</summary>
-                                {openLedgers[`${id}-${segmentId}`] && <div className="signal-list">{(segment.signal_events || []).map((event, index) => <div className="signal-row" key={`${segmentId}-${event.timestamp}-${event.symbol}-${index}`}>
-                                  <span>{researchDate(event.timestamp)}</span><strong>{event.symbol}</strong>
-                                  <span>{signalText(event.action)}</span><span>{signalText(event.reason)}</span>
-                                  <span>{Number(event.price).toLocaleString('it-IT', {maximumFractionDigits:4})}</span>
-                                </div>)}</div>}
-                              </details>
-                            </> : <p className="small">Dati insufficienti per questo segmento.</p>}
-                          </div>)}
-                        </details>}
-                        {!!screening.baseline.limitations?.length && <ul>{screening.baseline.limitations.map(item => <li key={item}>{item}</li>)}</ul>}
-                      </> : <p>Dati adeguati non disponibili: i risultati restano da calcolare.</p>}
-                    </details>}
-                    {validation && <details className="research-details">
-                      <summary>Perché la validazione non è ancora completa</summary>
-                      <p><strong>{validation.closed_trades}</strong> operazioni paper osservate su almeno <strong>{validation.minimum_trades}</strong> richieste; <strong>{validation.observed_sessions || 0}</strong> sessioni su almeno <strong>{validation.minimum_sessions}</strong>.</p>
-                      {!!validation.data_blockers?.length && <><strong>Dati ancora necessari</strong><ul>{validation.data_blockers.map(item => <li key={item}>{item}</li>)}</ul></>}
-                      {!!validation.blockers?.length && <><strong>Controlli ancora da superare</strong><ul>{validation.blockers.map(item => <li key={item}>{gateLabels[item] || item}</li>)}</ul></>}
-                    </details>}
-                    <details className="research-details"><summary>Metriche tecniche predisposte per la futura simulazione continua</summary>
-                      <dl className="research-metrics">
-                        {metric('Stato interno', statusLabels[bot.status] || shown(bot.status))}
-                        {metric('Ultimo aggiornamento', shown(bot.heartbeat || bot.last_heartbeat))}
-                        {metric('Capitale simulato', shown(bot.capital))}
-                        {metric('Esposizione', shown(bot.exposure))}
-                        {metric('P/L realizzato', shown(bot.realized_pnl))}
-                        {metric('P/L non realizzato', shown(bot.unrealized_pnl))}
-                        {metric('Drawdown', shown(bot.drawdown))}
-                        {metric('Costi', shown(bot.costs))}
-                        {metric('Ultimo segnale', shown(bot.last_signal))}
-                        {metric('Proposte bloccate', shown(bot.blocked))}
-                        {metric('Proposte create', shown(bot.proposed))}
-                        {metric('Accettate dal simulatore', shown(bot.submitted))}
-                        {metric('Eseguite nel simulatore', shown(bot.fills))}
-                        {metric('Ordini inviati al broker', 'Disabilitati')}
-                      </dl>
-                    </details>
-                  </article>;
-                })}
-              </div>
-              <p className="small">Strategia con uno specifico profilo di rischio e potenziale rendimento, senza garanzia di risultato. Il capitale investito può subire perdite, anche rilevanti.</p>
-              <details className="research-details"><summary>Registro tecnico e limiti predisposti per gli sviluppi futuri</summary>
-                <pre className="research-log">{JSON.stringify({status:snapshot?.status, limits:snapshot?.limits, orders:snapshot?.orders, audit:snapshot?.audit}, null, 2)}</pre>
-              </details>
-            </>}
-          </section>
-        );
-      }
-
       function App() {
         const [state, setState] = useState(loadState);
-        const [isSalaryPanelOpen, setIsSalaryPanelOpen] = useState(() => localStorage.getItem("salary-estimate-panel-open") !== "false");
         const [isFinanceSectionOpen, setIsFinanceSectionOpen] = useState(() => localStorage.getItem("finance-section-open") !== "false");
         const [isWealthSectionOpen, setIsWealthSectionOpen] = useState(() => localStorage.getItem("wealth-section-open") !== "false");
         const [isMonthlyInputOpen, setIsMonthlyInputOpen] = useState(() => localStorage.getItem("monthly-input-panel-open") !== "false");
@@ -1855,7 +1451,6 @@
                 setEntry({ ...createEmptyEntry(), ...(document.entry || {}), category: document.entry?.category === "Flexible Cash" ? "Costo Variabile" : document.entry?.category || "Costo Variabile" });
                 setEditingMonthId(String(document.editingMonthId || ""));
                 const ui = document.ui || {};
-                if (typeof ui.salaryPanelOpen === "boolean") setIsSalaryPanelOpen(ui.salaryPanelOpen);
                 if (typeof ui.financeSectionOpen === "boolean") setIsFinanceSectionOpen(ui.financeSectionOpen);
                 if (typeof ui.wealthSectionOpen === "boolean") setIsWealthSectionOpen(ui.wealthSectionOpen);
                 if (typeof ui.monthlyInputOpen === "boolean") setIsMonthlyInputOpen(ui.monthlyInputOpen);
@@ -1873,7 +1468,6 @@
                   entry,
                   editingMonthId,
                   ui: {
-                    salaryPanelOpen: isSalaryPanelOpen,
                     financeSectionOpen: isFinanceSectionOpen,
                     wealthSectionOpen: isWealthSectionOpen,
                     monthlyInputOpen: isMonthlyInputOpen,
@@ -1913,14 +1507,13 @@
           entry,
           editingMonthId,
           ui: {
-            salaryPanelOpen: isSalaryPanelOpen,
             financeSectionOpen: isFinanceSectionOpen,
             wealthSectionOpen: isWealthSectionOpen,
             monthlyInputOpen: isMonthlyInputOpen,
             monthlyHistoryOpen: isMonthlyHistoryOpen,
             portfolioPanelOpen: isPortfolioPanelOpen
           }
-        }), [state, entry, editingMonthId, isSalaryPanelOpen, isFinanceSectionOpen, isWealthSectionOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isPortfolioPanelOpen]);
+        }), [state, entry, editingMonthId, isFinanceSectionOpen, isWealthSectionOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isPortfolioPanelOpen]);
 
         const queueStateSave = (payload) => {
           persistenceQueue.current = persistenceQueue.current.catch(() => {}).then(async () => {
@@ -1987,10 +1580,6 @@
             document.removeEventListener("visibilitychange", flushWhenHidden);
           };
         }, [persistencePayload]);
-
-        useEffect(() => {
-          localStorage.setItem("salary-estimate-panel-open", String(isSalaryPanelOpen));
-        }, [isSalaryPanelOpen]);
 
         useEffect(() => {
           localStorage.setItem("finance-section-open", String(isFinanceSectionOpen));
@@ -2341,8 +1930,6 @@
             projectedEmergencyFund: totals.projectedEmergencyFund,
             currentNetWorth: totals.currentNetWorth,
             investedCapital: totals.investmentAllocation,
-            annualNetSalary: salaryEstimate.annualNet,
-            monthlyNetSalary: salaryEstimate.monthlyNet,
             wealthTotal: livePortfolio.netLiquidation,
             portfolioMarketValue: livePortfolio.netLiquidation,
             ibkrCash: livePortfolio.positiveCash,
@@ -2418,33 +2005,6 @@
           "--emergency-glow": `hsla(${emergencyHue},95%,56%,.58)`,
           "--emergency-contrast": emergencyProgressValue >= 40 ? "#11150b" : "#ffffff"
         };
-        const salaryEstimate = useMemo(() => {
-          const grossSalary = Number(state.grossSalary) || 0;
-          const paychecks = Math.max(1, Number(state.paychecks) || 13);
-          const employeeContribution = grossSalary * ((Number(state.employeeContributionPct) || 0) / 100);
-          const taxableIncome = Math.max(0, grossSalary - employeeContribution);
-          const grossIrpef = calculateIrpef(taxableIncome);
-          const employeeDeduction = calculateEmployeeDeduction(taxableIncome, state.workDays);
-          const wageSupport = calculateWageSupport(taxableIncome, state.workDays);
-          const netIrpef = Math.max(0, grossIrpef - employeeDeduction);
-          const localTaxes = taxableIncome * (((Number(state.regionalTaxPct) || 0) + (Number(state.municipalTaxPct) || 0)) / 100);
-          const annualNet = Math.max(0, grossSalary - employeeContribution - netIrpef - localTaxes + wageSupport);
-
-          return {
-            grossSalary,
-            paychecks,
-            employeeContribution,
-            taxableIncome,
-            grossIrpef,
-            employeeDeduction,
-            wageSupport,
-            netIrpef,
-            localTaxes,
-            annualNet,
-            monthlyNet: annualNet / paychecks,
-            taxAndContribPct: grossSalary > 0 ? ((grossSalary - annualNet) / grossSalary) * 100 : 0
-          };
-        }, [state.grossSalary, state.paychecks, state.employeeContributionPct, state.regionalTaxPct, state.municipalTaxPct, state.workDays]);
         const monthlyHistory = useMemo(() => {
           return sortMonthlyHistory(state.monthlyHistory);
         }, [state.monthlyHistory]);
@@ -2724,7 +2284,7 @@
           <div className="app">
             <div className="shell">
               <header className="dashboard-title">
-                <h1>Dashboard finanziaria</h1>
+                <h1>Dashboard finanziaria <span className="beta-badge">Beta</span></h1>
                 <span className={`badge ${persistenceStatus === "error" ? "allocation-warning" : persistenceStatus === "saved" ? "allocation-ok" : "allocation-pending"}`}>
                   {persistenceStatus === "loading"
                     ? "Caricamento dati"
@@ -2737,110 +2297,22 @@
               </header>
 
               <nav className="workspace-nav" aria-label="Sezioni principali">
-                <a href="#salary-section"><span className="workspace-nav-index">01</span><span>Stima stipendio</span></a>
-                <a href="#finance-section"><span className="workspace-nav-index">02</span><span>Gestione delle finanze</span></a>
-                <a href="#wealth-section"><span className="workspace-nav-index">03</span><span>Wealth management</span></a>
-                <a href="#research-section"><span className="workspace-nav-index">04</span><span>Laboratorio strategie</span></a>
+                <a href="#finance-section"><span className="workspace-nav-index">01</span><span>Gestione delle finanze</span></a>
+                <a href="#wealth-section"><span className="workspace-nav-index">02</span><span>Wealth management</span></a>
               </nav>
 
               <section className="grid">
-                <div className="card full section-surface macro-section-card macro-salary" id="salary-section">
-                  <div className="section-head">
-                    <div className="macro-title-line">
-                      <span className="macro-number">01</span>
-                      <div className="title">Stima stipendio netto da RAL</div>
-                    </div>
-                    <div className="actions">
-                      <span className="badge">Netto stimato: {money(salaryEstimate.monthlyNet)} x {salaryEstimate.paychecks}</span>
-                      <SectionToggle
-                        isOpen={isSalaryPanelOpen}
-                        onToggle={() => setIsSalaryPanelOpen((open) => !open)}
-                        label="stima stipendio netto"
-                        tone="blue"
-                      />
-                    </div>
-                  </div>
-                  {isSalaryPanelOpen && (
-                    <div className="split">
-                      <div className="form">
-                        <div className="field third">
-                          <label>RAL annua</label>
-                          <input type="number" value={state.grossSalary} onChange={(e) => updateField("grossSalary", e.target.value)} />
-                        </div>
-                        <div className="field third">
-                          <label>Mensilita'</label>
-                          <input type="number" value={state.paychecks} onChange={(e) => updateField("paychecks", e.target.value)} />
-                        </div>
-                        <div className="field third">
-                          <label>Giorni lavoro</label>
-                          <input type="number" value={state.workDays} onChange={(e) => updateField("workDays", e.target.value)} />
-                        </div>
-                        <div className="field third">
-                          <label>Superminimo (promemoria)</label>
-                          <select value={state.superminimoAbsorbability} onChange={(e) => updateField("superminimoAbsorbability", e.target.value)}>
-                            <option>Assorbibile</option>
-                            <option>Non assorbibile</option>
-                          </select>
-                          <div className="small" style={{ marginTop: 6 }}>Informazione contrattuale: non modifica la stima del netto quando la RAL è già nota.</div>
-                        </div>
-                        <div className="field third">
-                          <label>Contributi lavoratore %</label>
-                          <input type="number" step="0.01" value={state.employeeContributionPct} onChange={(e) => updateField("employeeContributionPct", e.target.value)} />
-                        </div>
-                        <div className="field third">
-                          <label>Addizionale regionale %</label>
-                          <input type="number" step="0.01" value={state.regionalTaxPct} onChange={(e) => updateField("regionalTaxPct", e.target.value)} />
-                        </div>
-                        <div className="field third">
-                          <label>Addizionale comunale %</label>
-                          <input type="number" step="0.01" value={state.municipalTaxPct} onChange={(e) => updateField("municipalTaxPct", e.target.value)} />
-                        </div>
-                      </div>
-                      <div className="rows">
-                        <div className="mini">
-                          <div>
-                            <strong>Netto annuo stimato</strong>
-                            <div className="small">Dopo contributi, IRPEF netta e addizionali</div>
-                          </div>
-                          <strong>{money(salaryEstimate.annualNet)}</strong>
-                        </div>
-                        <div className="mini">
-                          <div>
-                            <strong>Imponibile fiscale</strong>
-                            <div className="small">RAL meno contributi previdenziali stimati</div>
-                          </div>
-                          <strong>{money(salaryEstimate.taxableIncome)}</strong>
-                        </div>
-                        <div className="mini">
-                          <div>
-                            <strong>Trattenute e imposte</strong>
-                            <div className="small">{plainPct(salaryEstimate.taxAndContribPct)} della RAL</div>
-                          </div>
-                          <strong>{money(salaryEstimate.grossSalary - salaryEstimate.annualNet)}</strong>
-                        </div>
-                        <div className="mini">
-                          <div>
-                            <strong>Detrazioni e bonus lavoro</strong>
-                            <div className="small">Detrazione dipendente + riduzione cuneo se spettante</div>
-                          </div>
-                          <strong>{money(salaryEstimate.employeeDeduction + salaryEstimate.wageSupport)}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 <div className="card full finance-management-card section-surface macro-section-card macro-finance" id="finance-section">
                   <div className="section-head finance-management-head">
                     <div className="macro-title-line">
-                      <span className="macro-number">02</span>
+                      <span className="macro-number">01</span>
                       <div className="title">Gestione delle finanze</div>
                     </div>
                     <SectionToggle
                       isOpen={isFinanceSectionOpen}
                       onToggle={() => setIsFinanceSectionOpen((open) => !open)}
                       label="gestione delle finanze"
-                      tone="gold"
+                      tone="blue"
                     />
                   </div>
 
@@ -2878,7 +2350,7 @@
                         isOpen={isMonthlyInputOpen}
                         onToggle={() => setIsMonthlyInputOpen((open) => !open)}
                         label="input del mese"
-                        tone="gold"
+                        tone="blue"
                       />
                     </div>
                   </div>
@@ -3399,7 +2871,7 @@
                 <section className="macro-section-shell macro-wealth" id="wealth-section">
                   <div className="macro-shell-heading">
                     <div className="macro-title-line">
-                      <span className="macro-number">03</span>
+                      <span className="macro-number">02</span>
                       <h2>Wealth management</h2>
                     </div>
                     <div className="macro-shell-controls">
@@ -3410,7 +2882,7 @@
                         isOpen={isWealthSectionOpen}
                         onToggle={() => setIsWealthSectionOpen((open) => !open)}
                         label="wealth management"
-                        tone="violet"
+                        tone="blue"
                       />
                     </div>
                   </div>
@@ -3432,7 +2904,7 @@
                         isOpen={isPortfolioPanelOpen}
                         onToggle={() => setIsPortfolioPanelOpen((open) => !open)}
                         label="portafoglio investimenti"
-                        tone="violet"
+                        tone="blue"
                       />
                     </div>
                   </div>
@@ -3796,7 +3268,6 @@
                 </>
                 )}
                 </section>
-                <ResearchPanel />
               </section>
             </div>
           </div>

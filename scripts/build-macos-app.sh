@@ -4,8 +4,8 @@ set -euo pipefail
 
 PROJECT_DIR="${0:A:h:h}"
 INSTALL_DIR="/Applications/Dashboard Finanziaria.app"
-APP_VERSION="1.13.28"
-APP_BUILD="55"
+APP_VERSION="1.14.0"
+APP_BUILD="57"
 # Every release replaces the same installed app and must increase its build.
 if [[ -f "$INSTALL_DIR/Contents/Info.plist" ]]; then
   INSTALLED_BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INSTALL_DIR/Contents/Info.plist")
@@ -91,8 +91,8 @@ PLIST
 
 rm -rf "$RESOURCES_DIR/runtime"
 mkdir -p "$RESOURCES_DIR/runtime/python"
-cp "$PROJECT_DIR/ibkr_paper_bridge.py" "$PROJECT_DIR/local_security.py" "$PROJECT_DIR/paper_data.py" "$PROJECT_DIR/enable_banking_sync.py" "$RESOURCES_DIR/runtime/"
-cp -R "$PROJECT_DIR/research" "$PROJECT_DIR/web-build" "$RESOURCES_DIR/runtime/"
+cp "$PROJECT_DIR/ibkr_paper_bridge.py" "$PROJECT_DIR/local_security.py" "$PROJECT_DIR/enable_banking_sync.py" "$RESOURCES_DIR/runtime/"
+cp -R "$PROJECT_DIR/web-build" "$RESOURCES_DIR/runtime/"
 mkdir -p "$RESOURCES_DIR/runtime/vendor"
 cp "$PROJECT_DIR/vendor/react-18.3.1.min.js" "$PROJECT_DIR/vendor/react-dom-18.3.1.min.js" "$PROJECT_DIR/vendor/REACT-LICENSE.txt" "$RESOURCES_DIR/runtime/vendor/"
 cp "$PROJECT_DIR/salary-planner-react.html" "$RESOURCES_DIR/runtime/"

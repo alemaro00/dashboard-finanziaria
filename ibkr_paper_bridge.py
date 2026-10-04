@@ -876,7 +876,6 @@ class IbkrAccountClient(EWrapper, EClient):
 class DashboardHandler(BaseHTTPRequestHandler):
     clients: dict[str, IbkrAccountClient]
 
-    research_engine = None
     enable_banking_service = None
     csrf_token = secrets.token_urlsafe(32)
     guard = RequestGuard()
@@ -1003,30 +1002,6 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     raise ValueError("Azione Enable Banking non ammessa")
                 self._send_json(result)
                 return
-            if path == "/api/paper-lab/control":
-                payload = self._read_json_body()
-                lab = getattr(self, 'paper_lab', None)
-                if lab is None:
-                    raise ValueError('Laboratorio paper non disponibile')
-                if set(payload) - {'action', 'port'}:
-                    raise ValueError('Campi non ammessi')
-                if payload.get('action') == 'collect':
-                    result = lab.start(payload.get('port', 7497))
-                elif payload.get('action') == 'stop':
-                    result = lab.stop()
-                else:
-                    raise ValueError('Solo raccolta dati paper e arresto sono ammessi')
-                self._send_json(result)
-                return
-            if path == "/api/research/control":
-                payload = self._read_json_body()
-                if self.research_engine is None:
-                    raise ValueError("Laboratorio non disponibile")
-                if set(payload) - {"action", "strategy"}:
-                    raise ValueError("Campi non ammessi")
-                self.research_engine.control(payload.get("action"), payload.get("strategy"))
-                self._send_json(self.research_engine.snapshot())
-                return
             if path == "/api/state":
                 payload = self._read_json_body()
                 document = save_dashboard_state(payload)
@@ -1071,20 +1046,6 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             service = getattr(self, "enable_banking_service", None)
             self._send_json(service.snapshot() if service else {"error": "Servizio Enable Banking non disponibile"},
                             200 if service else 503)
-            return
-        if path == "/api/paper-lab/snapshot":
-            lab = getattr(self, 'paper_lab', None)
-            self._send_json(lab.snapshot() if lab else {'error': 'Laboratorio paper non disponibile'}, 200 if lab else 503)
-            return
-        if path == "/api/research/snapshot":
-            if self.research_engine is None:
-                self._send_json({"error": "Laboratorio non disponibile"}, 503)
-            else:
-                self._send_json(self.research_engine.snapshot())
-            return
-        if path == "/api/research/strategies":
-            from research.strategies import strategy_catalog
-            self._send_json({"strategies": strategy_catalog()})
             return
         if path.startswith("/assets/"):
             assets = {
@@ -1239,10 +1200,6 @@ def main() -> int:
 
     for client in enabled.values():
         client.start()
-    from research.engine import ResearchEngine
-    DashboardHandler.research_engine = ResearchEngine(APP_DATA_DIR / "research" / "laboratory.sqlite3")
-    from paper_data import PaperLab
-    DashboardHandler.paper_lab = PaperLab(APP_DATA_DIR / 'paper-research')
     from enable_banking_sync import EnableBankingService
     DashboardHandler.enable_banking_service = EnableBankingService(APP_DATA_DIR / "enable-banking")
     DashboardHandler.clients = clients
@@ -1264,8 +1221,6 @@ def main() -> int:
         pass
     finally:
         server.server_close()
-        DashboardHandler.paper_lab.stop()
-        DashboardHandler.research_engine.close()
         for client in clients.values():
             client.stop()
     return 0
