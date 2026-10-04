@@ -21,8 +21,9 @@ test('beta preserves the original complete-dashboard color system', () => {
   assert.doesNotMatch(source, /macro-salary|macro-research/);
 });
 
-test('month selector matches the year and emergency-fund field dimensions and type size', () => {
-  assert.match(source, /\.monthly-period-fields input,\.monthly-period-fields select\{[\s\S]*?height:54px;min-height:54px;[\s\S]*?font-size:16px/);
+test('only the month selector receives the native-control size correction', () => {
+  assert.match(source, /\.monthly-period-fields select\{[\s\S]*?height:36px;min-height:36px;[\s\S]*?font-size:13px/);
+  assert.doesNotMatch(source, /\.monthly-period-fields input,\.monthly-period-fields select\{[^}]*height:/);
 });
 
 test('salary-category cashflow remains independent from the removed salary estimator', () => {
