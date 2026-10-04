@@ -185,6 +185,41 @@ class EnableBankingTests(unittest.TestCase):
             self.assertIn("old-record", {item["id"] for item in snapshot["records"]})
             self.assertIn("tx-eur-account", {item.get("bankRecordId") for item in snapshot["records"]})
 
+    def test_rate_limit_keeps_cached_accounts_and_returns_non_destructive_warning(self):
+        class RateLimitedClient(FakeClient):
+            def get(self, path, query=None):
+                raise EnableBankingAPIError(429, "Limite temporaneo", "RATE_LIMIT")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            service._client = lambda: RateLimitedClient()
+            cached_account = {
+                "id": "eur-account",
+                "name": "Revolut EUR",
+                "bank": "Revolut",
+                "currency": "EUR",
+            }
+            cached_record = {
+                "id": "old-record",
+                "accountId": "eur-account",
+                "date": "2026-09-02",
+                "recordType": "expense",
+            }
+            service._save({
+                **service._empty(),
+                "sessions": [{"id": "session-1", "bank": "Revolut"}],
+                "accounts": [cached_account],
+                "records": [cached_record],
+                "lastSync": "2026-10-03T01:38:00+00:00",
+            })
+
+            snapshot = service.sync()
+
+            self.assertEqual(snapshot["accounts"], [cached_account])
+            self.assertEqual(snapshot["records"], [cached_record])
+            self.assertEqual(snapshot["error"], "")
+            self.assertIn("pausa temporanea", snapshot["warning"])
+
 
 if __name__ == "__main__":
     unittest.main()

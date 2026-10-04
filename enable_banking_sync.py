@@ -267,7 +267,11 @@ class EnableBankingClient:
             if error.code == 403:
                 raise RuntimeError("Operazione non consentita dall'app Production Restricted") from error
             if error.code == 429:
-                raise RuntimeError("Limite Enable Banking raggiunto. Riprova più tardi") from error
+                raise EnableBankingAPIError(
+                    429,
+                    "Limite temporaneo di richieste raggiunto",
+                    "RATE_LIMIT",
+                ) from error
             error_code = ""
             try:
                 error_payload = json.loads(detail)
@@ -306,6 +310,7 @@ class EnableBankingService:
         self.lock = threading.RLock()
         self.sync_lock = threading.Lock()
         self.last_error = ""
+        self.last_warning = ""
 
     @staticmethod
     def _empty() -> dict:
@@ -428,6 +433,7 @@ class EnableBankingService:
             "transactionHistoryFrom": data.get("transactionHistoryFrom"),
             "syncing": self.sync_lock.locked(),
             "error": self.last_error,
+            "warning": self.last_warning,
         }
 
     def verify(self) -> dict:
@@ -476,6 +482,7 @@ class EnableBankingService:
         with self.lock:
             self._save(self._empty())
             self.last_error = ""
+            self.last_warning = ""
         return self.snapshot()
 
     def rename_record(self, record_id: object, custom_name: object) -> dict:
@@ -659,6 +666,16 @@ class EnableBankingService:
             with self.lock:
                 self._save(data)
                 self.last_error = ""
+                self.last_warning = ""
+        except EnableBankingAPIError as error:
+            if error.status != 429:
+                self.last_error = str(error)
+                raise
+            self.last_error = ""
+            self.last_warning = (
+                "Enable Banking ha chiesto una pausa temporanea. I dati già salvati restano disponibili; "
+                "riprova l'aggiornamento fra qualche minuto."
+            )
         except (ValueError, RuntimeError, OSError) as error:
             self.last_error = str(error)
             raise

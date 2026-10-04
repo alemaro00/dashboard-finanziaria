@@ -2504,6 +2504,7 @@
                       <details style={{ marginTop: 12 }}><summary>Privacy e gestione dati bancari</summary><div className="small" style={{ marginTop: 8 }}>Saldi, movimenti e riferimenti alle sessioni sono conservati soltanto nella cartella dati locale. La Dashboard non può disporre pagamenti.</div><button className="secondary" style={{ marginTop: 10 }} onClick={() => { if (window.confirm("Cancellare sessioni, conti e movimenti bancari salvati localmente? I mesi già salvati non saranno eliminati.")) bankingControl("forget"); }}>Dimentica dati bancari locali</button></details>
                     </div>}
                     {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}
+                    {banking.data?.warning && <div className="decision-box warn"><strong>Collegamento attivo · aggiornamento rinviato</strong><div className="small" style={{ marginTop: 6 }}>{banking.data.warning}</div></div>}
                     {banking.error && <div className="decision-box bad"><strong>Collegamento non riuscito</strong><div className="small" style={{ marginTop: 6 }}>{banking.error}</div></div>}
                     <div className="bank-kpis">
                       <div className="bank-kpi"><span className="eyebrow">Entrate bancarie in {readableBankAccounts} {readableBankAccounts === 1 ? "conto" : "conti"} in {state.monthName}</span><strong className="bank-income">{money(currentBankIncome)}</strong></div>
