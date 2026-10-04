@@ -2433,7 +2433,7 @@
                         <button disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: "UniCredit", country: "IT" })}>Collega UniCredit</button>
                         <button disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: "Revolut", country: "IT" })}>Collega Revolut</button>
                       </div>
-                      {banking.data?.authorizationPending && <React.Fragment><div className="field" style={{ marginTop: 12 }}><label>Indirizzo finale di autorizzazione</label><input value={banking.callbackUrl} onChange={event => setBanking(current => ({ ...current, callbackUrl: event.target.value }))} placeholder="https://localhost:8766/api/enable-banking/callback?code=…&state=…" /></div>
+                      {banking.data?.authorizationPending && <React.Fragment><div className="field" style={{ marginTop: 12 }}><label>Indirizzo finale di autorizzazione</label><input value={banking.callbackUrl} onChange={event => setBanking(current => ({ ...current, callbackUrl: event.target.value }))} placeholder="https://localhost:8767/api/enable-banking/callback?code=…&state=…" /></div>
                       <button className="secondary" disabled={banking.busy || !banking.callbackUrl} onClick={() => bankingControl("complete", { callbackUrl: banking.callbackUrl })}>Completa collegamento</button></React.Fragment>}
                     </div>
                     {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}

@@ -36,6 +36,20 @@ for excluded in ('paper_data.py','cp -R "$PROJECT_DIR/research"'):
 for required in ('Gestione delle finanze','Wealth management','beta-badge'):
     if required not in frontend:
         errors.append('Required beta UI marker missing: '+required)
+for required in ('/Applications/Beta Dashboard Finanziaria.app',
+                 'it.alemaro.dashboard-finanziaria.beta',
+                 'BetaDashboardFinanziaria'):
+    if required not in mac_build:
+        errors.append('Separate beta application identity missing: '+required)
+native_wrapper=(ROOT/'macos'/'DashboardFinanziaria.m').read_text()
+for required in ('127.0.0.1:8767', 'Dashboard Finanziaria Beta', 'DASHBOARD_DATA_DIR'):
+    if required not in native_wrapper:
+        errors.append('Separate beta runtime boundary missing: '+required)
+banking_sync=(ROOT/'enable_banking_sync.py').read_text()
+if 'localhost:8767/api/enable-banking/callback' not in banking_sync:
+    errors.append('Beta banking callback does not use the separate beta port')
+if 'DASHBOARD_DATA_DIR' not in banking_sync or 'DEFAULT_KEY_PATH = (\n    DEFAULT_DATA_DIR' not in banking_sync:
+    errors.append('Beta banking key does not follow the separate beta data directory')
 patterns=[re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
           re.compile(r'gh[pousr]_[A-Za-z0-9]{30,}'),re.compile(r'AKIA[A-Z0-9]{16}')]
 skip={'.git','.venv','.build','dist','vendor','web-build','__pycache__','.ruff_cache'}

@@ -5,9 +5,10 @@ Applicazione locale macOS dedicata a due sole aree:
 1. **Gestione delle finanze personali**
 2. **Wealth management**
 
-La beta mantiene i dati e l’identità dell’app completa, ma non espone né avvia la
-stima dello stipendio netto o il laboratorio strategie. La versione completa resta
-recuperabile dal tag Git annotato `v1.13.28-completa` (`bccef26`).
+La beta è installata accanto all’app completa, con identità e dati separati, e non
+espone né avvia la stima dello stipendio netto o il laboratorio strategie. La
+versione completa 1.13.28 resta disponibile dal tag Git annotato
+`v1.13.28-completa` (`bccef26`).
 
 ## Scope della beta
 
@@ -52,15 +53,16 @@ confronto e audit, ma non è inizializzato dal servizio né incluso nell’app.
 
 ## Dati e compatibilità
 
-Lo stato continua a essere salvato in:
+La beta salva il proprio stato in:
 
-`~/Library/Application Support/Dashboard Finanziaria/dashboard-state.json`
+`~/Library/Application Support/Dashboard Finanziaria Beta/dashboard-state.json`
 
-La beta non rinomina il file, non cambia bundle identifier e non esegue migrazioni
-distruttive. Prima di ogni scrittura il servizio conserva anche
-`dashboard-state.json.bak`; stato e backup hanno permessi privati. I vecchi campi
-delle funzioni rimosse sono tollerati e conservati quando presenti, senza essere
-mostrati o usati nei calcoli correnti.
+Al momento dell’installazione iniziale può ricevere una copia dello stato completo,
+ma da quel momento i due archivi sono indipendenti. La versione completa continua a
+usare `~/Library/Application Support/Dashboard Finanziaria/`. Prima di ogni
+scrittura il servizio conserva anche `dashboard-state.json.bak`; stato e backup
+hanno permessi privati. I vecchi campi delle funzioni rimosse sono tollerati e
+conservati quando presenti, senza essere mostrati o usati nei calcoli correnti.
 
 ## Avvio locale
 
@@ -81,15 +83,18 @@ di invio ordini.
 NODE_BIN=/percorso/a/node ./scripts/build-macos-app.sh
 ```
 
-Lo script compila, firma ad hoc, crea lo ZIP di distribuzione e sostituisce la stessa
-`/Applications/Dashboard Finanziaria.app`. Mantiene:
+Lo script compila, firma ad hoc, crea lo ZIP di distribuzione e installa:
 
-- bundle identifier `it.alemaro.dashboard-finanziaria`;
-- nome e percorso dell’app;
-- directory dati dell’utente;
-- collegamento Dock esistente.
+- `/Applications/Beta Dashboard Finanziaria.app`;
+- bundle identifier `it.alemaro.dashboard-finanziaria.beta`;
+- servizio locale su `127.0.0.1:8767`;
+- directory dati `~/Library/Application Support/Dashboard Finanziaria Beta/`.
 
-La beta è versione `1.14.0`, build `57`, e mostra chiaramente `Beta` nell’interfaccia.
+La versione completa conserva invece nome, bundle identifier, porta e directory
+dati originali. Le due applicazioni possono quindi essere aperte insieme senza
+condividere processi o scritture.
+
+La beta è versione `1.14.0`, build `59`, e mostra chiaramente `Beta` nell’interfaccia.
 
 ## Verifica
 

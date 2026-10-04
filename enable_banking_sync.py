@@ -21,12 +21,15 @@ from urllib.request import Request, urlopen
 
 API_ORIGIN = "https://api.enablebanking.com"
 APPLICATION_ID = "832f4ca4-67b0-4054-8ebd-ed0518198791"
-DEFAULT_REDIRECT_URL = "https://localhost:8766/api/enable-banking/callback"
+DEFAULT_REDIRECT_URL = "https://localhost:8767/api/enable-banking/callback"
+DEFAULT_DATA_DIR = Path(
+    os.environ.get(
+        "DASHBOARD_DATA_DIR",
+        Path.home() / "Library" / "Application Support" / "Dashboard Finanziaria",
+    )
+).expanduser()
 DEFAULT_KEY_PATH = (
-    Path.home()
-    / "Library"
-    / "Application Support"
-    / "Dashboard Finanziaria"
+    DEFAULT_DATA_DIR
     / "Secrets"
     / "enable-banking.pem"
 )

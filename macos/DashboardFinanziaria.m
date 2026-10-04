@@ -13,7 +13,7 @@
 
 @implementation DashboardAppDelegate
 
-static NSString *const DashboardURL = @"http://127.0.0.1:8766";
+static NSString *const DashboardURL = @"http://127.0.0.1:8767";
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -21,8 +21,8 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     NSMenu *menuBar = [[NSMenu alloc] init];
     NSMenuItem *appItem = [[NSMenuItem alloc] init];
     [menuBar addItem:appItem];
-    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Dashboard Finanziaria"];
-    [menu addItemWithTitle:@"Informazioni su Dashboard Finanziaria" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Beta Dashboard Finanziaria"];
+    [menu addItemWithTitle:@"Informazioni su Beta Dashboard Finanziaria" action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
     [menu addItem:NSMenuItem.separatorItem];
     NSMenuItem *connect = [menu addItemWithTitle:@"Collega TWS — sola lettura" action:@selector(connectReadOnly:) keyEquivalent:@""];
     connect.target = self;
@@ -31,7 +31,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     NSMenuItem *disconnect = [menu addItemWithTitle:@"Disconnetti TWS — modalità offline" action:@selector(disconnectBroker:) keyEquivalent:@""];
     disconnect.target = self;
     [menu addItem:NSMenuItem.separatorItem];
-    [menu addItemWithTitle:@"Esci da Dashboard Finanziaria" action:@selector(terminate:) keyEquivalent:@"q"];
+    [menu addItemWithTitle:@"Esci da Beta Dashboard Finanziaria" action:@selector(terminate:) keyEquivalent:@"q"];
     appItem.submenu = menu;
 
     NSMenuItem *editItem = [[NSMenuItem alloc] init];
@@ -59,7 +59,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
         styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
         backing:NSBackingStoreBuffered
         defer:NO];
-    self.window.title = @"Dashboard Finanziaria — Beta";
+    self.window.title = @"Beta Dashboard Finanziaria";
     self.window.delegate = self;
     self.window.contentView = self.webView;
     [self.window center];
@@ -163,10 +163,10 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     }
     NSTask *task = [[NSTask alloc] init];
     task.executableURL = python;
-    task.arguments = @[bridge.path, @"--no-browser", @"--broker-mode", self.brokerMode, @"--http-port", @"8766"];
+    task.arguments = @[bridge.path, @"--no-browser", @"--broker-mode", self.brokerMode, @"--http-port", @"8767"];
     task.currentDirectoryURL = runtime;
     NSURL *logDirectory = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
-    logDirectory = [logDirectory URLByAppendingPathComponent:@"Dashboard Finanziaria" isDirectory:YES];
+    logDirectory = [logDirectory URLByAppendingPathComponent:@"Dashboard Finanziaria Beta" isDirectory:YES];
     [NSFileManager.defaultManager createDirectoryAtURL:logDirectory withIntermediateDirectories:YES attributes:nil error:nil];
     NSURL *logURL = [logDirectory URLByAppendingPathComponent:@"bridge.log"];
     [NSFileManager.defaultManager createFileAtPath:logURL.path contents:nil attributes:nil];
@@ -174,6 +174,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     task.standardOutput = logHandle;
     task.standardError = logHandle;
     NSMutableDictionary *environment = NSProcessInfo.processInfo.environment.mutableCopy;
+    environment[@"DASHBOARD_DATA_DIR"] = logDirectory.path;
     environment[@"PYTHONPATH"] = [[runtime URLByAppendingPathComponent:@"python" isDirectory:YES] path];
     environment[@"PYTHONPYCACHEPREFIX"] = [[logDirectory URLByAppendingPathComponent:@"pycache" isDirectory:YES] path];
     task.environment = environment;

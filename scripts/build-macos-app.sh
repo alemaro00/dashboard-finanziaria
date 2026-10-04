@@ -3,10 +3,10 @@
 set -euo pipefail
 
 PROJECT_DIR="${0:A:h:h}"
-INSTALL_DIR="/Applications/Dashboard Finanziaria.app"
+INSTALL_DIR="/Applications/Beta Dashboard Finanziaria.app"
 APP_VERSION="1.14.0"
-APP_BUILD="57"
-# Every release replaces the same installed app and must increase its build.
+APP_BUILD="59"
+# Beta releases update only the separately installed beta application.
 if [[ -f "$INSTALL_DIR/Contents/Info.plist" ]]; then
   INSTALLED_BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INSTALL_DIR/Contents/Info.plist")
   if (( APP_BUILD <= INSTALLED_BUILD )); then
@@ -19,7 +19,7 @@ if [[ -f "$INSTALL_DIR/Contents/Info.plist" ]]; then
 fi
 VENV_DIR="$PROJECT_DIR/.venv"
 "${NODE_BIN:-node}" "$PROJECT_DIR/scripts/build-web.cjs"
-APP_DIR="$PROJECT_DIR/dist/Dashboard Finanziaria.app"
+APP_DIR="$PROJECT_DIR/dist/Beta Dashboard Finanziaria.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
@@ -63,7 +63,7 @@ CLANG_MODULE_CACHE_PATH="$PROJECT_DIR/.build/module-cache" /usr/bin/clang \
   -framework Cocoa \
   -framework WebKit \
   "$PROJECT_DIR/macos/DashboardFinanziaria.m" \
-  -o "$MACOS_DIR/DashboardFinanziaria"
+  -o "$MACOS_DIR/BetaDashboardFinanziaria"
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -71,12 +71,12 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key><string>it</string>
-  <key>CFBundleDisplayName</key><string>Dashboard Finanziaria</string>
-  <key>CFBundleExecutable</key><string>DashboardFinanziaria</string>
-  <key>CFBundleIdentifier</key><string>it.alemaro.dashboard-finanziaria</string>
+  <key>CFBundleDisplayName</key><string>Beta Dashboard Finanziaria</string>
+  <key>CFBundleExecutable</key><string>BetaDashboardFinanziaria</string>
+  <key>CFBundleIdentifier</key><string>it.alemaro.dashboard-finanziaria.beta</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-  <key>CFBundleName</key><string>Dashboard Finanziaria</string>
+  <key>CFBundleName</key><string>Beta Dashboard Finanziaria</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.11.2</string>
   <key>CFBundleVersion</key><string>21</string>
@@ -101,17 +101,17 @@ cp -R "$IBAPI_DIR" "$RESOURCES_DIR/runtime/python/"
 /usr/bin/codesign --verify --deep --strict "$APP_DIR"
 
 # Close the running app normally before executing this installer.
-if /usr/bin/pgrep -x DashboardFinanziaria >/dev/null; then
-  print -u2 "Chiudere Dashboard Finanziaria prima di sostituire l'app."
+if /usr/bin/pgrep -x BetaDashboardFinanziaria >/dev/null; then
+  print -u2 "Chiudere Beta Dashboard Finanziaria prima di sostituire l'app."
   exit 1
 fi
-INSTALL_STAGING="/Applications/.Dashboard-Finanziaria-update.app"
+INSTALL_STAGING="/Applications/.Beta-Dashboard-Finanziaria-update.app"
 rm -rf "$INSTALL_STAGING"
 /usr/bin/ditto "$APP_DIR" "$INSTALL_STAGING"
 rm -rf "$INSTALL_DIR"
 mv "$INSTALL_STAGING" "$INSTALL_DIR"
 /usr/bin/codesign --verify --deep --strict "$INSTALL_DIR"
-/usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$PROJECT_DIR/dist/Dashboard-Finanziaria-$APP_VERSION-build$APP_BUILD.zip"
+/usr/bin/ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$PROJECT_DIR/dist/Beta-Dashboard-Finanziaria-$APP_VERSION-build$APP_BUILD.zip"
 rm -rf "$APP_DIR"
 
 echo "$INSTALL_DIR — versione $APP_VERSION, build $APP_BUILD"
