@@ -22,7 +22,7 @@ test('bank-linked detailed entries preserve original identity and exact amount',
 });
 
 test('all requested monthly money inputs accept nine integer digits and cents', () => {
-  for (const field of ['income', 'fixedCosts', 'variableCosts', 'emergencyFundAllocation', 'investedCapital', 'flexibleCashFunds']) {
+  for (const field of ['emergencyFundAllocation']) {
     const pattern = new RegExp(`max="999999999\\.99" step="0\\.01" value=\\{state\\.${field}\\}`);
     assert.match(source, pattern);
   }

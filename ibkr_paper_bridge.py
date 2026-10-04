@@ -877,7 +877,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
     clients: dict[str, IbkrAccountClient]
 
     research_engine = None
-    wallet_service = None
     enable_banking_service = None
     csrf_token = secrets.token_urlsafe(32)
     guard = RequestGuard()
@@ -1004,25 +1003,6 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     raise ValueError("Azione Enable Banking non ammessa")
                 self._send_json(result)
                 return
-            if path == "/api/wallet/control":
-                payload = self._read_json_body(maximum_size=16 * 1024)
-                service = getattr(self, "wallet_service", None)
-                if service is None:
-                    raise ValueError("Servizio Wallet non disponibile")
-                if set(payload) - {"action", "record"}:
-                    raise ValueError("Campi non ammessi")
-                action = payload.get("action")
-                if action == "sync":
-                    if "record" in payload:
-                        raise ValueError("Record non ammesso per la sincronizzazione")
-                    self._send_json(service.sync())
-                elif action == "create":
-                    self._send_json(service.create_record(payload.get("record")))
-                elif action == "update":
-                    self._send_json(service.update_record(payload.get("record")))
-                else:
-                    raise ValueError("Azione Wallet non ammessa")
-                return
             if path == "/api/paper-lab/control":
                 payload = self._read_json_body()
                 lab = getattr(self, 'paper_lab', None)
@@ -1090,11 +1070,6 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         if path == "/api/enable-banking/snapshot":
             service = getattr(self, "enable_banking_service", None)
             self._send_json(service.snapshot() if service else {"error": "Servizio Enable Banking non disponibile"},
-                            200 if service else 503)
-            return
-        if path == "/api/wallet/snapshot":
-            service = getattr(self, "wallet_service", None)
-            self._send_json(service.snapshot() if service else {"error": "Servizio Wallet non disponibile"},
                             200 if service else 503)
             return
         if path == "/api/paper-lab/snapshot":
@@ -1268,8 +1243,6 @@ def main() -> int:
     DashboardHandler.research_engine = ResearchEngine(APP_DATA_DIR / "research" / "laboratory.sqlite3")
     from paper_data import PaperLab
     DashboardHandler.paper_lab = PaperLab(APP_DATA_DIR / 'paper-research')
-    from wallet_sync import WalletSyncService
-    DashboardHandler.wallet_service = WalletSyncService(APP_DATA_DIR / "wallet")
     from enable_banking_sync import EnableBankingService
     DashboardHandler.enable_banking_service = EnableBankingService(APP_DATA_DIR / "enable-banking")
     DashboardHandler.clients = clients

@@ -1,5 +1,4 @@
 #import <Cocoa/Cocoa.h>
-#import <Security/Security.h>
 #import <WebKit/WebKit.h>
 
 @interface DashboardAppDelegate : NSObject <NSApplicationDelegate, WKNavigationDelegate, NSWindowDelegate>
@@ -31,9 +30,6 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
     paperConnect.target = self;
     NSMenuItem *disconnect = [menu addItemWithTitle:@"Disconnetti TWS — modalità offline" action:@selector(disconnectBroker:) keyEquivalent:@""];
     disconnect.target = self;
-    [menu addItem:NSMenuItem.separatorItem];
-    NSMenuItem *wallet = [menu addItemWithTitle:@"Configura Wallet API…" action:@selector(configureWallet:) keyEquivalent:@""];
-    wallet.target = self;
     [menu addItem:NSMenuItem.separatorItem];
     [menu addItemWithTitle:@"Esci da Dashboard Finanziaria" action:@selector(terminate:) keyEquivalent:@"q"];
     appItem.submenu = menu;
@@ -84,38 +80,6 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8766";
 - (void)connectReadOnly:(id)sender { [self changeBrokerMode:@"monitor-readonly"]; }
 - (void)connectPaperReadOnly:(id)sender { [self changeBrokerMode:@"paper-readonly"]; }
 - (void)disconnectBroker:(id)sender { [self changeBrokerMode:@"offline"]; }
-
-- (void)configureWallet:(id)sender {
-    NSAlert *alert = [[NSAlert alloc] init];
-    alert.messageText = @"Collega Wallet by BudgetBakers";
-    alert.informativeText = @"Incolla il token creato in Wallet Web → Impostazioni → REST API. Verrà salvato soltanto nel Portachiavi di questo Mac.";
-    [alert addButtonWithTitle:@"Salva nel Portachiavi"];
-    [alert addButtonWithTitle:@"Annulla"];
-    NSSecureTextField *field = [[NSSecureTextField alloc] initWithFrame:NSMakeRect(0, 0, 420, 24)];
-    field.placeholderString = @"Token API Wallet Premium";
-    alert.accessoryView = field;
-    if ([alert runModal] != NSAlertFirstButtonReturn) return;
-    NSString *token = [field.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-    if (token.length < 20 || token.length > 4096 || [token rangeOfCharacterFromSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].location != NSNotFound) {
-        [self showError:@"Token Wallet non valido. Nessuna modifica è stata eseguita."];
-        return;
-    }
-    NSString *service = @"it.alemaro.dashboard-finanziaria.wallet-api";
-    NSString *account = @"wallet-api";
-    NSDictionary *lookup = @{(__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
-                             (__bridge id)kSecAttrService: service,
-                             (__bridge id)kSecAttrAccount: account};
-    SecItemDelete((__bridge CFDictionaryRef)lookup);
-    NSMutableDictionary *item = lookup.mutableCopy;
-    item[(__bridge id)kSecValueData] = [token dataUsingEncoding:NSUTF8StringEncoding];
-    item[(__bridge id)kSecAttrAccessible] = (__bridge id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly;
-    OSStatus status = SecItemAdd((__bridge CFDictionaryRef)item, NULL);
-    if (status != errSecSuccess) {
-        [self showError:[NSString stringWithFormat:@"Impossibile salvare il token nel Portachiavi (errore %d).", (int)status]];
-        return;
-    }
-    [self.webView reload];
-}
 
 - (void)changeBrokerMode:(NSString *)mode {
     if ([mode isEqualToString:self.brokerMode]) return;

@@ -55,3 +55,34 @@ test('reset removes every linked bank contribution from both monthly totals', ()
   assert.equal(next.variableCosts, '0.00');
   assert.equal(next.notes.length, 0);
 });
+
+const availableBegin = source.indexOf('function availableBankMovements');
+const availableEnd = source.indexOf('\n\n      function removeDetailedEntriesFromState', availableBegin);
+const availableBankMovements = vm.runInNewContext(
+  `${source.slice(availableBegin, availableEnd)}\navailableBankMovements`
+);
+
+test('classified bank expenses move out of the window and return on removal', () => {
+  const records = [
+    {id: 'fixed', recordType: 'expense'},
+    {id: 'variable', recordType: 'expense'},
+    {id: 'income', recordType: 'income'}
+  ];
+  const state = {fixedCosts: 10, variableCosts: 20, notes: [
+    {id: 'bank-fixed', bankTransactionId: 'fixed', category: 'Costo Fisso', amount: 10},
+    {id: 'bank-variable', bankTransactionId: 'variable', category: 'Costo Variabile', amount: 20},
+    {id: 'manual', category: 'Costo Variabile', amount: 5}
+  ]};
+  const ids = current => Array.from(availableBankMovements(records, current.notes), r => r.id);
+  assert.deepEqual(ids(state), ['income']);
+  const afterFixed = removeDetailedEntriesFromState(state, n => n.id === 'bank-fixed');
+  assert.deepEqual(ids(afterFixed), ['fixed', 'income']);
+  assert.equal(afterFixed.fixedCosts, '0.00');
+  const afterVariable = removeDetailedEntriesFromState(afterFixed, n => n.id === 'bank-variable');
+  assert.deepEqual(ids(afterVariable), ['fixed', 'variable', 'income']);
+  assert.equal(afterVariable.variableCosts, '0.00');
+  const afterManual = removeDetailedEntriesFromState(afterVariable, n => n.id === 'manual');
+  assert.equal(afterManual.notes.length, 0);
+  assert.deepEqual(ids(afterManual), ['fixed', 'variable', 'income']);
+  assert.equal(records.length, 3);
+});

@@ -19,6 +19,8 @@
         --line-soft:rgba(255,255,255,.06);
         --accent:#d7b46a;
         --accent-2:#6fb2d2;
+        --selected-surface:#162536;
+        --selected-border:#527792;
         --good:#42d392;
         --bad:#ff5f63;
         --warn:#e9b949;
@@ -71,10 +73,7 @@
         margin:0;
         font-family:"Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         color:var(--text);
-        background:
-          radial-gradient(circle at 18% 0%, rgba(58,78,104,.38), transparent 30%),
-          radial-gradient(circle at 84% 12%, rgba(31,48,68,.48), transparent 34%),
-          linear-gradient(135deg, #131a24 0%, #0b1017 46%, #151923 100%);
+        background:var(--selected-surface);
       }
       .app{min-height:100vh;padding:18px}
       .shell{max-width:1580px;margin:0 auto}
@@ -233,16 +232,10 @@
       .decision-box.bad{border-color:rgba(255,123,123,.32);background:rgba(255,123,123,.08)}
       .bank-sync{display:grid;gap:12px}
       .bank-sync-status{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-      .wallet-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-      .wallet-kpi{padding:12px 14px;border:1px solid #283344;border-radius:8px;background:#0b1119}
-      .wallet-kpi strong{display:block;font-size:21px;margin-top:6px}
-      .wallet-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px;border:1px solid rgba(215,180,106,.25);border-radius:8px;background:rgba(11,17,25,.72)}
-      .wallet-form .wide{grid-column:span 2}
-      .wallet-form-actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-      .wallet-ledger{display:grid;gap:7px;max-height:340px;overflow:auto;padding-right:3px}
-      .wallet-record{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid #263243;border-radius:7px;background:#0c131d}
-      .wallet-record-meta{display:flex;gap:8px;flex-wrap:wrap;color:#96a3b5;font-size:12px;margin-top:3px}
-      .wallet-income{color:#44d7a8}.wallet-expense{color:#ff7d83}
+      .bank-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+      .bank-kpi{padding:12px 14px;border:1px solid #283344;border-radius:8px;background:#0b1119}
+      .bank-kpi strong{display:block;font-size:21px;margin-top:6px}
+      .bank-income{color:#44d7a8}.bank-expense{color:#ff7d83}
       .bank-connections{display:flex;gap:7px;flex-wrap:wrap}
       .bank-review-list{display:grid;gap:8px;max-height:340px;overflow:auto;padding:10px;border:1px solid #253244;border-radius:8px;background:#091019;overscroll-behavior:contain;scrollbar-gutter:stable}
       .bank-review-list>strong{position:sticky;top:-10px;z-index:1;padding:10px 2px 8px;background:#091019;border-bottom:1px solid #253244}
@@ -276,6 +269,13 @@
       .readout .value{font-size:34px;color:#f3d48d}
       .allocation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
       .stack-form{grid-template-columns:1fr}
+      .monthly-period-fields .field{grid-column:span 4;padding:12px;border:1px solid rgba(215,180,106,.55);border-radius:8px;background:rgba(215,180,106,.09)}
+      .monthly-period-fields label{color:var(--accent)}
+      .monthly-period-fields input,.monthly-period-fields select{border-color:rgba(215,180,106,.55);color:var(--accent)}
+      .monthly-flow-inputs > .field.third{padding:12px;border:1px solid #283344;border-radius:8px;background:#0b1119}
+      .monthly-flow-inputs output{display:block;padding:10px 0;color:#e5eaf2;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums}
+      .entry-detail-layout{align-items:start}
+      .entry-detail-layout > .stack-form{align-self:start;align-content:start}
       .stack-form .field,.stack-form .field.third,.stack-form .field.quarter{grid-column:span 1}
       .meter{
         height:18px;border-radius:4px;background:#0a0f16;border:1px solid #2b3646;
@@ -290,40 +290,27 @@
       .allocation-ok{color:var(--good)}
       .allocation-pending{color:var(--warn)}
       .monthly-input-card{border-color:rgba(215,180,106,.42);box-shadow:0 16px 40px rgba(0,0,0,.28)}
+      .monthly-flow-inputs + .bank-sync{margin-top:24px;padding-top:20px;border-top:1px solid rgba(215,180,106,.18)}
       .monthly-input-block + .monthly-input-block{margin-top:22px;padding-top:22px;border-top:1px solid rgba(215,180,106,.18)}
       .monthly-save-bar{
         display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:22px;padding:14px;
         border-radius:6px;border:1px solid rgba(215,180,106,.34);background:rgba(215,180,106,.07);
       }
-      .entry-category-grid{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+      .entry-category-grid{display:flex;flex-wrap:nowrap;gap:8px;margin-bottom:14px;padding:2px;overflow-x:auto;overscroll-behavior-x:contain}
       .entry-category-chip{
-        display:grid;align-content:start;gap:7px;min-height:92px;padding:10px;
-        color:#e8d39e;background:rgba(215,180,106,.07);border:1px solid rgba(215,180,106,.28);
+        flex:1 0 160px;min-width:160px;min-height:58px;padding:12px;
+        color:var(--text);background:#0c1118;border:1px solid var(--line);
         text-transform:none;letter-spacing:0;text-align:left;font-weight:600;
       }
-      .entry-category-head,.entry-category-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+      .entry-category-head{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
       .entry-category-title{font-size:11px;white-space:nowrap}
-      .entry-category-head strong{font-size:14px;font-variant-numeric:tabular-nums}
-      .entry-category-meta{color:#a99b78;font-size:10px;font-weight:600}
-      .entry-category-gap{color:var(--warn);text-align:right}
-      .entry-category-gap.complete{color:var(--good)}
-      .entry-category-gap.over{color:var(--bad)}
-      .entry-category-progress{height:4px;border-radius:999px;background:rgba(215,180,106,.14);overflow:hidden}
-      .entry-category-fill{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),#f2d58e)}
-      .entry-category-chip.detail-complete .entry-category-fill{background:var(--good)}
-      .entry-category-chip.detail-over .entry-category-fill{background:var(--bad)}
-      .entry-category-chip.active{
-        color:#171107;background:linear-gradient(180deg,#ead28f,#caa95e);border-color:#f0d996;
-        box-shadow:0 0 0 2px rgba(215,180,106,.12);
+      .entry-category-head strong{font-size:16px;font-variant-numeric:tabular-nums;white-space:nowrap}
+      .entry-category-chip.active,.entry-category-chip.active:hover,.entry-category-chip.active:focus,.entry-category-chip.active:active{
+        color:var(--text);background:var(--selected-surface);border-color:var(--selected-border);box-shadow:none;
       }
-      .entry-category-chip.active .entry-category-meta{color:rgba(23,17,7,.72)}
-      .entry-category-chip.active .entry-category-gap{
-        color:#101722;background:rgba(8,10,15,.12);border:1px solid rgba(8,10,15,.22);
-        border-radius:3px;padding:2px 5px;font-weight:800;
-      }
-      .entry-category-chip.active .entry-category-gap.complete{color:#07543a}
-      .entry-category-chip.active .entry-category-gap.over{color:#7a2024}
-      .entry-category-chip.active .entry-category-progress{background:rgba(23,17,7,.16)}
+      .entry-category-chip:hover{background:#0c1118;border-color:var(--selected-border)}
+      .entry-category-chip:focus-visible{outline:2px solid var(--selected-border);outline-offset:2px}
+      .entry-category-chip:focus:not(:focus-visible){outline:none}
       .entry-list-panel{display:grid;align-content:start;gap:10px;min-width:0}
       .entry-list-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
       .entry-list{display:grid;gap:9px}
@@ -355,18 +342,27 @@
       .allocation-patrimony .value{font-size:28px}
       .history-list{display:grid;gap:10px}
       .history-item{border:1px solid #263141;border-radius:7px;background:#0c1118;overflow:hidden}
-      .history-item[open]{border-color:rgba(111,178,210,.46);box-shadow:0 10px 26px rgba(0,0,0,.2)}
+      .history-item[open]{border-color:var(--selected-border);background:var(--selected-surface);box-shadow:none}
       .history-summary{
         display:grid;grid-template-columns:1.25fr repeat(5,.72fr) auto;gap:12px;align-items:center;
-        padding:13px 14px;cursor:pointer;list-style:none;background:linear-gradient(180deg,#101722,#0c1118);
+        padding:13px 14px;cursor:pointer;list-style:none;background:#0c1118;
       }
+      .history-overall{display:grid;grid-template-columns:1.25fr repeat(5,.72fr) auto;gap:12px;align-items:center;padding:16px 14px;margin-bottom:18px;border:1px solid #263141;border-radius:7px;background:#101722}
+      .history-total .label{font-size:10px;line-height:1.5;margin-bottom:8px}
+      .history-total strong{font-size:21px;font-variant-numeric:tabular-nums}
+      .history-overall .history-chevron{visibility:hidden}
+      @media(max-width:1100px){.history-overall{grid-template-columns:repeat(3,minmax(0,1fr))}.history-overall > .title{grid-column:1/-1}.history-overall .history-chevron{display:none}}
+      @media(max-width:600px){.history-overall{grid-template-columns:repeat(2,minmax(0,1fr))}}
       .history-summary::-webkit-details-marker{display:none}
-      .history-summary:hover{background:#121a25}
+      .history-summary:hover{background:#0c1118}
+      .history-item[open] .history-summary,.history-item[open] .history-summary:hover,.history-item[open] .history-summary:focus,.history-item[open] .history-details{background:var(--selected-surface)}
+      .history-summary:focus-visible{outline:2px solid var(--selected-border);outline-offset:-2px}
+      .history-summary:focus:not(:focus-visible){outline:none}
       .history-summary strong{display:block;font-variant-numeric:tabular-nums}
       .history-chevron{font-size:18px;color:var(--accent);transition:transform .18s ease}
       .history-item[open] .history-chevron{transform:rotate(180deg)}
       .history-details{padding:16px;border-top:1px solid #263141}
-      .history-detail-grid{display:grid;grid-template-columns:repeat(5,minmax(135px,1fr));gap:9px}
+      .history-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(135px,1fr));gap:9px}
       .history-detail-card{padding:11px;border-radius:6px;background:#111823;border:1px solid #222d3c}
       .history-detail-card strong{font-size:16px;font-variant-numeric:tabular-nums}
       .history-notes{display:grid;gap:8px;margin-top:12px}
@@ -404,7 +400,7 @@
       .archive-notice.bad{border-color:rgba(255,95,99,.38);background:rgba(255,95,99,.08);color:#ffb5b8}
       .finance-management-card{
         order:100;border-color:rgba(233,185,73,.42);
-        background:linear-gradient(145deg,#171a20,#0d1219 58%,#15120c);
+        background:var(--selected-surface);
       }
       .finance-management-head .title{color:#f0d58d}
       .finance-panel{padding:14px;border:1px solid #273244;border-radius:6px;background:#0b1118}
@@ -512,7 +508,7 @@
       .risk-threshold.dinamico.active{color:#ffb3b8;border-color:#ff5f63;background:rgba(255,95,99,.12)}
       .section-surface{
         border:1px solid rgba(71,151,181,.55)!important;
-        background:linear-gradient(145deg,#102532 0%,#0b1721 55%,#0b131b 100%)!important;
+        background:var(--selected-surface)!important;
         box-shadow:0 0 0 1px rgba(71,151,181,.07),0 14px 30px rgba(0,0,0,.22)!important;
       }
       .section-surface .title,.section-surface .finance-management-head .title{color:#d7f4ff;text-shadow:none}
@@ -525,12 +521,10 @@
         .allocation-grid{grid-template-columns:1fr}
         .performance-grid{grid-template-columns:repeat(2,1fr)}
         .finance-summary-grid{grid-template-columns:repeat(2,1fr)}
-        .wallet-form{grid-template-columns:repeat(2,minmax(0,1fr))}
         .ibkr-kpis{grid-template-columns:repeat(3,1fr)}
         .wealth-kpis{grid-template-columns:1fr}
         .wealth-half{grid-column:span 12}
         .row{grid-template-columns:1fr}
-        .entry-category-grid{grid-template-columns:repeat(2,1fr)}
         .history-summary{grid-template-columns:1fr repeat(2,.7fr) auto}
         .history-summary .history-optional{display:none}
         .history-detail-grid{grid-template-columns:repeat(2,1fr)}
@@ -554,8 +548,7 @@
         .value{font-size:32px}
         .performance-grid{grid-template-columns:1fr}
         .finance-summary-grid{grid-template-columns:1fr}
-        .wallet-kpis,.wallet-form{grid-template-columns:1fr}.wallet-form .wide{grid-column:auto}
-        .wallet-record{grid-template-columns:1fr auto}.wallet-record button{grid-column:1/-1}
+        .bank-kpis{grid-template-columns:1fr}
         .ibkr-kpis{grid-template-columns:1fr}
         .ibkr-strip{align-items:flex-start;flex-direction:column}
         .wealth-heading{align-items:flex-start;flex-direction:column}
@@ -563,7 +556,6 @@
         .donut{width:230px;height:230px}
         .donut::after{inset:42px}
         .indicator-row{grid-template-columns:1fr}
-        .entry-category-grid{grid-template-columns:1fr}
         .monthly-save-bar,.history-actions{align-items:flex-start;flex-direction:column}
         .history-summary{grid-template-columns:1fr auto}
         .history-summary .history-kpi{display:none}
@@ -638,11 +630,13 @@
       const defaultState = {
         budgetModelVersion: 4,
         income: 0,
+        additionalIncome: 0,
         decemberBonusNet: 0,
         fixedCosts: 0,
         variableCosts: 0,
         emergencyFundTarget: 0,
         emergencyFundAllocation: 0,
+        cashOpeningBalance: 0,
         investedCapital: 0,
         flexibleCashFunds: 0,
         grossSalary: 0,
@@ -655,6 +649,7 @@
         monthName: "Agosto",
         year: 2026,
         monthlyHistory: [],
+        monthDrafts: {},
         notes: []
       };
 
@@ -788,6 +783,12 @@
           category: normalizeCategory(note.category),
           amount: roundMoney(note.amount)
         };
+        if (normalized.category === "Investimento" && normalized.bankTransactionId && normalized.bankRecordType === "income") normalized.category = "Disinvestimento";
+        if (["Investimento", "Disinvestimento"].includes(normalized.category) && normalized.bankTransactionId) {
+          normalized.managementSource = "Bancario";
+          normalized.currentValue = 0;
+          return normalized;
+        }
         if (normalized.category === "Investimento") {
           normalized.managementSource = normalized.managementSource || (normalized.ticker ? "IBKR" : "Manuale");
           if (normalized.managementSource === "IBKR") {
@@ -826,31 +827,194 @@
           if (note.category === "Costo Fisso") summary.fixedCosts = roundMoney(summary.fixedCosts + amount);
           if (note.category === "Costo Variabile") summary.variableCosts = roundMoney(summary.variableCosts + amount);
           if (note.category === "Investimento") summary.investments = roundMoney(summary.investments + amount);
+          if (note.category === "Disinvestimento") summary.disinvestments = roundMoney(summary.disinvestments + amount);
+          if (note.category === "Stipendio") summary.salary = roundMoney(summary.salary + amount);
+          if (note.category === "Entrate aggiuntive") summary.additionalIncome = roundMoney(summary.additionalIncome + amount);
           if (note.category === "Flexible Cash") summary.flexibleCash = roundMoney(summary.flexibleCash + amount);
           return summary;
-        }, { fixedCosts: 0, variableCosts: 0, investments: 0, flexibleCash: 0, total: 0 });
+        }, { fixedCosts: 0, variableCosts: 0, investments: 0, disinvestments: 0, flexibleCash: 0, salary: 0, additionalIncome: 0, total: 0 });
+      }
+
+      function upsertDetailedIncome(current, item) {
+        const previous = (current.notes || []).find(note => note.id === item.id);
+        const contribution = (note, category) => note?.category === category ? Math.max(0, roundMoney(note.amount)) : 0;
+        return {
+          ...current,
+          income: roundMoney(Math.max(0, (Number(current.income) || 0) - contribution(previous, "Stipendio") + contribution(item, "Stipendio"))).toFixed(2),
+          additionalIncome: roundMoney(Math.max(0, (Number(current.additionalIncome) || 0) - contribution(previous, "Entrate aggiuntive") + contribution(item, "Entrate aggiuntive"))).toFixed(2),
+          notes: previous ? current.notes.map(note => note.id === item.id ? item : note) : [...(current.notes || []), item]
+        };
+      }
+
+      function detailedEntriesForCategory(notes, category) {
+        return (notes || []).map((item, index) => ({ item, index })).filter(({ item }) => item.category === category);
+      }
+
+      function monthlyCashflow(inputs, details) {
+        const investments = details.investments;
+        const disinvestments = details.disinvestments;
+        const inflows = roundMoney(details.salary + details.additionalIncome + disinvestments);
+        const outflows = roundMoney(details.fixedCosts + details.variableCosts + investments);
+        return { investments, disinvestments, inflows, outflows, net: roundMoney(inflows - outflows) };
+      }
+
+      function monthlyReport(record) {
+        const notes = (record.notes || []).map(normalizeNote).filter(note => !note.bankTransactionId || bankMovementMatchesPeriod(note, record));
+        const categories = summarizeNotes(notes);
+        const cashflow = monthlyCashflow(record, categories);
+        return { notes, categories, ...cashflow, netInvestments: roundMoney(categories.investments - categories.disinvestments) };
+      }
+
+      function groupReportNotes(notes) {
+        const groups = new Map();
+        for (const note of notes || []) {
+          const label = String(note.label || "").trim().replace(/\s+/g, " ");
+          const key = JSON.stringify([note.category, label.toLocaleLowerCase("it-IT")]);
+          const group = groups.get(key);
+          if (group) {
+            group.amount = roundMoney(group.amount + roundMoney(note.amount));
+            group.count += 1;
+          } else groups.set(key, { ...note, label, amount: roundMoney(note.amount), count: 1, groupKey: key });
+        }
+        return [...groups.values()];
+      }
+
+      function aggregateMonthlyReports(records) {
+        return records.reduce((total, record) => {
+          const report = monthlyReport(record);
+          for (const field of ["inflows", "outflows", "net", "netInvestments"]) total[field] = roundMoney(total[field] + report[field]);
+          total.emergencyFund = roundMoney(total.emergencyFund + roundMoney(record.emergencyFundAllocation));
+          return total;
+        }, { inflows: 0, outflows: 0, net: 0, netInvestments: 0, emergencyFund: 0 });
+      }
+
+      function cashAccountBalance(current) {
+        const periods = new Map();
+        const periodNumber = record => Number(record.year) * 12 + months.indexOf(record.monthName);
+        const selected = periodNumber(current);
+        for (const record of current.monthlyHistory || []) periods.set(monthPeriodKey(record.monthName, record.year), record);
+        for (const [key, draft] of Object.entries(current.monthDrafts || {})) {
+          const [year, name] = key.split("-");
+          periods.set(key, { ...draft, year: Number(year), monthName: months.find(month => month.toLowerCase() === name) });
+        }
+        periods.set(monthPeriodKey(current.monthName, current.year), current);
+        let balance = roundMoney(current.cashOpeningBalance);
+        const seen = new Set();
+        for (const record of periods.values()) {
+          if (periodNumber(record) > selected) continue;
+          for (const note of record.notes || []) {
+            if (note.accountId !== "cash" || (note.bankTransactionId && !bankMovementMatchesPeriod(note, record))) continue;
+            const id = note.bankTransactionId || `${monthPeriodKey(record.monthName, record.year)}:${note.id}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
+            const direction = ["Stipendio", "Entrate aggiuntive", "Disinvestimento", "Prelievo cash"].includes(note.category) ? 1 : ["Costo Fisso", "Costo Variabile", "Investimento"].includes(note.category) ? -1 : 0;
+            balance = roundMoney(balance + direction * roundMoney(note.amount));
+          }
+        }
+        return balance;
+      }
+
+      function readableBankAccountCount(data) {
+        if (!data?.configured || data.authorizationRequired || !data.lastSync || data.error) return 0;
+        return new Set((data.accounts || []).filter(account => account.id && account.readable !== false).map(account => account.id)).size;
+      }
+
+      function availableBankMovements(records, notes) {
+        const classifiedIds = new Set((notes || []).map(note => note.bankTransactionId).filter(Boolean));
+        return records.filter(record => !classifiedIds.has(record.id));
       }
 
       function removeDetailedEntriesFromState(current, shouldRemove) {
         const notes = [];
         let linkedFixedCosts = 0;
         let linkedVariableCosts = 0;
+        let removedSalary = 0;
+        let removedAdditionalIncome = 0;
         (Array.isArray(current.notes) ? current.notes : []).forEach((note, index) => {
           if (!shouldRemove(note, index)) {
             notes.push(note);
             return;
           }
-          if (!note.bankTransactionId) return;
           const amount = Math.max(0, Number(note.amount) || 0);
+          if (note.category === "Stipendio") removedSalary += amount;
+          if (note.category === "Entrate aggiuntive") removedAdditionalIncome += amount;
+          if (!note.bankTransactionId) return;
           if (note.category === "Costo Fisso") linkedFixedCosts += amount;
           if (note.category === "Costo Variabile") linkedVariableCosts += amount;
         });
         return {
           ...current,
           notes,
+          income: roundMoney(Math.max(0, (Number(current.income) || 0) - removedSalary)).toFixed(2),
+          additionalIncome: roundMoney(Math.max(0, (Number(current.additionalIncome) || 0) - removedAdditionalIncome)).toFixed(2),
           fixedCosts: roundMoney(Math.max(0, (Number(current.fixedCosts) || 0) - linkedFixedCosts)).toFixed(2),
           variableCosts: roundMoney(Math.max(0, (Number(current.variableCosts) || 0) - linkedVariableCosts)).toFixed(2)
         };
+      }
+
+      function monthPeriodKey(monthName, year) {
+        return `${year}-${monthName}`.toLowerCase().trim();
+      }
+
+      function bankMovementMatchesPeriod(movement, period) {
+        const match = String(movement.transactionDate || movement.date || "").match(/^(\d{4})-(\d{2})-\d{2}$/);
+        return Boolean(match && Number(match[1]) === Number(period.year) && Number(match[2]) === months.indexOf(period.monthName) + 1);
+      }
+
+      function repairMonthlyRecord(record, savedSnapshot = false) {
+        if (!record.monthName || !record.year) return record;
+        const excluded = (record.notes || []).filter(note => note.bankTransactionId && !bankMovementMatchesPeriod(note, record));
+        if (!excluded.length) return record;
+        const input = { ...record, income: savedSnapshot ? record.baseIncome ?? Math.max(0, Number(record.income || 0) - Number(record.additionalIncome || 0) - Number(record.decemberBonusNet || 0) - Number(record.disinvestmentIncome || 0)) : record.income };
+        const ids = new Set(excluded);
+        const corrected = removeDetailedEntriesFromState(input, note => ids.has(note));
+        const archived = [...(record.excludedBankNotes || [])];
+        excluded.forEach(note => {
+          if (!archived.some(old => old.id === note.id && old.transactionDate === note.transactionDate)) archived.push(note);
+        });
+        const result = { ...corrected, excludedBankNotes: archived };
+        if (savedSnapshot) {
+          result.baseIncome = Number(corrected.income);
+          result.income = roundMoney(result.baseIncome + Number(corrected.additionalIncome || 0) + Number(record.decemberBonusNet || 0));
+          result.freeCash = roundMoney(result.income - Number(corrected.fixedCosts) - Number(corrected.variableCosts));
+          result.currentNetWorth = roundMoney(result.freeCash - Number(record.emergencyFundAllocation || 0));
+          if (Number(record.budgetModelVersion) >= 5) {
+            const cashflow = monthlyCashflow(corrected, summarizeNotes(corrected.notes));
+            result.income = cashflow.inflows;
+            result.monthlyOutflows = cashflow.outflows;
+            result.disinvestmentIncome = cashflow.disinvestments;
+            result.currentNetWorth = cashflow.net;
+            result.investmentAllocation = cashflow.investments;
+          }
+        }
+        return result;
+      }
+
+      function monthInputs(source = {}, savedSnapshot = false) {
+        source = repairMonthlyRecord(source, savedSnapshot);
+        return {
+          excludedBankNotes: source.excludedBankNotes || [],
+          income: savedSnapshot ? source.baseIncome ?? Math.max(0, Number(source.income || 0) - Number(source.decemberBonusNet || 0) - Number(source.additionalIncome || 0) - Number(source.disinvestmentIncome || 0)) : source.income ?? "0.00",
+          additionalIncome: source.additionalIncome ?? "0.00",
+          decemberBonusNet: source.decemberBonusNet ?? 0,
+          fixedCosts: source.fixedCosts ?? "0.00",
+          variableCosts: source.variableCosts ?? "0.00",
+          emergencyFundAllocation: source.emergencyFundAllocation ?? 0,
+          investedCapital: (savedSnapshot ? source.investmentAllocation ?? source.investedCapital : source.investedCapital) ?? 0,
+          flexibleCashFunds: (savedSnapshot ? source.flexibleCashAllocation : source.flexibleCashFunds) ?? 0,
+          notes: (source.notes || []).map(normalizeNote)
+        };
+      }
+
+      function switchMonthlyPeriod(current, monthName, year, draftEntry) {
+        const fromId = monthPeriodKey(current.monthName, current.year);
+        const toId = monthPeriodKey(monthName, year);
+        if (fromId === toId) return current;
+        const monthDrafts = { ...(current.monthDrafts || {}), [fromId]: { ...monthInputs(current), entry: draftEntry } };
+        const draft = monthDrafts[toId];
+        const saved = (current.monthlyHistory || []).find(month => monthPeriodKey(month.monthName, month.year) === toId);
+        const inputs = draft ? monthInputs({ ...draft, monthName, year }) : monthInputs(saved, Boolean(saved));
+        return { ...current, ...inputs, monthName, year, monthDrafts };
       }
 
       function mergeValueMaps(...maps) {
@@ -988,7 +1152,8 @@
         let cumulativeEmergencyFund = 0;
         let cumulativeFlexibleCash = 0;
         let cumulativeManualPortfolioValue = 0;
-        return sortMonthlyHistory(history).map((month) => {
+        return sortMonthlyHistory(history).map((storedMonth) => {
+          const month = repairMonthlyRecord(storedMonth, true);
           const normalizedNotes = (month.notes || []).map(normalizeNote);
           const noteTotals = summarizeNotes(normalizedNotes);
           const monthModelVersion = Number(month.budgetModelVersion || 0);
@@ -1022,7 +1187,7 @@
           const manualInvestmentValue = normalizedNotes
             .filter((note) => note.category === "Investimento" && note.managementSource === "Manuale")
             .reduce((sum, note) => sum + Math.max(0, numberOrFallback(note.currentValue, note.amount)), 0);
-          cumulativeEmergencyFund += Math.max(0, Number(month.emergencyFundAllocation) || 0);
+          cumulativeEmergencyFund = roundMoney(cumulativeEmergencyFund + roundMoney(month.emergencyFundAllocation));
           cumulativeFlexibleCash += flexibleCashAllocation;
           cumulativeManualPortfolioValue += manualInvestmentValue;
           const savedPortfolioValue = Number(month.portfolioMarketValue) || 0;
@@ -1064,7 +1229,13 @@
 
       function normalizeStoredState(parsed) {
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Archivio dati non valido");
+        parsed = repairMonthlyRecord(parsed);
         const savedState = { ...parsed };
+        savedState.monthDrafts = Object.fromEntries(Object.entries(parsed.monthDrafts || {}).map(([key, draft]) => {
+          const [year, name] = key.split("-");
+          const monthName = months.find(month => month.toLowerCase() === name);
+          return [key, repairMonthlyRecord({ ...draft, monthName, year: Number(year) })];
+        }));
         delete savedState.pendingSales;
         delete savedState.marketQuotes;
         const normalizedCurrentNotes = (parsed.notes || defaultState.notes).map(normalizeNote);
@@ -1076,11 +1247,11 @@
         savedState.variableCosts = Math.max(0, Number(parsed.variableCosts) || 0) + (usesAdditiveDetails ? currentNoteTotals.variableCosts : 0);
         savedState.investedCapital = Math.max(0, Number(parsed.investedCapital) || 0) + (usesAdditiveDetails ? currentNoteTotals.investments : 0);
         const isDecember = String(parsed.monthName || defaultState.monthName).toLowerCase() === "dicembre";
-        const currentIncome = (Number(parsed.income) || 0) + (isDecember ? Math.min(2000, Math.max(0, Number(parsed.decemberBonusNet) || 0)) : 0);
+        const currentIncome = (Number(parsed.income) || 0) + (Number(parsed.additionalIncome) || 0) + (isDecember ? Math.min(2000, Math.max(0, Number(parsed.decemberBonusNet) || 0)) : 0);
         const currentAvailableAfterEmergency = currentIncome
           - savedState.fixedCosts
           - savedState.variableCosts
-          - Math.max(0, Number(parsed.emergencyFundAllocation) || 0);
+          - roundMoney(parsed.emergencyFundAllocation);
         const currentInvestmentAllocation = savedState.investedCapital;
         const inferredFlexibleCash = Math.max(0, currentAvailableAfterEmergency - currentInvestmentAllocation);
         savedState.flexibleCashFunds = usesMacroTargets
@@ -1654,9 +1825,10 @@
         const [isWealthSectionOpen, setIsWealthSectionOpen] = useState(() => localStorage.getItem("wealth-section-open") !== "false");
         const [isMonthlyInputOpen, setIsMonthlyInputOpen] = useState(() => localStorage.getItem("monthly-input-panel-open") !== "false");
         const [isMonthlyHistoryOpen, setIsMonthlyHistoryOpen] = useState(() => localStorage.getItem("monthly-history-panel-open") !== "false");
-        const [isMonthlySummaryOpen, setIsMonthlySummaryOpen] = useState(() => localStorage.getItem("monthly-summary-panel-open") !== "false");
         const [isPortfolioPanelOpen, setIsPortfolioPanelOpen] = useState(() => localStorage.getItem("portfolio-panel-open") !== "false");
         const [entry, setEntry] = useState(createEmptyEntry);
+        const [yearInput, setYearInput] = useState(() => state.year);
+        useEffect(() => setYearInput(state.year), [state.year]);
         const [editingMonthId, setEditingMonthId] = useState("");
         const [persistenceStatus, setPersistenceStatus] = useState("loading");
         const persistenceReady = useRef(false);
@@ -1667,13 +1839,6 @@
         const [ibkrLive, setIbkrLive] = useState({ reachable: false, loading: true, data: null, error: "" });
         const [banking, setBanking] = useState({ loading: true, busy: false, data: null, error: "", callbackUrl: "" });
         const [bankRename, setBankRename] = useState({ id: "", value: "" });
-        const [wallet, setWallet] = useState({ loading: true, busy: false, data: null, error: "" });
-        const [walletDraft, setWalletDraft] = useState(() => ({
-          walletRecordId: "", recordType: "expense", accountId: "", categoryId: "",
-          date: new Date().toLocaleDateString("sv-SE"), amount: "", counterParty: "",
-          note: "", paymentType: "debit_card"
-        }));
-
         useEffect(() => {
           localStorage.setItem(storageKey, JSON.stringify(state));
         }, [state]);
@@ -1687,7 +1852,7 @@
               if (!response.ok) throw new Error(document.error || "Memoria locale non disponibile");
               if (!cancelled && document.saved && document.state) {
                 setState(normalizeStoredState(document.state));
-                setEntry({ ...createEmptyEntry(), ...(document.entry || {}) });
+                setEntry({ ...createEmptyEntry(), ...(document.entry || {}), category: document.entry?.category === "Flexible Cash" ? "Costo Variabile" : document.entry?.category || "Costo Variabile" });
                 setEditingMonthId(String(document.editingMonthId || ""));
                 const ui = document.ui || {};
                 if (typeof ui.salaryPanelOpen === "boolean") setIsSalaryPanelOpen(ui.salaryPanelOpen);
@@ -1695,7 +1860,6 @@
                 if (typeof ui.wealthSectionOpen === "boolean") setIsWealthSectionOpen(ui.wealthSectionOpen);
                 if (typeof ui.monthlyInputOpen === "boolean") setIsMonthlyInputOpen(ui.monthlyInputOpen);
                 if (typeof ui.monthlyHistoryOpen === "boolean") setIsMonthlyHistoryOpen(ui.monthlyHistoryOpen);
-                if (typeof ui.monthlySummaryOpen === "boolean") setIsMonthlySummaryOpen(ui.monthlySummaryOpen);
                 if (typeof ui.portfolioPanelOpen === "boolean") setIsPortfolioPanelOpen(ui.portfolioPanelOpen);
               } else if (!cancelled) {
                 const initialPayload = {
@@ -1714,7 +1878,6 @@
                     wealthSectionOpen: isWealthSectionOpen,
                     monthlyInputOpen: isMonthlyInputOpen,
                     monthlyHistoryOpen: isMonthlyHistoryOpen,
-                    monthlySummaryOpen: isMonthlySummaryOpen,
                     portfolioPanelOpen: isPortfolioPanelOpen
                   }
                 };
@@ -1755,10 +1918,9 @@
             wealthSectionOpen: isWealthSectionOpen,
             monthlyInputOpen: isMonthlyInputOpen,
             monthlyHistoryOpen: isMonthlyHistoryOpen,
-            monthlySummaryOpen: isMonthlySummaryOpen,
             portfolioPanelOpen: isPortfolioPanelOpen
           }
-        }), [state, entry, editingMonthId, isSalaryPanelOpen, isFinanceSectionOpen, isWealthSectionOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isMonthlySummaryOpen, isPortfolioPanelOpen]);
+        }), [state, entry, editingMonthId, isSalaryPanelOpen, isFinanceSectionOpen, isWealthSectionOpen, isMonthlyInputOpen, isMonthlyHistoryOpen, isPortfolioPanelOpen]);
 
         const queueStateSave = (payload) => {
           persistenceQueue.current = persistenceQueue.current.catch(() => {}).then(async () => {
@@ -1847,10 +2009,6 @@
         }, [isMonthlyHistoryOpen]);
 
         useEffect(() => {
-          localStorage.setItem("monthly-summary-panel-open", String(isMonthlySummaryOpen));
-        }, [isMonthlySummaryOpen]);
-
-        useEffect(() => {
           localStorage.setItem("portfolio-panel-open", String(isPortfolioPanelOpen));
         }, [isPortfolioPanelOpen]);
 
@@ -1863,17 +2021,6 @@
           Object.values(pollers).forEach(poller => poller.refresh());
           return () => Object.values(pollers).forEach(poller => poller.stop());
         }, []);
-
-        async function refreshWallet() {
-          try {
-            const response = await fetch(`${ibkrBridgeBaseUrl}/api/wallet/snapshot`, { cache: "no-store" });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || "Sincronizzazione Wallet non disponibile");
-            setWallet(current => ({ ...current, loading: false, data, error: data.error || "" }));
-          } catch (error) {
-            setWallet(current => ({ ...current, loading: false, error: error.message }));
-          }
-        }
 
         async function refreshBanking() {
           try {
@@ -1917,68 +2064,29 @@
           return () => clearInterval(timer);
         }, []);
 
-        useEffect(() => {
-          refreshWallet();
-          const timer = setInterval(refreshWallet, 30000);
-          return () => clearInterval(timer);
-        }, []);
-
-        async function walletControl(action, record = undefined) {
-          setWallet(current => ({ ...current, busy: true, error: "" }));
-          try {
-            const response = await fetch(`${ibkrBridgeBaseUrl}/api/wallet/control`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ _csrf: csrfToken, action, ...(record ? { record } : {}) })
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || "Operazione Wallet non riuscita");
-            setWallet(current => ({ ...current, busy: false, data, error: data.error || "" }));
-            if (action === "create" || action === "update") {
-              setWalletDraft(current => ({ ...current, walletRecordId: "", amount: "", counterParty: "", note: "" }));
-            }
-            if (["sync", "create", "update"].includes(action)) await refreshWallet();
-          } catch (error) {
-            setWallet(current => ({ ...current, busy: false, error: error.message }));
-          }
-        }
-
-        function editWalletRecord(record) {
-          setWalletDraft({
-            walletRecordId: record.walletRecordId, recordType: record.recordType,
-            accountId: record.accountId, categoryId: record.categoryId || "", date: record.date,
-            amount: String(record.amount), counterParty: record.counterParty || "",
-            note: record.note || "", paymentType: record.paymentType || "debit_card"
-          });
-        }
-
-        function saveWalletRecord() {
-          if (!walletDraft.accountId || !walletDraft.amount || !walletDraft.date) return;
-          return walletControl(walletDraft.walletRecordId ? "update" : "create", walletDraft);
-        }
-
         function refreshIbkr(mode) {
           return ibkrPollers.current[mode]?.refresh();
         }
 
         const totals = useMemo(() => {
-          const baseIncome = Number(state.income) || 0;
-          const isDecember = String(state.monthName).toLowerCase() === "dicembre";
-          const decemberBonusNet = isDecember ? Math.min(2000, Math.max(0, Number(state.decemberBonusNet) || 0)) : 0;
-          const income = baseIncome + decemberBonusNet;
           const noteTotals = summarizeNotes(state.notes);
-          const fixedCosts = Math.max(0, Number(state.fixedCosts) || 0);
-          const variableCosts = Math.max(0, Number(state.variableCosts) || 0);
+          const baseIncome = noteTotals.salary;
+          const decemberBonusNet = 0;
+          const additionalIncome = noteTotals.additionalIncome;
+          const income = roundMoney(baseIncome + additionalIncome);
+          const fixedCosts = noteTotals.fixedCosts;
+          const variableCosts = noteTotals.variableCosts;
           const fixedCostDetailGap = fixedCosts - noteTotals.fixedCosts;
           const variableCostDetailGap = variableCosts - noteTotals.variableCosts;
           const baseFixedCosts = Math.max(0, fixedCostDetailGap);
           const baseVariableCosts = Math.max(0, variableCostDetailGap);
           const essential = fixedCosts + variableCosts;
           const freeCash = income - essential;
-          const emergencyFundAllocation = Math.max(0, Number(state.emergencyFundAllocation) || 0);
-          const currentNetWorth = freeCash - emergencyFundAllocation;
-          const investmentAllocation = Math.max(0, Number(state.investedCapital) || 0);
-          const flexibleCashAllocation = Math.max(0, Number(state.flexibleCashFunds) || 0);
+          const emergencyFundAllocation = roundMoney(state.emergencyFundAllocation);
+          const cashflow = monthlyCashflow(state, noteTotals);
+          const currentNetWorth = cashflow.net;
+          const investmentAllocation = cashflow.investments;
+          const flexibleCashAllocation = 0;
           const investmentDetailGap = investmentAllocation - noteTotals.investments;
           const flexibleCashDetailGap = flexibleCashAllocation - noteTotals.flexibleCash;
           const unclassifiedInvestmentAllocation = Math.max(0, investmentDetailGap);
@@ -1989,17 +2097,19 @@
           const currentPeriodId = `${state.year}-${state.monthName}`.toLowerCase().trim();
           const historicalEmergencyFund = (state.monthlyHistory || [])
             .filter((month) => month.id !== currentPeriodId && month.id !== editingMonthId)
-            .reduce((sum, month) => sum + Math.max(0, Number(month.emergencyFundAllocation) || 0), 0);
-          const projectedEmergencyFund = historicalEmergencyFund + emergencyFundAllocation;
+            .reduce((sum, month) => roundMoney(sum + roundMoney(month.emergencyFundAllocation)), 0);
+          const projectedEmergencyFund = roundMoney(historicalEmergencyFund + emergencyFundAllocation);
           const emergencyGap = Math.max(0, emergencyFundTarget - projectedEmergencyFund);
-          const emergencyProgress = emergencyFundTarget > 0 ? Math.min(100, (projectedEmergencyFund / emergencyFundTarget) * 100) : 0;
+          const emergencyProgress = emergencyFundTarget > 0 ? Math.max(0, Math.min(100, (projectedEmergencyFund / emergencyFundTarget) * 100)) : 0;
           const spendable = currentNetWorth;
           const ratio = income > 0 ? (currentNetWorth / income) * 100 : 0;
-          const unallocatedCapital = currentNetWorth - allocatedCapital;
+          const unallocatedCapital = currentNetWorth;
 
           return {
+            cashflow,
             income,
             baseIncome,
+            additionalIncome,
             decemberBonusNet,
             noteTotals,
             baseFixedCosts,
@@ -2031,33 +2141,33 @@
           };
         }, [state, editingMonthId]);
 
-        const currentWalletExpenses = useMemo(() => (wallet.data?.expenses || [])
-          .filter(expense => bankExpenseMatchesMonth(expense, state)), [wallet.data, state.monthName, state.year]);
-        const currentWalletRecords = useMemo(() => (wallet.data?.records || [])
-          .filter(record => bankExpenseMatchesMonth(record, state)), [wallet.data, state.monthName, state.year]);
-        const currentWalletIncome = currentWalletRecords.filter(record => record.recordType === "income" && record.currency === "EUR")
-          .reduce((sum, record) => sum + Number(record.amount || 0), 0);
-        const currentWalletOutflow = currentWalletRecords.filter(record => record.recordType === "expense" && record.currency === "EUR")
-          .reduce((sum, record) => sum + Number(record.amount || 0), 0);
-        const importedBankIds = useMemo(() => new Set((state.notes || [])
-          .map(note => note.bankTransactionId).filter(Boolean)), [state.notes]);
-        const walletExpensesToReview = currentWalletExpenses
-          .filter(expense => !importedBankIds.has(expense.id) && (expense.needsReview || expense.currency !== "EUR"));
-        const importedBankTotal = currentWalletExpenses
-          .filter(expense => importedBankIds.has(expense.id) && expense.currency === "EUR")
-          .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
         const currentBankRecords = useMemo(() => (banking.data?.records || [])
           .filter(record => bankExpenseMatchesMonth(record, state)), [banking.data, state.monthName, state.year]);
+        const cashBalance = cashAccountBalance(state);
+        const cashWithdrawals = (state.notes || []).filter(note => note.category === "Prelievo cash");
+        const readableBankAccounts = banking.error ? 0 : readableBankAccountCount(banking.data);
         const currentBankExpenses = currentBankRecords.filter(record => record.recordType === "expense");
         const currentBankIncome = currentBankRecords.filter(record => record.recordType === "income" && record.currency === "EUR")
           .reduce((sum, record) => sum + Number(record.amount || 0), 0);
         const currentBankOutflow = currentBankExpenses.filter(record => record.currency === "EUR")
           .reduce((sum, record) => sum + Number(record.amount || 0), 0);
-        const importedBankCategories = useMemo(() => new Map((state.notes || [])
-          .filter(note => note.bankTransactionId)
-          .map(note => [note.bankTransactionId, normalizeCategory(note.category)])), [state.notes]);
+        const availableBankRecords = useMemo(() => availableBankMovements(currentBankRecords, state.notes),
+          [currentBankRecords, state.notes]);
+
+        function navigateMonth(monthName, year) {
+          if (!months.includes(monthName) || !Number.isInteger(Number(year)) || Number(year) < 1900 || Number(year) > 9999) return;
+          const id = monthPeriodKey(monthName, year);
+          if (id === monthPeriodKey(state.monthName, state.year)) return;
+          const saved = (state.monthlyHistory || []).find(month => monthPeriodKey(month.monthName, month.year) === id);
+          setEditingMonthId(saved?.id || "");
+          setEntry({ ...createEmptyEntry(), ...(state.monthDrafts?.[id]?.entry || {}) });
+          setBankRename({ id: "", value: "" });
+          setState(current => switchMonthlyPeriod(current, monthName, Number(year), entry));
+        }
 
         function updateField(field, value) {
+          if (field === "monthName") return navigateMonth(value, state.year);
+          if (field === "year") return navigateMonth(state.monthName, value);
           setState((current) => ({ ...current, [field]: value }));
         }
 
@@ -2066,42 +2176,19 @@
         }
 
         function bankExpenseMatchesMonth(expense, current) {
-          const month = months.indexOf(current.monthName) + 1;
-          const match = String(expense.date || "").match(/^(\d{4})-(\d{2})-/);
-          return Boolean(match && Number(match[1]) === Number(current.year) && Number(match[2]) === month);
-        }
-
-        function importWalletExpenses(expenses) {
-          setState((current) => {
-            const eligible = expenses.filter(expense => expense.currency === "EUR" && bankExpenseMatchesMonth(expense, current));
-            const replacements = new Map(eligible.map(expense => [expense.id, normalizeNote({
-                id: `bank-${expense.id}`,
-                bankTransactionId: expense.id,
-                bank: expense.bank,
-                transactionDate: expense.date,
-                autoImported: !expense.needsReview,
-                label: `${expense.suggestedCategory} · ${expense.description}`,
-                amount: expense.amount,
-                category: "Costo Variabile"
-              })]));
-            const seen = new Set();
-            const notes = (current.notes || []).map(note => {
-              const replacement = replacements.get(note.bankTransactionId);
-              if (!replacement) return note;
-              seen.add(note.bankTransactionId);
-              return replacement;
-            });
-            replacements.forEach((note, id) => { if (!seen.has(id)) notes.push(note); });
-            if (!replacements.size) return current;
-            const detailedVariableCosts = notes
-              .filter(note => normalizeCategory(note.category) === "Costo Variabile")
-              .reduce((sum, note) => sum + Math.max(0, Number(note.amount) || 0), 0);
-            return { ...current, notes, variableCosts: detailedVariableCosts };
-          });
+          return bankMovementMatchesPeriod(expense, current);
         }
 
         function classifyBankExpense(expense, category) {
-          if (expense.recordType !== "expense" || expense.currency !== "EUR") return;
+          if (category === "Prelievo cash") {
+            if (expense.currency !== "EUR" || expense.recordType !== "expense" || !bankMovementMatchesPeriod(expense, state)) return;
+            const note = normalizeNote({ id: `bank-${expense.id}`, bankTransactionId: expense.id, bank: expense.bank, transactionDate: expense.date, originalBankDescription: expense.description, bankRecordType: "expense", label: expense.customName || expense.description, amount: expense.amount, category, accountId: "cash" });
+            setState(current => upsertDetailedIncome(current, note));
+            return;
+          }
+          const allowed = expense.recordType === "income" ? ["Stipendio", "Entrate aggiuntive", "Disinvestimento"] : expense.recordType === "expense" ? ["Costo Fisso", "Costo Variabile", "Investimento"] : [];
+          if (expense.currency !== "EUR" || !allowed.includes(category) || !bankMovementMatchesPeriod(expense, state)) return;
+          setEntry(current => ({ ...createEmptyEntry(), category }));
           setState(current => {
             const bankNote = normalizeNote({
               id: `bank-${expense.id}`,
@@ -2109,11 +2196,13 @@
               bank: expense.bank,
               transactionDate: expense.date,
               originalBankDescription: expense.description,
+              bankRecordType: expense.recordType,
               autoImported: false,
               label: expense.customName || expense.description,
               amount: expense.amount,
               category
             });
+            if (expense.recordType === "income" || category === "Investimento") return upsertDetailedIncome(current, bankNote);
             let replaced = false;
             const notes = (current.notes || []).map(note => {
               if (note.bankTransactionId !== expense.id) return note;
@@ -2141,11 +2230,6 @@
           setBankRename({ id: "", value: "" });
         }
 
-        useEffect(() => {
-          if (persistenceStatus !== "saved" || !wallet.data?.expenses) return;
-          importWalletExpenses(wallet.data.expenses.filter(expense => !expense.needsReview && expense.currency === "EUR"));
-        }, [wallet.data, state.monthName, state.year, persistenceStatus]);
-
         async function addEntry() {
           const isInvestment = entry.category === "Investimento";
           const isIbkrInvestment = isInvestment && entry.managementSource === "IBKR";
@@ -2162,6 +2246,7 @@
             id: entry.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
             label: isIbkrInvestment ? "Capitale versato su IBKR" : entry.label.trim(),
             amount,
+            accountId: entry.bankTransactionId ? undefined : "cash",
             bankTransactionId: entry.bankTransactionId,
             bank: entry.bank,
             transactionDate: entry.transactionDate,
@@ -2180,13 +2265,8 @@
             geography: isManualInvestment ? entry.geography : "",
             continent: isManualInvestment ? entry.continent : ""
           });
-          setState((current) => ({
-            ...current,
-            notes: entry.id
-              ? current.notes.map((note) => note.id === entry.id ? item : note)
-              : [...current.notes, item]
-          }));
-          setEntry(createEmptyEntry());
+          setState(current => upsertDetailedIncome(current, item));
+          setEntry({ ...createEmptyEntry(), category: entry.category });
         }
 
         function editEntry(item) {
@@ -2230,12 +2310,15 @@
 
         function buildSnapshot() {
           return {
-            budgetModelVersion: 4,
+            budgetModelVersion: 6,
             id: `${state.year}-${state.monthName}`.toLowerCase().trim() || String(Date.now()),
             monthName: state.monthName,
             year: Number(state.year) || 2026,
-            income: totals.income,
+            income: totals.cashflow.inflows,
+            monthlyOutflows: totals.cashflow.outflows,
+            disinvestmentIncome: totals.cashflow.disinvestments,
             baseIncome: totals.baseIncome,
+            additionalIncome: totals.additionalIncome,
             decemberBonusNet: totals.decemberBonusNet,
             baseFixedCosts: totals.baseFixedCosts,
             baseVariableCosts: totals.baseVariableCosts,
@@ -2286,40 +2369,11 @@
         function startNextMonth() {
           const nextPeriod = nextMonth(state.monthName, state.year);
           persistMonthSnapshot(buildSnapshot(), editingMonthId);
-          setEditingMonthId("");
-          setEntry(createEmptyEntry());
-          setBankRename({ id: "", value: "" });
-          setState((current) => ({
-            ...current,
-            monthName: nextPeriod.monthName,
-            year: nextPeriod.year,
-            income: "0.00",
-            fixedCosts: "0.00",
-            emergencyFundAllocation: 0,
-            investedCapital: 0,
-            flexibleCashFunds: 0,
-            variableCosts: 0,
-            decemberBonusNet: 0,
-            notes: []
-          }));
+          navigateMonth(nextPeriod.monthName, nextPeriod.year);
         }
 
         function loadSnapshot(snapshot) {
-          setEditingMonthId(snapshot.id);
-          setEntry(createEmptyEntry());
-          setState((current) => ({
-            ...current,
-            monthName: snapshot.monthName,
-            year: snapshot.year || current.year,
-            income: snapshot.baseIncome ?? (Number(snapshot.income || 0) - Number(snapshot.decemberBonusNet || 0)),
-            decemberBonusNet: snapshot.decemberBonusNet || 0,
-            fixedCosts: Math.max(0, Number(snapshot.fixedCosts) || 0),
-            variableCosts: Math.max(0, Number(snapshot.variableCosts) || 0),
-            investedCapital: Math.max(0, Number(snapshot.investmentAllocation ?? snapshot.investedCapital) || 0),
-            flexibleCashFunds: Math.max(0, Number(snapshot.flexibleCashAllocation) || 0),
-            emergencyFundAllocation: snapshot.emergencyFundAllocation || 0,
-            notes: (snapshot.notes || current.notes).map(normalizeNote)
-          }));
+          navigateMonth(snapshot.monthName, snapshot.year || state.year);
           requestAnimationFrame(() => document.getElementById("monthly-input")?.scrollIntoView({ behavior: "smooth", block: "start" }));
         }
 
@@ -2337,11 +2391,14 @@
 
         const investRatio = totals.income > 0 ? (totals.investmentAllocation / totals.income) * 100 : 0;
         const detailCategories = [
-          { value: "Costo Fisso", label: "Costo fisso", target: totals.fixedCosts, detailed: totals.noteTotals.fixedCosts, gap: totals.fixedCostDetailGap },
-          { value: "Costo Variabile", label: "Costo variabile", target: totals.variableCosts, detailed: totals.noteTotals.variableCosts, gap: totals.variableCostDetailGap },
-          { value: "Investimento", label: "Investimento", target: totals.investmentAllocation, detailed: totals.noteTotals.investments, gap: totals.investmentDetailGap },
-          { value: "Flexible Cash", label: "Flexible cash", target: totals.flexibleCashAllocation, detailed: totals.noteTotals.flexibleCash, gap: totals.flexibleCashDetailGap }
+          { value: "Costo Fisso", label: "Costi fissi", target: totals.fixedCosts, detailed: totals.noteTotals.fixedCosts, gap: totals.fixedCostDetailGap },
+          { value: "Costo Variabile", label: "Costi variabili", target: totals.variableCosts, detailed: totals.noteTotals.variableCosts, gap: totals.variableCostDetailGap },
+          { value: "Investimento", label: "Investimenti", target: totals.investmentAllocation, detailed: totals.noteTotals.investments, gap: totals.investmentDetailGap },
+          { value: "Disinvestimento", label: "Disinvestimenti", target: totals.noteTotals.disinvestments, detailed: totals.noteTotals.disinvestments, gap: 0 },
+          { value: "Stipendio", label: "Stipendio", target: totals.baseIncome, detailed: totals.noteTotals.salary, gap: totals.baseIncome - totals.noteTotals.salary },
+          { value: "Entrate aggiuntive", label: "Entrate aggiuntive", target: totals.additionalIncome, detailed: totals.noteTotals.additionalIncome, gap: totals.additionalIncome - totals.noteTotals.additionalIncome }
         ];
+        const visibleDetailedEntries = detailedEntriesForCategory(state.notes, entry.category);
         const selectedDetailCategory = detailCategories.find((category) => category.value === entry.category) || detailCategories[1];
         const originalEditedEntry = entry.id ? state.notes.find((note) => note.id === entry.id) : null;
         const originalAmountInSelectedCategory = originalEditedEntry?.category === entry.category
@@ -2562,20 +2619,11 @@
           return mergeValueMaps(livePortfolio.byType, manualPortfolio.byType);
         }, [livePortfolio.byType, manualPortfolio.byType]);
         const historicalInvestmentTotal = Object.values(historicalInvestmentTotals).reduce((sum, value) => sum + Number(value || 0), 0);
-        const historyStats = useMemo(() => {
-          const totalFreeCash = monthlyHistory.reduce((sum, item) => sum + Number(item.freeCash || 0), 0);
-          const totalInvestable = monthlyHistory.reduce((sum, item) => sum + Number(item.investmentAllocation ?? item.investable ?? 0), 0);
-          const first = monthlyHistory[0];
-          const last = monthlyHistory[monthlyHistory.length - 1];
-          const netWorthChange = first && last ? Number(last.currentNetWorth || 0) - Number(first.currentNetWorth || 0) : 0;
-          const investedChange = first && last ? Number(last.investedCapital || 0) - Number(first.investedCapital || 0) : 0;
-
-          return { totalFreeCash, totalInvestable, netWorthChange, investedChange };
-        }, [monthlyHistory]);
+        const historyStats = useMemo(() => aggregateMonthlyReports(monthlyHistory), [monthlyHistory]);
         const wealthOverview = useMemo(() => {
           const savedFlexibleCash = monthlyHistory.reduce((sum, month) => sum + Math.max(0, Number(month.flexibleCashAllocation) || 0), 0);
           const flexibleCash = savedFlexibleCash;
-          const emergencyFund = monthlyHistory.reduce((sum, month) => sum + Math.max(0, Number(month.emergencyFundAllocation) || 0), 0);
+          const emergencyFund = monthlyHistory.reduce((sum, month) => roundMoney(sum + roundMoney(month.emergencyFundAllocation)), 0);
           const total = livePortfolio.netLiquidation + manualPortfolio.total + emergencyFund + flexibleCash;
           const liquidityAvailable = emergencyFund + flexibleCash + livePortfolio.positiveCash + manualPortfolio.liquidValue;
           const combinedInvestmentsByType = mergeValueMaps(livePortfolio.byType, manualPortfolio.byType);
@@ -2803,7 +2851,7 @@
                     <div className="title-with-info">
                         <div className="title">Fondo emergenza</div>
                         <InfoTip label="formula del fondo emergenza">
-                          Fondo aggiornato = quote del fondo nei mesi salvati + quota del mese selezionato. La percentuale confronta il fondo aggiornato con il target impostato.
+                          Fondo aggiornato = quote del fondo nei mesi salvati + quota del mese selezionato. Una quota positiva aumenta il fondo; una quota negativa lo riduce. La percentuale confronta il fondo aggiornato con il target impostato.
                         </InfoTip>
                     </div>
                     <span className="badge">{plainPct(totals.emergencyProgress)} completato</span>
@@ -2822,11 +2870,10 @@
                     <div className="title-with-info">
                         <div className="title">Input del mese</div>
                         <InfoTip label="formula del patrimonio mensile">
-                          Patrimonio a fine mese = stipendio netto + eventuale bonus di dicembre − costi fissi − costi variabili − quota fondo emergenza del mese.
+                          I sei importi sono la somma delle rispettive voci dettagliate. Per cambiarli, classifica un movimento oppure aggiungi, modifica o rimuovi una voce nella categoria corrispondente.
                         </InfoTip>
                     </div>
                     <div className="actions">
-                      <span className="badge">Disponibile da allocare: {money(totals.currentNetWorth)}</span>
                       <SectionToggle
                         isOpen={isMonthlyInputOpen}
                         onToggle={() => setIsMonthlyInputOpen((open) => !open)}
@@ -2837,7 +2884,7 @@
                   </div>
                   {isMonthlyInputOpen && (
                   <>
-                  <div className="form">
+                  <div className="form monthly-period-fields">
                     <div className="field third">
                       <label>Mese</label>
                       <select value={state.monthName} onChange={(e) => updateField("monthName", e.target.value)}>
@@ -2848,46 +2895,37 @@
                     </div>
                     <div className="field third">
                       <label>Anno</label>
-                      <input type="number" value={state.year} onChange={(e) => updateField("year", e.target.value)} />
-                    </div>
-                    <div className="field third">
-                      <label>Stipendio netto (€)</label>
-                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.income} onChange={(e) => updateField("income", e.target.value)} onBlur={() => commitMoneyField("income")} />
-                    </div>
-                    {String(state.monthName).toLowerCase() === "dicembre" && (
-                      <div className="field full-field">
-                        <div className="decision-box warn">
-                          <strong>Bonus annuale di dicembre</strong>
-                          <div className="small" style={{ marginTop: 6, marginBottom: 12 }}>
-                            Il bonus massimo previsto e' 2.000 euro lordi. Inserisci qui soltanto il netto realmente ricevuto nel cedolino.
-                          </div>
-                          <label>Bonus netto ricevuto (euro)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="2000"
-                            step="0.01"
-                            value={state.decemberBonusNet}
-                            onChange={(e) => updateField("decemberBonusNet", e.target.value)}
-                            placeholder="es. 1.250"
-                          />
-                          <div className="small" style={{ marginTop: 8 }}>
-                            Reddito totale del mese: {money(totals.income)}. Il netto non puo' superare il lordo massimo di 2.000 euro.
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="field third">
-                      <label>Costi fissi totali del mese (€)</label>
-                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.fixedCosts} onChange={(e) => updateField("fixedCosts", e.target.value)} onBlur={() => commitMoneyField("fixedCosts")} />
-                    </div>
-                    <div className="field third">
-                      <label>Costi variabili totali del mese (€)</label>
-                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.variableCosts} onChange={(e) => updateField("variableCosts", e.target.value)} onBlur={() => commitMoneyField("variableCosts")} />
+                      <input type="number" min="1900" max="9999" value={yearInput} onChange={e => setYearInput(e.target.value)} onBlur={e => { updateField("year", e.target.value); setYearInput(Number(e.target.value) >= 1900 && Number(e.target.value) <= 9999 ? Number(e.target.value) : state.year); }} />
                     </div>
                     <div className="field third">
                       <label>Quota fondo emergenza del mese (€)</label>
-                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} onBlur={() => commitMoneyField("emergencyFundAllocation")} />
+                      <input type="number" min="-999999999.99" max="999999999.99" step="0.01" value={state.emergencyFundAllocation} onChange={(e) => updateField("emergencyFundAllocation", e.target.value)} onBlur={() => commitMoneyField("emergencyFundAllocation")} />
+                    </div>
+                  </div>
+                  <div className="form monthly-flow-inputs" style={{ marginTop: 12 }}>
+                    <div className="field third">
+                      <label>Stipendio netto (€)</label>
+                      <output aria-label="income calcolato dalle voci dettagliate">{money(totals.baseIncome)}</output>
+                    </div>
+                    <div className="field third">
+                      <label>Entrate aggiuntive (€)</label>
+                      <output aria-label="additionalIncome calcolato dalle voci dettagliate">{money(totals.additionalIncome)}</output>
+                    </div>
+                    <div className="field third">
+                      <label>Costi fissi totali del mese (€)</label>
+                      <output aria-label="fixedCosts calcolato dalle voci dettagliate">{money(totals.fixedCosts)}</output>
+                    </div>
+                    <div className="field third">
+                      <label>Costi variabili totali del mese (€)</label>
+                      <output aria-label="variableCosts calcolato dalle voci dettagliate">{money(totals.variableCosts)}</output>
+                    </div>
+                    <div className="field third">
+                      <label>Investimenti del mese (€)</label>
+                      <output aria-label="Investimenti calcolati dalle voci dettagliate">{money(totals.cashflow.investments)}</output>
+                    </div>
+                    <div className="field third">
+                      <label>Disinvestimenti del mese (€)</label>
+                      <output aria-label="Disinvestimenti calcolati dalle voci dettagliate">{money(totals.cashflow.disinvestments)}</output>
                     </div>
                   </div>
 
@@ -2906,8 +2944,16 @@
                     </div>
                     <div className="bank-sync-status"><div className="bank-connections">
                       <span className={`badge ${banking.data?.application?.active ? "allocation-ok" : ""}`}>{banking.data?.application?.active ? "Enable Banking attivo · sola lettura" : "Collegamento da completare"}</span>
+                      <span className="badge">Cash · EUR · {money(cashBalance)}</span>
                       {(banking.data?.accounts || []).map(account => <span className="badge" key={account.id}>{account.bank || account.name} · {account.currency}{account.identifierMasked ? ` · ${account.identifierMasked}` : ""}{account.balance == null ? "" : ` · ${accountMoney(account.balance, account.currency)}`}</span>)}
                     </div></div>
+                    <details className="decision-box" style={{ marginBottom: 12 }}>
+                      <summary>Gestisci conto Cash</summary>
+                      <div className="field" style={{ marginTop: 12, maxWidth: 320 }}><label>Saldo iniziale contanti (€)</label><input type="number" min="0" max="999999999.99" step="0.01" value={state.cashOpeningBalance ?? 0} onChange={event => updateField("cashOpeningBalance", event.target.value)} onBlur={() => commitMoneyField("cashOpeningBalance")} /></div>
+                      <div className="small" style={{ marginTop: 8 }}>Imposta una sola volta il saldo prima delle voci cash registrate. Le nuove voci manuali aggiornano i contanti. Classifica i prelievi bancari con “Prelievo cash”: sono trasferimenti, non spese. Il saldo mostrato include i movimenti fino al mese selezionato.</div>
+                      {cashBalance < 0 && <div className="bank-expense" style={{ marginTop: 8 }}>Saldo cash negativo: verifica saldo iniziale, prelievi e voci manuali.</div>}
+                      {cashWithdrawals.map(note => <div className="bank-movement-row" key={note.id}><div><strong>{note.label}</strong><div className="small">{note.bank} → Cash · {note.transactionDate}</div></div><div className="actions"><strong className="bank-income">+{money(note.amount)}</strong><button className="secondary" onClick={() => setState(current => removeDetailedEntriesFromState(current, item => item.id === note.id))}>Rimuovi</button></div></div>)}
+                    </details>
                     <div className={banking.data?.authorizationRequired ? "decision-box warn" : "decision-box"}>
                       <strong>{banking.data?.authorizationRequired ? "Autorizza i conti nell’app della banca" : "Aggiungi o rinnova un conto"}</strong>
                       <div className="small" style={{ marginTop: 6 }}>Esegui l’accesso per ogni banca. Enable Banking mostrerà soltanto i conti già consentiti nella tua applicazione Restricted.</div>
@@ -2920,13 +2966,12 @@
                     </div>
                     {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}
                     {banking.error && <div className="decision-box bad"><strong>Collegamento non riuscito</strong><div className="small" style={{ marginTop: 6 }}>{banking.error}</div></div>}
-                    <div className="wallet-kpis">
-                      <div className="wallet-kpi"><span className="eyebrow">Entrate bancarie · mese</span><strong className="wallet-income">{money(currentBankIncome)}</strong></div>
-                      <div className="wallet-kpi"><span className="eyebrow">Uscite bancarie · mese</span><strong className="wallet-expense">{money(currentBankOutflow)}</strong></div>
-                      <div className="wallet-kpi"><span className="eyebrow">Movimenti · mese</span><strong>{currentBankRecords.length}</strong></div>
+                    <div className="bank-kpis">
+                      <div className="bank-kpi"><span className="eyebrow">Entrate bancarie in {readableBankAccounts} {readableBankAccounts === 1 ? "conto" : "conti"} in {state.monthName}</span><strong className="bank-income">{money(currentBankIncome)}</strong></div>
+                      <div className="bank-kpi"><span className="eyebrow">Uscite bancarie in {readableBankAccounts} {readableBankAccounts === 1 ? "conto" : "conti"} in {state.monthName}</span><strong className="bank-expense">{money(currentBankOutflow)}</strong></div>
+                      <div className="bank-kpi"><span className="eyebrow">Movimenti nel mese di {state.monthName}</span><strong>{currentBankRecords.length}</strong></div>
                     </div>
-                    {currentBankRecords.length > 0 && <div className="bank-movement-window"><strong>{currentBankRecords.length} movimenti del mese</strong>{currentBankRecords.map(record => {
-                      const selectedCategory = importedBankCategories.get(record.id) || "";
+                    {currentBankRecords.length > 0 && <div className="bank-movement-window"><strong>{availableBankRecords.length ? `${availableBankRecords.length} movimenti del mese` : "Tutti i movimenti sono nelle voci dettagliate"}</strong>{availableBankRecords.map(record => {
                       const isRenaming = bankRename.id === record.id;
                       return <div className="bank-movement-row" key={record.id}>
                         <div className="bank-review-main">
@@ -2936,10 +2981,12 @@
                           {isRenaming && <div className="bank-rename-form"><input maxLength="120" value={bankRename.value} onChange={event => setBankRename({ id: record.id, value: event.target.value })} placeholder="Nome personalizzato" /><button disabled={banking.busy || !bankRename.value.trim()} onClick={() => saveBankRename(record)}>Salva nome</button><button className="secondary" onClick={() => setBankRename({ id: "", value: "" })}>Annulla</button></div>}
                         </div>
                         <div className="bank-movement-side">
-                          <strong className={record.recordType === "income" ? "wallet-income" : "wallet-expense"}>{record.recordType === "income" ? "+" : "−"}{accountMoney(record.amount, record.currency)}</strong>
+                          <strong className={record.recordType === "income" ? "bank-income" : "bank-expense"}>{record.recordType === "income" ? "+" : "−"}{accountMoney(record.amount, record.currency)}</strong>
                           <div className="bank-movement-actions">
-                            {record.recordType === "expense" && <React.Fragment><button className={`secondary ${selectedCategory === "Costo Fisso" ? "selected" : ""}`} disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Fisso")}>Fisso</button><button className={`secondary ${selectedCategory === "Costo Variabile" ? "selected" : ""}`} disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Variabile")}>Variabile</button></React.Fragment>}
+                            {record.recordType === "expense" && <React.Fragment><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Fisso")}>Fisso</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Variabile")}>Variabile</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Prelievo cash")}>Prelievo cash</button></React.Fragment>}
+                            {record.recordType === "income" && <React.Fragment><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Stipendio")}>Emolumenti</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Entrate aggiuntive")}>Extra</button></React.Fragment>}
                             {!isRenaming && <button className="secondary" onClick={() => setBankRename({ id: record.id, value: "" })}>Rinomina</button>}
+                            <button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, record.recordType === "income" ? "Disinvestimento" : "Investimento")}>{record.recordType === "income" ? "Disinvestimenti" : "Investimenti"}</button>
                           </div>
                         </div>
                       </div>;
@@ -2949,43 +2996,9 @@
                   <section className="monthly-input-block">
                   <div className="section-head">
                     <div className="title-with-info">
-                        <div className="title">Capital allocation</div>
-                        <InfoTip label="formula della capital allocation">
-                          Patrimonio {money(totals.currentNetWorth)} = target investimenti {money(totals.investmentAllocation)} + target flexible cash {money(totals.flexibleCashAllocation)} + differenza {money(totals.unallocatedCapital)}. Dettaglio investimenti: {money(totals.noteTotals.investments)} ({detailGapLabel(totals.investmentDetailGap)}). Dettaglio flexible cash: {money(totals.noteTotals.flexibleCash)} ({detailGapLabel(totals.flexibleCashDetailGap)}).
-                        </InfoTip>
-                    </div>
-                    <span className={Math.abs(totals.unallocatedCapital) < 0.01 ? "badge allocation-ok" : totals.unallocatedCapital > 0 ? "badge allocation-pending" : "badge allocation-warning"}>
-                      {Math.abs(totals.unallocatedCapital) < 0.01
-                        ? "Patrimonio completamente allocato"
-                        : totals.unallocatedCapital > 0
-                          ? `Da allocare: ${money(totals.unallocatedCapital)}`
-                          : `Sovra-allocato: ${money(Math.abs(totals.unallocatedCapital))}`}
-                    </span>
-                  </div>
-                  <div className="form" style={{ marginTop: 12 }}>
-                    <div className="field third">
-                      <div className="readout allocation-patrimony">
-                        <div className="label">Patrimonio a fine mese</div>
-                        <div className="value">{money(totals.currentNetWorth)}</div>
-                      </div>
-                    </div>
-                    <div className="field third">
-                      <label>Investimenti totali del mese (€)</label>
-                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.investedCapital} onChange={(e) => updateField("investedCapital", e.target.value)} onBlur={() => commitMoneyField("investedCapital")} />
-                    </div>
-                    <div className="field third">
-                      <label>Flexible cash funds a fine mese (€)</label>
-                      <input type="number" min="0" max="999999999.99" step="0.01" value={state.flexibleCashFunds} onChange={(e) => updateField("flexibleCashFunds", e.target.value)} onBlur={() => commitMoneyField("flexibleCashFunds")} />
-                    </div>
-                  </div>
-                  </section>
-
-                  <section className="monthly-input-block">
-                  <div className="section-head">
-                    <div className="title-with-info">
                         <div className="title">Voci dettagliate</div>
                         <InfoTip label="riconciliazione delle voci dettagliate">
-                          Le voci dettagliano i target macro senza sommare nuovamente gli importi. Il residuo di ogni categoria è target meno totale delle relative voci.
+                          Le classificazioni bancarie aggiornano gli importi del mese. Investimenti e disinvestimenti sono calcolati dalle relative voci dettagliate.
                         </InfoTip>
                     </div>
                   </div>
@@ -2994,24 +3007,18 @@
                       <button
                         type="button"
                         key={category.value}
-                        className={`entry-category-chip detail-${detailGapTone(category.gap)} ${entry.category === category.value ? "active" : ""}`}
+                        className={`entry-category-chip ${entry.category === category.value ? "active" : ""}`}
+                        aria-pressed={entry.category === category.value}
                         onClick={() => setEntry((current) => ({ ...current, category: category.value }))}
                       >
                         <div className="entry-category-head">
                           <span className="entry-category-title">{category.label}</span>
                           <strong>{money(category.target)}</strong>
                         </div>
-                        <div className="entry-category-meta">
-                          <span>Dettagliato {money(category.detailed)}</span>
-                          <span className={`entry-category-gap ${detailGapTone(category.gap)}`}>{detailGapLabel(category.gap)}</span>
-                        </div>
-                        <div className="entry-category-progress" aria-hidden="true">
-                          <span className="entry-category-fill" style={{ width: `${detailProgress(category.target, category.detailed)}%` }} />
-                        </div>
                       </button>
                     ))}
                   </div>
-                  <div className="split">
+                  <div className="split entry-detail-layout">
                     <div className="form stack-form">
                       {entry.category === "Investimento" && (
                         <div className="field">
@@ -3160,7 +3167,7 @@
                                   : "Aggiungi investimento illiquido"
                                 : entry.category === "Flexible Cash"
                                   ? "Aggiungi flexible cash"
-                                  : "Aggiungi costo"}
+                                  : entry.category === "Disinvestimento" ? "Aggiungi disinvestimento" : ["Stipendio", "Entrate aggiuntive"].includes(entry.category) ? "Aggiungi entrata" : "Aggiungi costo"}
                           </button>
                           {entry.id && <button className="secondary" onClick={() => setEntry(createEmptyEntry())}>Annulla modifica</button>}
                           <button className="secondary" onClick={resetCustomEntries}>Reset voci</button>
@@ -3169,17 +3176,17 @@
                     </div>
                     <div className="entry-list-panel">
                       <div className="entry-list-heading">
-                        <div className="title">Voci del mese</div>
-                        <span className="badge">{state.notes.length} {state.notes.length === 1 ? "voce" : "voci"}</span>
+                        <div className="title">{selectedDetailCategory.label} · voci del mese</div>
+                        <span className="badge">{visibleDetailedEntries.length} {visibleDetailedEntries.length === 1 ? "voce" : "voci"}</span>
                       </div>
-                      {state.notes.length === 0 && (
+                      {visibleDetailedEntries.length === 0 && (
                         <div className="decision-box">
                           <strong>Nessuna voce inserita</strong>
                           <div className="small" style={{ marginTop: 6 }}>Usa il pannello a sinistra per aggiungere il primo dettaglio del mese.</div>
                         </div>
                       )}
                       <div className="entry-list">
-                      {state.notes.map((item, index) => (
+                      {visibleDetailedEntries.map(({ item, index }) => (
                         <div className="entry-list-card" key={`${item.label}-${index}`}>
                           <div className="entry-list-main">
                             <div className="entry-list-top">
@@ -3188,10 +3195,11 @@
                             </div>
                             {item.bankTransactionId && item.originalBankDescription && item.label !== item.originalBankDescription && <div className="bank-original-name">Movimento originale: {item.originalBankDescription}</div>}
                             <div className="entry-list-meta">
+                              {item.accountId === "cash" && !item.bankTransactionId && <span>Cash</span>}
                               {item.bank && <span>{item.bank}</span>}
                               {item.transactionDate && <span>{item.transactionDate.split("-").reverse().join("/")}</span>}
                               {item.bankTransactionId && <span>{item.autoImported ? "Importato automaticamente" : "Importato dopo conferma"}</span>}
-                              {item.category === "Investimento" && item.managementSource && <span>{item.managementSource === "Manuale" ? "Illiquido / non IBKR" : "IBKR Live"}</span>}
+                              {item.category === "Investimento" && item.managementSource && <span>{item.managementSource === "Bancario" ? "Movimento investimenti" : item.managementSource === "Manuale" ? "Illiquido / non IBKR" : "IBKR Live"}</span>}
                               {item.category === "Investimento" && item.ticker && <span>{item.ticker}</span>}
                               {item.category === "Investimento" && item.investmentType && <span>{item.investmentType}</span>}
                               {item.category === "Investimento" && item.investmentDetail && <span>{item.investmentDetail}</span>}
@@ -3199,16 +3207,15 @@
                               {item.category === "Investimento" && item.geography && <span>{item.geography}</span>}
                               {item.category === "Investimento" && item.continent && <span>{item.continent}</span>}
                             </div>
-                            {item.category === "Investimento" && (
+                            {item.category === "Investimento" && !item.bankTransactionId && (
                               <div className="small" style={{ marginTop: 8 }}>
                                 {item.managementSource === "Manuale" ? `Valore attuale: ${money(item.currentValue)} | Investimento illiquido incluso nel portafoglio` : "Quota mensile IBKR | non crea una posizione patrimoniale"}
                                 {item.managementSource === "Manuale" && item.entryPrice ? ` | Quantita': ${precise(item.quantity)} | Carico: ${precise(item.entryPrice, 2)} ${item.marketCurrency || "EUR"}` : ""}
                               </div>
                             )}
-                            <div className="bar"><div className="fill" style={{ width: `${Math.min(100, (item.amount / Math.max(1, totals.income)) * 100)}%` }} /></div>
                           </div>
                           <div className="entry-list-value">
-                            <strong>{money(item.amount)}</strong>
+                            <strong className={item.bankRecordType === "income" ? "bank-income" : item.bankRecordType === "expense" ? "bank-expense" : ""}>{item.bankRecordType === "income" ? "+" : item.bankRecordType === "expense" ? "−" : ""}{money(item.amount)}</strong>
                             <div className="entry-list-actions">
                               {!item.bankTransactionId && <button className="secondary" onClick={() => editEntry(item)}>Modifica</button>}
                               <button className="secondary" onClick={() => removeEntry(index)}>Rimuovi</button>
@@ -3233,7 +3240,7 @@
 
                 <section className={`finance-panel monthly-history-card ${isMonthlyHistoryOpen ? "is-open" : ""}`}>
                   <div className="section-head">
-                    <div className="title">Storico mensile</div>
+                    <div className="title-with-info"><div className="title">Resoconto complessivo e mensile</div><InfoTip label="formule del resoconto mensile">Entrate = stipendio + entrate extra + disinvestimenti. Uscite = costi fissi + costi variabili + investimenti. Saldo mensile netto = entrate − uscite. Investimenti netti = investimenti − disinvestimenti. I totali complessivi sommano i mesi salvati. La quota fondo emergenza è un accantonamento interno e non viene sottratta di nuovo.</InfoTip></div>
                     <div className="actions">
                       <span className="badge">{monthlyHistory.length} {monthlyHistory.length === 1 ? "mese salvato" : "mesi salvati"}</span>
                       <SectionToggle
@@ -3246,23 +3253,29 @@
                   </div>
                   {isMonthlyHistoryOpen && (
                   <>
-                  <div className="grid" style={{ marginTop: 0, marginBottom: 18 }}>
-                    <div className="card metric" style={{ boxShadow: "none" }}>
-                      <div className="label">Margine cumulato</div>
-                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.totalFreeCash)}</div>
+                  <div className="history-overall">
+                    <div className="title">Storico mensile</div>
+                    <div className="history-total">
+                      <div className="label">Saldo netto complessivo</div>
+                      <strong>{money(historyStats.net)}</strong>
                     </div>
-                    <div className="card metric" style={{ boxShadow: "none" }}>
-                      <div className="label">Investimenti cumulati</div>
-                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.totalInvestable)}</div>
+                    <div className="history-total">
+                      <div className="label">Investimenti netti complessivi</div>
+                      <strong>{money(historyStats.netInvestments)}</strong>
                     </div>
-                    <div className="card metric" style={{ boxShadow: "none" }}>
-                      <div className="label">Variazione patrimonio</div>
-                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.netWorthChange)}</div>
+                    <div className="history-total">
+                      <div className="label">Entrate complessive</div>
+                      <strong>{money(historyStats.inflows)}</strong>
                     </div>
-                    <div className="card metric" style={{ boxShadow: "none" }}>
-                      <div className="label">Variazione investito</div>
-                      <div className="value" style={{ fontSize: 28 }}>{money(historyStats.investedChange)}</div>
+                    <div className="history-total">
+                      <div className="label">Uscite complessive</div>
+                      <strong>{money(historyStats.outflows)}</strong>
                     </div>
+                    <div className="history-total">
+                      <div className="label">Fondo emergenza complessivo</div>
+                      <strong>{money(historyStats.emergencyFund)}</strong>
+                    </div>
+                    <span aria-hidden="true" className="history-chevron"> </span>
                   </div>
                   <div className="history-list">
                     {monthlyHistory.length === 0 && (
@@ -3272,69 +3285,62 @@
                       </div>
                     )}
                     {monthlyHistory.map((item) => {
-                      const itemNotes = (item.notes || []).map(normalizeNote);
-                      const itemNoteTotals = summarizeNotes(itemNotes);
+                      const report = monthlyReport(item);
+                      const itemNotes = report.notes;
+                      const itemNoteTotals = report.categories;
                       return (
                         <details className="history-item" key={item.id}>
                           <summary className="history-summary">
                             <div>
                               <strong>{item.monthName} {item.year}</strong>
                             </div>
+                            <div className="history-kpi">
+                              <strong>{money(report.net)}</strong>
+                              <div className="small">Saldo mensile netto</div>
+                            </div>
+                            <div className="history-kpi">
+                              <strong>{money(report.netInvestments)}</strong>
+                              <div className="small">Investimenti netti</div>
+                            </div>
                             <div className="history-kpi history-optional">
-                              <strong>{money(item.freeCash)}</strong>
-                              <div className="small">Margine</div>
+                              <strong>{money(report.inflows)}</strong>
+                              <div className="small">Entrate</div>
+                            </div>
+                            <div className="history-kpi history-optional">
+                              <strong>{money(report.outflows)}</strong>
+                              <div className="small">Uscite</div>
                             </div>
                             <div className="history-kpi history-optional">
                               <strong>{money(item.emergencyFundAllocation)}</strong>
                               <div className="small">Quota fondo</div>
-                            </div>
-                            <div className="history-kpi">
-                              <strong>{money(item.investmentAllocation ?? item.investable)}</strong>
-                              <div className="small">Investimenti</div>
-                            </div>
-                            <div className="history-kpi">
-                              <strong>{money(item.currentNetWorth)}</strong>
-                              <div className="small">Patrimonio</div>
-                            </div>
-                            <div className="history-kpi history-optional">
-                              <strong>{money(item.flexibleCashAllocation)}</strong>
-                              <div className="small">Flexible cash</div>
                             </div>
                             <span className="history-chevron">⌄</span>
                           </summary>
                           <div className="history-details">
                             <div className="history-detail-grid">
                               <div className="history-detail-card">
-                                <div className="label">Stipendio netto</div>
-                                <strong>{money(item.baseIncome ?? item.income)}</strong>
+                                <div className="label">Stipendio</div>
+                                <strong>{money(itemNoteTotals.salary)}</strong>
                               </div>
                               <div className="history-detail-card">
-                                <div className="label">Target costi fissi</div>
-                                <strong>{money(item.fixedCosts)}</strong>
+                                <div className="label">Entrate extra</div>
+                                <strong>{money(itemNoteTotals.additionalIncome)}</strong>
                               </div>
                               <div className="history-detail-card">
-                                <div className="label">Target costi variabili</div>
-                                <strong>{money(item.variableCosts)}</strong>
+                                <div className="label">Costi fissi</div>
+                                <strong>{money(itemNoteTotals.fixedCosts)}</strong>
                               </div>
                               <div className="history-detail-card">
-                                <div className="label">Quota fondo emergenza</div>
-                                <strong>{money(item.emergencyFundAllocation)}</strong>
+                                <div className="label">Costi variabili</div>
+                                <strong>{money(itemNoteTotals.variableCosts)}</strong>
                               </div>
                               <div className="history-detail-card">
-                                <div className="label">Patrimonio a fine mese</div>
-                                <strong>{money(item.currentNetWorth)}</strong>
+                                <div className="label">Investimenti</div>
+                                <strong>{money(itemNoteTotals.investments)}</strong>
                               </div>
                               <div className="history-detail-card">
-                                <div className="label">Target investimenti</div>
-                                <strong>{money(item.investmentAllocation)}</strong>
-                              </div>
-                              <div className="history-detail-card">
-                                <div className="label">Target flexible cash</div>
-                                <strong>{money(item.flexibleCashAllocation)}</strong>
-                              </div>
-                              <div className="history-detail-card">
-                                <div className="label">Differenza allocazione</div>
-                                <strong className={Math.abs(Number(item.unallocatedCapital) || 0) < 0.01 ? "positive" : "negative"}>{money(item.unallocatedCapital)}</strong>
+                                <div className="label">Disinvestimenti</div>
+                                <strong>{money(itemNoteTotals.disinvestments)}</strong>
                               </div>
                               <div className="history-detail-card">
                                 <div className="label">Voci dettagliate</div>
@@ -3346,18 +3352,18 @@
                               </div>
                             </div>
                             <div className="history-notes">
-                              {itemNotes.map((note) => (
-                                <div className="history-note" key={note.id}>
+                              {groupReportNotes(itemNotes).map((note) => (
+                                <div className="history-note" key={note.groupKey}>
                                   <div>
                                     <strong>{note.label}</strong>
                                     <div className="small">
-                                      {note.category}
-                                      {note.category === "Investimento" && note.investmentType ? ` | ${note.investmentType}` : ""}
-                                      {note.category === "Investimento" && note.ticker ? ` | ${note.ticker}` : ""}
-                                      {note.category === "Investimento" && note.investmentDetail ? ` | ${note.investmentDetail}` : ""}
-                                      {note.category === "Investimento" && note.geography ? ` | ${note.geography}` : ""}
+                                      {note.category}{note.count > 1 ? ` · ${note.count} movimenti` : ""}
+                                      {note.count === 1 && note.category === "Investimento" && note.investmentType ? ` | ${note.investmentType}` : ""}
+                                      {note.count === 1 && note.category === "Investimento" && note.ticker ? ` | ${note.ticker}` : ""}
+                                      {note.count === 1 && note.category === "Investimento" && note.investmentDetail ? ` | ${note.investmentDetail}` : ""}
+                                      {note.count === 1 && note.category === "Investimento" && note.geography ? ` | ${note.geography}` : ""}
                                     </div>
-                                    {note.category === "Investimento" && (
+                                    {note.count === 1 && note.category === "Investimento" && (
                                       <div className="small">
                                         {note.managementSource === "Manuale" ? `Investimento illiquido | valore attuale ${money(note.currentValue)}` : "Quota mensile IBKR | esclusa da portafoglio e grafici"}
                                         {note.managementSource === "Manuale" && note.purchaseDate ? ` | acquisto ${new Date(note.purchaseDate).toLocaleDateString("it-IT")}` : ""}
@@ -3386,36 +3392,6 @@
                   )}
                 </section>
 
-                <section className={`finance-panel monthly-summary-card ${isMonthlySummaryOpen ? "is-open" : ""}`}>
-                  <div className="section-head">
-                    <div className="title">Riepilogo del mese</div>
-                    <SectionToggle
-                      isOpen={isMonthlySummaryOpen}
-                      onToggle={() => setIsMonthlySummaryOpen((open) => !open)}
-                      label="riepilogo del mese"
-                    />
-                  </div>
-                  {isMonthlySummaryOpen && (
-                    <div className="finance-summary-grid">
-                      <div className="card metric">
-                        <div className="label">Entrate mensili</div>
-                        <div className="value">{money(totals.income)}</div>
-                      </div>
-                      <div className="card metric">
-                        <div className="label">Uscite totali</div>
-                        <div className="value">{money(totals.essential)}</div>
-                      </div>
-                      <div className="card metric">
-                        <div className="label">Disponibile allocabile</div>
-                        <div className="value">{money(totals.currentNetWorth)}</div>
-                      </div>
-                      <div className="card metric">
-                        <div className="label">Capitale investito del mese</div>
-                        <div className="value">{money(totals.investmentAllocation)}</div>
-                      </div>
-                    </div>
-                  )}
-                </section>
                 </>
                 )}
                 </div>

@@ -33,20 +33,8 @@ class HttpTests(unittest.TestCase):
                 if port not in (7497,4002): raise ValueError('Paper port required')
                 return self.snapshot()
             def stop(self): return self.snapshot()
-        class FakeWalletService:
-            def snapshot(self):
-                return {'provider':'Wallet by BudgetBakers','configured':True,'readOnly':False,
-                        'writesEnabled':True,'writeScope':'dashboard-managed-records-only','expenses':[],'incomes':[],'records':[]}
-            def sync(self): return self.snapshot()
-            def create_record(self,record):
-                if record.get('amount') != 12.5: raise ValueError('fixture')
-                return self.snapshot()
-            def update_record(self,record):
-                if record.get('walletRecordId') != 'managed-1': raise ValueError('not managed')
-                return self.snapshot()
         cls.handler=type('TestHandler',(bridge.DashboardHandler,),{'research_engine':cls.engine,'guard':RequestGuard(),
             'paper_lab':FakePaperLab(),
-            'wallet_service':FakeWalletService(),
             'clients':{k:bridge.IbkrAccountClient('127.0.0.1',p,i,k.upper()) for k,p,i in [('live',7496,70),('paper',7497,71)]}})
         cls.server=bridge.ThreadingHTTPServer(('127.0.0.1',0),cls.handler)
         cls.port=cls.server.server_port
@@ -89,22 +77,12 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(code,200)
         self.assertFalse(json.loads(body)['orders_enabled'])
 
-    def test_wallet_manual_mutations_require_csrf_and_reject_unknown_actions(self):
-        code,_,body=self.request('GET','/api/wallet/snapshot')
-        self.assertEqual(code,200)
-        snapshot=json.loads(body)
-        self.assertFalse(snapshot['readOnly'])
-        self.assertTrue(snapshot['writesEnabled'])
-        headers={'Content-Type':'application/json'}
-        self.assertEqual(self.request('POST','/api/wallet/control',json.dumps({'action':'sync'}),headers)[0],400)
-        headers['X-CSRF-Token']=self.handler.csrf_token
-        code,_,body=self.request('POST','/api/wallet/control',json.dumps({'action':'sync'}),headers)
-        self.assertEqual(code,200)
-        self.assertTrue(json.loads(body)['writesEnabled'])
-        self.assertEqual(self.request('POST','/api/wallet/control',json.dumps({'action':'create','record':{'amount':12.5}}),headers)[0],200)
-        self.assertEqual(self.request('POST','/api/wallet/control',json.dumps({'action':'update','record':{'walletRecordId':'managed-1'}}),headers)[0],200)
-        for action in ('delete','write','transfer'):
-            self.assertEqual(self.request('POST','/api/wallet/control',json.dumps({'action':action}),headers)[0],400)
+    def test_retired_wallet_routes_are_unavailable(self):
+        self.assertEqual(self.request('GET', '/api/wallet/snapshot')[0], 404)
+        headers = {'Content-Type': 'application/json', 'X-CSRF-Token': self.handler.csrf_token}
+        for action in ('sync', 'create', 'update'):
+            self.assertEqual(self.request('POST', '/api/wallet/control',
+                json.dumps({'action': action}), headers)[0], 404)
 
     def test_cross_origin_reads_and_dns_rebinding_denied(self):
         for path in ('/api/state','/api/research/snapshot','/api/live/snapshot','/'):

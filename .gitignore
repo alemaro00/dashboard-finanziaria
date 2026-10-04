@@ -10,3 +10,18 @@ web-build/
 *.sqlite3
 *.sqlite3-*
 *.json.bak
+
+# Local financial state, banking exports and credentials must never be published.
+.ruff_cache/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+Secrets/
+dashboard-state.json
+dashboard-state.*.json
+enable-banking/
+paper-research/

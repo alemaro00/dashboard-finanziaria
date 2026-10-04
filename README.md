@@ -13,8 +13,8 @@ monitoraggio IBKR Live/Paper e analisi consolidata del patrimonio.
 - Wealth management con sei indicatori operativi, esposizioni, crescita YoY,
   profilo di rischio e Value at Risk parametrico.
 - Memoria automatica su disco per mese aperto, storico, voci e bozze in compilazione.
-- Sincronizzazione Wallet by BudgetBakers di entrate e uscite, con creazione e modifica
-  protetta delle sole voci manuali create dalla Dashboard.
+- Bozze separate per mese e anno: il cambio periodo conserva gli input e le classificazioni
+  senza aggiungere automaticamente un mese allo storico. Un periodo nuovo parte vuoto.
 - Tre macrosezioni riconoscibili e richiudibili: Stima stipendio, Gestione delle
   finanze e Wealth management, con navigazione rapida sempre disponibile.
 
@@ -60,7 +60,7 @@ Nessun collegamento broker è stato utilizzato durante questo sviluppo.
 ### macOS
 
 La build nativa locale si trova in `dist/Dashboard Finanziaria.app`. Richiede Python
-`/usr/bin/python3`, Mac Apple Silicon e macOS13+. Su questo Mac la versione **1.13.5**
+`/usr/bin/python3`, Mac Apple Silicon e macOS13+. Su questo Mac la versione **1.13.28**
 è stata installata in `/Applications/Dashboard Finanziaria.app` su richiesta dell'utente.
 Se la avvii con un doppio clic:
 avvia il servizio locale, mostra la dashboard in una finestra macOS e lo chiude quando
@@ -79,28 +79,6 @@ Backup della precedente app e dei dati prima dell'installazione:
 `.build/install-backups/20260910-130946/` (locale, escluso da Git).
 L'app usa la porta locale 8766, separata dall'avvio alternativo nel browser, per non
 caricare per errore una vecchia istanza del bridge rimasta aperta sulla porta 8765.
-
-### Collegamento Wallet by BudgetBakers
-
-Il connettore usa la REST API ufficiale di Wallet Premium per leggere entrate e uscite
-e per creare voci manuali. La modifica è consentita soltanto sui record creati dalla
-Dashboard; i movimenti originati dalla sincronizzazione bancaria rimangono in sola lettura.
-Wallet aggrega i conti bancari e fornisce alla Dashboard transazioni e categorie; la
-Dashboard non riceve password, PIN o codici bancari. Genera il token personale nella
-versione web di Wallet, in **Impostazioni → REST API**, quindi esegui:
-
-```sh
-python3 scripts/configure_wallet_api.py
-```
-
-In alternativa usa direttamente il menu **Dashboard Finanziaria → Configura Wallet API…**:
-il campo è protetto e il token viene salvato nel Portachiavi macOS. Non inserirlo
-nel codice, nel repository o in chat. Ricaricando l'app, la prima sincronizzazione parte
-automaticamente; **Aggiorna da Wallet** consente anche l'aggiornamento manuale. La Dashboard
-legge fino a 365 giorni di record e aggiorna le uscite EUR già categorizzate nei costi
-variabili. Entrate, uscite e saldo mensile restano visibili insieme al patrimonio IBKR.
-Le scritture richiedono un gesto esplicito; in caso di timeout non vengono ritentate
-automaticamente perché l'API non espone una chiave di idempotenza documentata.
 
 Per ricreare l'app dopo un aggiornamento del progetto esegui:
 
