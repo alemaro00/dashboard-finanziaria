@@ -15,18 +15,18 @@ jobs:
       - name: Install isolated checks
         run: |
           python3 -m venv .build/check-env
-          .build/check-env/bin/python -m pip install -r requirements-dev.txt
+          .build/check-env/bin/python -m pip install -r requirements-dev.txt -r requirements.txt
       - name: Build frontend without network
         run: node scripts/build-web.cjs
       - name: Offline tests
         run: |
-          python3 -m unittest discover -s tests -p 'test*.py'
+          .build/check-env/bin/python -m unittest discover -s tests -p 'test*.py'
           node --test tests/test-*.cjs
-          python3 tests/http_smoke.py
-          python3 scripts/check_repository.py
+          .build/check-env/bin/python tests/http_smoke.py
+          .build/check-env/bin/python scripts/check_repository.py
       - name: Lint types and security
         run: |
           .build/check-env/bin/ruff check .
           .build/check-env/bin/mypy
-          .build/check-env/bin/bandit -r research local_security.py ibkr_paper_bridge.py enable_banking_sync.py -ll
+          .build/check-env/bin/bandit -r research local_security.py secure_storage.py ibkr_paper_bridge.py enable_banking_sync.py -ll
           .build/check-env/bin/pip-audit --no-deps --disable-pip -r requirements.txt

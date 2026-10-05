@@ -1,7 +1,7 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
 
-@interface DashboardAppDelegate : NSObject <NSApplicationDelegate, WKNavigationDelegate, NSWindowDelegate>
+@interface DashboardAppDelegate : NSObject <NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, NSWindowDelegate>
 @property(nonatomic, strong) NSWindow *window;
 @property(nonatomic, strong) WKWebView *webView;
 @property(nonatomic, strong) NSTask *bridgeTask;
@@ -53,6 +53,7 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8767";
     configuration.websiteDataStore = WKWebsiteDataStore.defaultDataStore;
     self.webView = [[WKWebView alloc] initWithFrame:NSZeroRect configuration:configuration];
     self.webView.navigationDelegate = self;
+    self.webView.UIDelegate = self;
 
     self.window = [[NSWindow alloc]
         initWithContentRect:NSMakeRect(0, 0, 1380, 900)
@@ -61,6 +62,8 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8767";
         defer:NO];
     self.window.title = @"Beta Dashboard Finanziaria";
     self.window.delegate = self;
+    self.webView.frame = self.window.contentView.bounds;
+    self.webView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     self.window.contentView = self.webView;
     [self.window center];
     [self.window makeKeyAndOrderFront:nil];
@@ -144,17 +147,18 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8767";
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[DashboardURL stringByAppendingString:@"/api/health"]]];
     request.timeoutInterval = 0.8;
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        BOOL available = [(NSHTTPURLResponse *)response statusCode] == 200;
+        NSDictionary *health = data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : nil;
+        BOOL available = [(NSHTTPURLResponse *)response statusCode] == 200 && [health isKindOfClass:NSDictionary.class] && [health[@"service"] isEqual:@"ibkr-dashboard-bridge"] && [health[@"edition"] isEqual:@"beta-secure-storage-v1"] && [health[@"readOnlyBridge"] boolValue];
         dispatch_async(dispatch_get_main_queue(), ^{ completion(available); });
     }] resume];
 }
 
 - (void)startBridge {
     NSURL *runtime = [NSBundle.mainBundle.resourceURL URLByAppendingPathComponent:@"runtime" isDirectory:YES];
-    NSURL *python = [NSURL fileURLWithPath:@"/usr/bin/python3"];
-    NSURL *bridge = [runtime URLByAppendingPathComponent:@"ibkr_paper_bridge.py"];
+    NSURL *python = [runtime URLByAppendingPathComponent:@"bridge/dashboard-bridge"];
+    NSURL *bridge = python;
     if (![NSFileManager.defaultManager isExecutableFileAtPath:python.path]) {
-        [self showError:@"Python di sistema non disponibile."];
+        [self showError:@"Runtime incorporato non disponibile: reinstalla la beta."];
         return;
     }
     if (![NSFileManager.defaultManager fileExistsAtPath:bridge.path]) {
@@ -163,20 +167,21 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8767";
     }
     NSTask *task = [[NSTask alloc] init];
     task.executableURL = python;
-    task.arguments = @[bridge.path, @"--no-browser", @"--broker-mode", self.brokerMode, @"--http-port", @"8767"];
+    task.arguments = @[@"--no-browser", @"--broker-mode", self.brokerMode, @"--http-port", @"8767"];
     task.currentDirectoryURL = runtime;
     NSURL *logDirectory = [NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
     logDirectory = [logDirectory URLByAppendingPathComponent:@"Dashboard Finanziaria Beta" isDirectory:YES];
-    [NSFileManager.defaultManager createDirectoryAtURL:logDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+    [NSFileManager.defaultManager createDirectoryAtURL:logDirectory withIntermediateDirectories:YES attributes:@{NSFilePosixPermissions: @0700} error:nil];
     NSURL *logURL = [logDirectory URLByAppendingPathComponent:@"bridge.log"];
-    [NSFileManager.defaultManager createFileAtPath:logURL.path contents:nil attributes:nil];
+    [NSFileManager.defaultManager createFileAtPath:logURL.path contents:nil attributes:@{NSFilePosixPermissions: @0600}];
     NSFileHandle *logHandle = [NSFileHandle fileHandleForWritingToURL:logURL error:nil];
     task.standardOutput = logHandle;
     task.standardError = logHandle;
-    NSMutableDictionary *environment = NSProcessInfo.processInfo.environment.mutableCopy;
+    NSMutableDictionary *environment = [@{@"PATH": @"/usr/bin:/bin", @"HOME": NSHomeDirectory(), @"TMPDIR": NSTemporaryDirectory(), @"LANG": @"it_IT.UTF-8"} mutableCopy];
     environment[@"DASHBOARD_DATA_DIR"] = logDirectory.path;
-    environment[@"PYTHONPATH"] = [[runtime URLByAppendingPathComponent:@"python" isDirectory:YES] path];
-    environment[@"PYTHONPYCACHEPREFIX"] = [[logDirectory URLByAppendingPathComponent:@"pycache" isDirectory:YES] path];
+    environment[@"DASHBOARD_RESOURCE_DIR"] = runtime.path;
+    environment[@"DASHBOARD_KEYCHAIN_HELPER"] = [[NSBundle.mainBundle.executableURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:@"DashboardKeychain"].path;
+    environment[@"DASHBOARD_REQUIRE_ENCRYPTION"] = @"1";
     task.environment = environment;
     NSError *error = nil;
     if (![task launchAndReturnError:&error]) {
@@ -207,21 +212,52 @@ static NSString *const DashboardURL = @"http://127.0.0.1:8767";
     [self.webView loadRequest:request];
 }
 
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
+    if (error.code != NSURLErrorCancelled) [self showError:@"Impossibile caricare la Dashboard locale. Chiudi e riapri la beta; i dati salvati non vengono eliminati."];
+}
+
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
+    [self showError:@"Il contenuto della finestra si è interrotto. Riapri la beta per recuperare i dati già salvati."];
+}
+
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
     NSURL *url = navigationAction.request.URL;
+    if (navigationAction.shouldPerformDownload && [url.scheme isEqualToString:@"blob"]) {
+        decisionHandler(WKNavigationActionPolicyDownload);
+        return;
+    }
     NSString *host = url.host.lowercaseString;
-    BOOL isLocal = [host isEqualToString:@"127.0.0.1"] || [host isEqualToString:@"localhost"];
+    BOOL isLocal = ([host isEqualToString:@"127.0.0.1"] || [host isEqualToString:@"localhost"]) && [url.scheme isEqualToString:@"http"] && url.port.integerValue == 8767;
     if (url && !isLocal && ([url.scheme isEqualToString:@"https"] || [url.scheme isEqualToString:@"http"])) {
         [NSWorkspace.sharedWorkspace openURL:url];
         decisionHandler(WKNavigationActionPolicyCancel);
         return;
     }
-    decisionHandler(WKNavigationActionPolicyAllow);
+    decisionHandler(isLocal ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
 }
 
 - (void)stopOwnedBridge {
     if (self.ownsBridge && self.bridgeTask.running) [self.bridgeTask terminate];
     self.ownsBridge = NO;
+}
+
+- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
+    NSURL *url = navigationAction.request.URL;
+    BOOL local = [url.host isEqualToString:@"127.0.0.1"] && [url.scheme isEqualToString:@"http"] && url.port.integerValue == 8767;
+    if ([url.scheme isEqualToString:@"https"] || local) [NSWorkspace.sharedWorkspace openURL:url];
+    return nil;
+}
+
+- (void)webView:(WKWebView *)webView navigationAction:(WKNavigationAction *)navigationAction didBecomeDownload:(WKDownload *)download {
+    download.delegate = self;
+}
+
+- (void)download:(WKDownload *)download decideDestinationUsingResponse:(NSURLResponse *)response suggestedFilename:(NSString *)suggestedFilename completionHandler:(void (^)(NSURL *))completionHandler {
+    NSSavePanel *panel = [NSSavePanel savePanel];
+    panel.nameFieldStringValue = @"dashboard-backup.dfbackup";
+    [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result) {
+        completionHandler(result == NSModalResponseOK ? panel.URL : nil);
+    }];
 }
 
 - (void)showError:(NSString *)message {

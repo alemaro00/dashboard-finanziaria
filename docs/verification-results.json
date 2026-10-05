@@ -1,20 +1,28 @@
 {
-  "date": "2026-09-10",
-  "baseline_commit": "0b2e8a1",
+  "date": "2026-10-05",
+  "baseline_commit": "3fa41a3",
   "unit_python": {
-    "passed": 68
+    "passed": 109
   },
   "http_integration": {
-    "passed": 4
+    "passed": 7
   },
   "node_polling": {
     "passed": 4
   },
+  "node_frontend": {"passed": 47},
   "ruff": "passed E9/F",
-  "mypy": "passed 7 modules check_untyped_defs, not strict",
-  "macos_build": "1.8 build9 local only; signed ad hoc; minos13.0",
-  "browser_visual": "blocked: auto-review usage limit",
-  "deployment": "not performed",
+  "mypy": "passed 9 configured modules check_untyped_defs, not strict",
+  "macos_build": "1.14.0 build70; embedded Python3.12.14; signed ad hoc; arm64 macOS13+",
+  "browser_visual": "native interface verified on current Mac: renewal, account selection, backup controls and saved status",
+  "deployment": "beta installed locally; original 1.13.28 and main unchanged",
+  "frozen_runtime": "passed with disposable fixtures: embedded runtime, Keychain encryption, save/read, password-protected backup roundtrip, wrong password, legal pages",
+  "data_preservation": "local fingerprint comparisons passed; financial values not recorded in report",
+  "dependency_audit": "no known vulnerabilities in pinned runtime requirements and full freeze environment after updates; unknown vulnerabilities not excluded",
+  "public_release": "blocked: no valid Developer ID identity, no notarization; public AIS contractual/backend model and GDPR review still required",
+  "other_macs": "not tested on separate hardware or Intel",
+  "windows": "no end-user package built",
+  "legal_compliance": "technical review and primary-source checklist only; no certification",
   "historical_performance": "not calculated",
   "python_dependencies": {
     "dependencies": [
@@ -22,6 +30,9 @@
         "name": "ibapi",
         "version": "9.81.1.post1",
         "vulns": []
+      },
+      {"name": "cryptography", "version": "50.0.1", "vulns": []},
+      {"name": "certifi", "version": "2026.7.22", "vulns": []
       }
     ],
     "fixes": []
@@ -34,15 +45,15 @@
     ]
   },
   "bandit": {
-    "CONFIDENCE.HIGH": 5,
+    "CONFIDENCE.HIGH": 6,
     "CONFIDENCE.LOW": 0,
     "CONFIDENCE.MEDIUM": 0,
     "CONFIDENCE.UNDEFINED": 0,
     "SEVERITY.HIGH": 0,
-    "SEVERITY.LOW": 5,
+    "SEVERITY.LOW": 6,
     "SEVERITY.MEDIUM": 0,
     "SEVERITY.UNDEFINED": 0,
-    "loc": 2415,
+    "loc": 2080,
     "nosec": 0,
     "skipped_tests": 0
   }

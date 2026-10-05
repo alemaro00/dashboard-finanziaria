@@ -23,7 +23,7 @@ for path in (ROOT/'research').glob('*.py'):
             errors.append('Dynamic execution in '+path.name)
 frontend=(ROOT/'salary-planner-react.html').read_text()
 bridge=(ROOT/'ibkr_paper_bridge.py').read_text()
-mac_build=(ROOT/'scripts'/'build-macos-app.sh').read_text()
+mac_build=(ROOT/'scripts'/'build-macos-app.sh').read_text() + (ROOT/'macos'/'Info.plist').read_text()
 for retired in ('Stima stipendio netto da RAL','Laboratorio strategie','/api/research/','/api/paper-lab/'):
     if retired in frontend:
         errors.append('Retired beta feature still present in frontend: '+retired)

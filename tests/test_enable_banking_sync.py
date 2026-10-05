@@ -25,7 +25,7 @@ class FakeClient:
         if path == "/application":
             return {"name": "Dashboard Finanziaria", "environment": "PRODUCTION", "active": True, "services": ["AIS"]}
         if path == "/aspsps":
-            return {"aspsps": [{"name": "Revolut", "country": "IT", "maximum_consent_validity": 180}, {"name": "UniCredit", "country": "IT"}]}
+            return {"aspsps": [{"name": "Revolut", "country": "IT", "maximum_consent_validity": 180 * 86400}, {"name": "UniCredit", "country": "IT"}]}
         if path == "/sessions/session-1":
             return {"accounts": ["eur-account", "usd-account"], "aspsp": {"name": "Revolut", "country": "IT"}}
         if path.endswith("/details"):
@@ -55,6 +55,63 @@ class FakeClient:
 
 
 class EnableBankingTests(unittest.TestCase):
+    def test_expired_pending_is_not_shown_and_can_be_cancelled(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            service._client = lambda: FakeClient()
+            service._save({**service._empty(), "pending": {"createdAt": time.time() - 1201}})
+            self.assertFalse(service.snapshot()["authorizationPending"])
+            self.assertFalse(service.cancel_authorization()["authorizationPending"])
+
+    def test_bank_limit_in_seconds_and_decoupled_auth_without_credentials(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            client = FakeClient()
+            original_get = client.get
+            client.get = lambda path, query=None: {"aspsps": [{"name": "Revolut", "country": "IT", "maximum_consent_validity": 30 * 86400, "auth_methods": [{"name": "app", "approach": "DECOUPLED", "psu_type": "personal", "credentials": []}]}]} if path == "/aspsps" else original_get(path, query)
+            service._client = lambda: client
+            service.start_authorization("Revolut", "IT", 180)
+            payload = client.posts[-1][1]
+            self.assertEqual(payload["auth_method"], "app")
+            self.assertLessEqual(datetime.fromisoformat(payload["access"]["valid_until"]) - datetime.now(timezone.utc), timedelta(days=30))
+
+    def test_same_remote_reference_from_different_accounts_does_not_collide(self):
+        raw = {"transaction_id": "same", "booking_date": "2026-10-01", "transaction_amount": {"amount": "8", "currency": "EUR"}}
+        self.assertNotEqual(normalize_transaction(raw, {"id": "a"})["id"], normalize_transaction(raw, {"id": "b"})["id"])
+
+    def test_short_consent_limit_is_not_rounded_up_to_a_day(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            client = FakeClient()
+            service._client = lambda: client
+            service.list_banks = lambda country: {"banks": [{"name": "Revolut", "maximumConsentDays": 1, "maximumConsentSeconds": 3600}]}
+            service.start_authorization("Revolut", "IT", 180)
+            expiry = datetime.fromisoformat(client.posts[-1][1]["access"]["valid_until"])
+            self.assertLessEqual(expiry - datetime.now(timezone.utc), timedelta(seconds=3600))
+
+    def test_selected_accounts_only_are_read_and_old_identifiers_survive_renewal(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service = EnableBankingService(Path(temporary), Path(temporary) / "unused.pem")
+            client = FakeClient()
+            service._client = lambda: client
+            account = normalize_account(client.get('/accounts/eur-account/details'), 'Revolut')
+            old_record = normalize_transaction(client.get('/accounts/eur-account/transactions')['transactions'][0], account)
+            old_record['id'] = 'legacy-classification-id'
+            old_record['customName'] = 'Nome classificato'
+            service._save({**service._empty(), 'sessions': [{'id': 'session-1', 'bank': 'Revolut', 'accounts': [account], 'selectionRequired': True}], 'accounts': [account], 'records': [old_record]})
+            reads = []
+            original = client.get
+            def tracked(path, query=None):
+                reads.append(path)
+                return original(path, query)
+            client.get = tracked
+            result = service.select_accounts(['eur-account'])
+            self.assertNotIn('/accounts/usd-account/transactions', reads)
+            self.assertNotIn('/accounts/usd-account/balances', reads)
+            record = next(item for item in result['records'] if item['accountId'] == 'eur-account')
+            self.assertEqual(record['id'], 'legacy-classification-id')
+            self.assertEqual(record['customName'], 'Nome classificato')
+
     def test_normalizes_debit_credit_and_multicurrency_accounts(self):
         eur = normalize_account({"uid": "a", "currency": "EUR", "account_id": {"iban": "IT001234"}}, "Revolut")
         usd = normalize_account({"uid": "b", "currency": "USD", "account_id": {"iban": "IT001234"}}, "Revolut")
@@ -90,6 +147,9 @@ class EnableBankingTests(unittest.TestCase):
                 result = service.start_authorization("Revolut", "IT")
             self.assertEqual(result["status"], "authorization_required")
             snapshot = service.complete_authorization("http://127.0.0.1:8767/api/enable-banking/callback?code=abc&state=state-value")
+            self.assertTrue(snapshot["selectionRequired"])
+            self.assertEqual(snapshot["records"], [])
+            snapshot = service.select_accounts([item["id"] for item in snapshot["accounts"]])
             self.assertEqual(len(snapshot["accounts"]), 2)
             self.assertEqual({a["currency"] for a in snapshot["accounts"]}, {"EUR", "USD"})
             self.assertEqual(len(snapshot["records"]), 2)

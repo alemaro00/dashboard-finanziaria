@@ -92,6 +92,27 @@ class HttpTests(unittest.TestCase):
         self.assertTrue(health['readOnlyBridge'])
         self.assertTrue(all(c['status']=='disconnected' for c in health['connections'].values()))
 
+    def test_portable_backup_http_requires_csrf_and_confirm_and_restores_classifications(self):
+        headers = {'Content-Type': 'application/json', 'X-CSRF-Token': self.handler.csrf_token}
+        fixture = {'state': {'monthlyHistory': [{'monthName': 'Test', 'notes': [{'bankTransactionIds': ['fixture-id'], 'category': 'Costo Fisso'}]}]}, 'entry': {}}
+        self.assertEqual(self.request('POST', '/api/state', json.dumps(fixture), headers)[0], 200)
+        password = 'fixture password only'
+        self.assertEqual(self.request('POST', '/api/backup/export', json.dumps({'password': password}), {'Content-Type': 'application/json'})[0], 400)
+        code, _, body = self.request('POST', '/api/backup/export', json.dumps({'password': password}), headers)
+        self.assertEqual(code, 200)
+        self.assertNotIn(b'fixture-id', body)
+        archive = json.loads(body)
+        self.assertEqual(set(archive), {'format', 'version', 'salt', 'nonce', 'data'})
+        payload = {'archive': archive, 'password': password}
+        self.assertEqual(self.request('POST', '/api/backup/import', json.dumps(payload), headers)[0], 400)
+        payload['confirmReplace'] = True
+        payload['password'] = 'wrong fixture password'
+        self.assertEqual(self.request('POST', '/api/backup/import', json.dumps(payload), headers)[0], 400)
+        self.assertEqual(json.loads(self.request('GET', '/api/state')[2])['state'], fixture['state'])
+        payload['password'] = password
+        self.assertEqual(self.request('POST', '/api/backup/import', json.dumps(payload), headers)[0], 200)
+        self.assertEqual(json.loads(self.request('GET', '/api/state')[2])['state'], fixture['state'])
+
     def test_banking_callback_is_automatic_and_cross_origin_posts_stay_blocked(self):
         class FakeBanking:
             redirect_url=f'http://127.0.0.1:{self.port}/api/enable-banking/callback'

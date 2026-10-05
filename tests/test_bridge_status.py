@@ -6,6 +6,7 @@ import tempfile
 import types
 import unittest
 from unittest.mock import patch
+import secure_storage  # noqa: F401 -- preload crypto before fake ibapi modules.
 
 
 class FakeClient:

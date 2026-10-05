@@ -6,7 +6,6 @@ import math
 import os
 import queue
 import secrets
-import shutil
 import hashlib
 import html
 import re
@@ -20,13 +19,14 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from local_security import RequestGuard, validate_json_tree, verify_csrf
+from secure_storage import atomic_write, read_bytes, export_backup, import_backup
 
 from ibapi.client import EClient
 from ibapi.contract import Contract
 from ibapi.wrapper import EWrapper
 
 
-SCRIPT_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR = Path(os.environ.get("DASHBOARD_RESOURCE_DIR", Path(__file__).resolve().parent))
 DASHBOARD_FILE = SCRIPT_DIR / "salary-planner-react.html"
 ARCHIVE_FILE_PATTERN = re.compile(r"^patrimonio-[0-9]{4}-[a-z0-9-]+\.json$")
 
@@ -166,27 +166,19 @@ def save_dashboard_state(payload: dict[str, object]) -> dict[str, object]:
     }
     APP_DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     APP_DATA_DIR.chmod(0o700)
-    temporary = APP_STATE_FILE.with_suffix(".json.tmp")
     with APP_STATE_LOCK:
         # Never overwrite a corrupt but potentially recoverable previous document.
         if APP_STATE_FILE.exists():
             if APP_STATE_FILE.is_symlink() or APP_STATE_FILE.stat().st_size > 20 * 1024 * 1024:
                 raise ValueError("Memoria esistente non sicura o troppo grande")
-            previous = json.loads(APP_STATE_FILE.read_text(encoding="utf-8"))
+            previous = json.loads(read_bytes(APP_STATE_FILE))
             if not isinstance(previous, dict) or not isinstance(previous.get("state"), dict):
                 raise ValueError("Memoria esistente non valida: recuperare il backup prima di salvare")
             backup = APP_STATE_FILE.with_suffix(".json.bak")
             if backup.is_symlink():
                 raise ValueError("Percorso backup non sicuro")
-            shutil.copyfile(APP_STATE_FILE, backup)
-            backup.chmod(0o600)
-        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            json.dump(document, stream, ensure_ascii=False, indent=2, allow_nan=False)
-            stream.flush()
-            os.fsync(stream.fileno())
-        temporary.chmod(0o600)
-        temporary.replace(APP_STATE_FILE)
+            atomic_write(backup, json.dumps(previous, ensure_ascii=False, allow_nan=False).encode("utf-8"))
+        atomic_write(APP_STATE_FILE, json.dumps(document, ensure_ascii=False, allow_nan=False).encode("utf-8"))
     return document
 
 
@@ -196,7 +188,7 @@ def load_dashboard_state() -> dict[str, object] | None:
             return None
         if APP_STATE_FILE.is_symlink() or APP_STATE_FILE.stat().st_size > 20 * 1024 * 1024:
             raise ValueError("Stato dashboard non sicuro o troppo grande")
-        document = json.loads(APP_STATE_FILE.read_text(encoding="utf-8"))
+        document = json.loads(read_bytes(APP_STATE_FILE))
     if not isinstance(document, dict) or not isinstance(document.get("state"), dict):
         raise ValueError("Stato dashboard non valido")
     return document
@@ -1021,7 +1013,7 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                 service = getattr(self, "enable_banking_service", None)
                 if service is None:
                     raise ValueError("Servizio Enable Banking non disponibile")
-                if set(payload) - {"action", "bank", "country", "recordId", "customName", "applicationId", "privateKey", "validDays"}:
+                if set(payload) - {"action", "bank", "country", "recordId", "customName", "applicationId", "privateKey", "validDays", "accountIds"}:
                     raise ValueError("Campi non ammessi")
                 action = payload.get("action")
                 if action == "verify":
@@ -1038,9 +1030,28 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     result = service.rename_record(payload.get("recordId"), payload.get("customName"))
                 elif action == "forget":
                     result = service.forget_bank_data()
+                elif action == "cancel":
+                    result = service.cancel_authorization()
+                elif action == "select_accounts":
+                    result = service.select_accounts(payload.get("accountIds"))
                 else:
                     raise ValueError("Azione Enable Banking non ammessa")
                 self._send_json(result)
+                return
+            if path == "/api/backup/export":
+                payload = self._read_json_body()
+                document = load_dashboard_state()
+                if document is None:
+                    raise ValueError("Salva prima i dati della dashboard")
+                self._send_json(export_backup(document, payload.get("password")))
+                return
+            if path == "/api/backup/import":
+                payload = self._read_json_body()
+                if payload.get("confirmReplace") is not True:
+                    raise ValueError("Conferma la sostituzione dei dati locali")
+                document = import_backup(payload.get("archive"), payload.get("password"))
+                result = save_dashboard_state(document)
+                self._send_json({"status": "saved", "savedAt": result["savedAt"]})
                 return
             if path == "/api/state":
                 payload = self._read_json_body()
@@ -1090,11 +1101,17 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             try:
                 callback_url = service.redirect_url + (("?" + parsed.query) if parsed.query else "")
                 service.complete_authorization(callback_url)
-                self._send_callback_page("Conto collegato", "Autorizzazione completata e dati sincronizzati.")
+                self._send_callback_page("Conto collegato", "Autorizzazione completata. Torna alla Dashboard, scegli i conti da leggere e conferma l'aggiornamento.")
             except (ValueError, RuntimeError, OSError) as error:
                 self._send_callback_page("Collegamento non riuscito", str(error), 400)
             return
         if not self._authorize():
+            return
+        if path in {"/privacy", "/terms"}:
+            document = SCRIPT_DIR / "docs" / ("PRIVACY.md" if path == "/privacy" else "TERMS.md")
+            body = ("<!doctype html><html lang='it'><meta charset='utf-8'><title>Dashboard · Informazioni</title><style>body{max-width:800px;margin:32px auto;padding:20px;font:16px system-ui}pre{white-space:pre-wrap;font:inherit;line-height:1.6}</style><pre>" + html.escape(document.read_text(encoding="utf-8")) + "</pre></html>").encode("utf-8")
+            self._send_headers(200, "text/html; charset=utf-8", len(body))
+            self.wfile.write(body)
             return
         if path == "/api/enable-banking/snapshot":
             service = getattr(self, "enable_banking_service", None)
@@ -1123,7 +1140,7 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                     self._send_json({"status": "empty", "saved": False})
                     return
                 self._send_json({"status": "loaded", "saved": True, **document})
-            except (OSError, ValueError, json.JSONDecodeError) as error:
+            except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
                 self._send_json({"error": f"Impossibile leggere lo stato: {error}"}, 500)
             return
         if path in {"/api/paper/snapshot", "/api/live/snapshot"}:
@@ -1138,6 +1155,7 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             self._send_json(
                 {
                     "service": "ibkr-dashboard-bridge",
+                    "edition": "beta-secure-storage-v1",
                     "status": "connected"
                     if any(item["status"] == "connected" for item in snapshots.values())
                     else "disconnected",
@@ -1261,6 +1279,7 @@ def main() -> int:
     )
     DashboardHandler.enable_banking_service = EnableBankingService(
         APP_DATA_DIR / "enable-banking",
+        key_path=APP_DATA_DIR / "Secrets" / "enable-banking.pem",
         redirect_url=redirect_url,
     )
     DashboardHandler.clients = clients

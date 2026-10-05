@@ -865,7 +865,7 @@
 
       function readableBankAccountCount(data) {
         if (!data?.configured || data.authorizationRequired || !data.lastSync || data.error) return 0;
-        return new Set((data.accounts || []).filter(account => account.id && account.readable !== false).map(account => account.id)).size;
+        return new Set((data.accounts || []).filter(account => account.id && account.readable !== false && account.selected !== false).map(account => account.id)).size;
       }
 
       function availableBankMovements(records, notes) {
@@ -1451,12 +1451,17 @@
         const [banking, setBanking] = useState({ loading: true, busy: false, data: null, error: "" });
         const [bankSetup, setBankSetup] = useState({ applicationId: "", country: "IT", bank: "", validDays: 90 });
         const [bankOptions, setBankOptions] = useState([]);
+        const [selectedBankAccounts, setSelectedBankAccounts] = useState([]);
+        useEffect(() => {
+          setSelectedBankAccounts((banking.data?.accounts || []).filter(account => account.selected !== false).map(account => account.id));
+        }, [banking.data?.accounts]);
         const [bankSetupMessage, setBankSetupMessage] = useState("");
         const bankKeyFile = useRef(null);
         const [bankRename, setBankRename] = useState({ id: "", value: "" });
         useEffect(() => {
-          localStorage.setItem(storageKey, JSON.stringify(state));
-        }, [state]);
+          // Financial data are persisted by the local service, not by WebKit.
+          if (persistenceStatus === "saved") localStorage.removeItem(storageKey);
+        }, [persistenceStatus]);
 
         useEffect(() => {
           let cancelled = false;
@@ -1553,6 +1558,41 @@
           return persistenceQueue.current;
         };
 
+        const [backupPassword, setBackupPassword] = useState("");
+        const [backupMessage, setBackupMessage] = useState("");
+        const [backupBusy, setBackupBusy] = useState(false);
+        const backupFile = useRef(null);
+        async function transferBackup(file = null) {
+          setBackupBusy(true);
+          setBackupMessage("");
+          try {
+            if (!persistenceReady.current) throw new Error("Attendi il caricamento della memoria locale");
+            if (backupPassword.length < 12) throw new Error("Inserisci una password di almeno 12 caratteri");
+            if (file && !window.confirm("Importare il backup e sostituire i dati di questa beta? Verrà conservata una copia locale dello stato precedente. I collegamenti bancari non vengono trasferiti.")) return;
+            if (file && file.size > 20 * 1024 * 1024) throw new Error("Backup troppo grande");
+            if (!await window.dashboardFlushState()) throw new Error("Salvataggio non riuscito: nessun dato trasferito");
+            const response = await fetch(`${ibkrBridgeBaseUrl}/api/backup/${file ? "import" : "export"}`, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ _csrf: csrfToken, password: backupPassword, ...(file ? { archive: JSON.parse(await file.text()), confirmReplace: true } : {}) })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Trasferimento non riuscito");
+            setBackupPassword("");
+            if (file) {
+              // Prevent pagehide from saving stale pre-import React state.
+              persistenceReady.current = false;
+              clearTimeout(persistenceTimer.current);
+              window.location.reload();
+            } else {
+              const url = URL.createObjectURL(new Blob([JSON.stringify(result)], { type: "application/json" }));
+              const link = document.createElement("a"); link.href = url; link.download = "dashboard-backup.dfbackup"; link.click();
+              setTimeout(() => URL.revokeObjectURL(url), 1000);
+              setBackupMessage("Backup protetto creato. Conserva la password separatamente: non è recuperabile.");
+            }
+          } catch (error) { setBackupMessage(error.message); }
+          finally { setBackupBusy(false); if (backupFile.current) backupFile.current.value = ""; }
+        }
+
         useEffect(() => {
           window.dashboardFlushState = async () => {
             clearTimeout(persistenceTimer.current);
@@ -1641,6 +1681,12 @@
           }
         }
 
+        useEffect(() => {
+          if (!(banking.data?.retryAfterSeconds > 0)) return undefined;
+          const timer = setInterval(refreshBanking, 15000);
+          return () => clearInterval(timer);
+        }, [banking.data?.retryAfterSeconds > 0]);
+
         async function bankingControl(action, extra = {}) {
           setBanking(current => ({ ...current, busy: true, error: "" }));
           try {
@@ -1702,7 +1748,7 @@
           const result = await bankingControl("banks", { country });
           const banks = result?.banks || [];
           setBankOptions(banks);
-          setBankSetup(current => ({ ...current, country, bank: banks.some(item => item.name === current.bank) ? current.bank : (banks[0]?.name || "") }));
+          setBankSetup(current => ({ ...current, country, bank: banks.some(item => item.name === current.bank) ? current.bank : "" }));
           setBankSetupMessage(banks.length ? `${banks.length} banche disponibili.` : "Nessuna banca disponibile per il Paese selezionato.");
         }
 
@@ -2353,6 +2399,14 @@
                 </span>
               </header>
 
+              <details className="decision-box" style={{ marginBottom: 14 }}><summary>Backup e trasferimento dati</summary>
+                <div className="small" style={{ marginTop: 8 }}>Il backup protetto include mesi, bozze e movimenti classificati. Non include chiavi private, sessioni o collegamenti bancari. Sul nuovo Mac ogni utente autorizza i propri conti. La password non è recuperabile.</div>
+                <div className="field" style={{ marginTop: 10 }}><label>Password del backup (almeno 12 caratteri)</label><input type="password" autoComplete="new-password" value={backupPassword} onChange={event => setBackupPassword(event.target.value)} /></div>
+                <input ref={backupFile} type="file" accept=".dfbackup" style={{ display: "none" }} onChange={event => { const file = event.target.files?.[0]; if (file) transferBackup(file); }} />
+                <div className="actions" style={{ marginTop: 10 }}><button disabled={backupBusy || persistenceStatus === "loading"} onClick={() => transferBackup()}>Esporta backup protetto</button><button className="secondary" disabled={backupBusy || persistenceStatus === "loading"} onClick={() => backupFile.current?.click()}>Importa backup protetto</button></div>
+                {backupMessage && <div className="small" role="status" style={{ marginTop: 8 }}>{backupMessage}</div>}
+              </details>
+
               <nav className="workspace-nav" aria-label="Sezioni principali">
                 <a href="#finance-section"><span className="workspace-nav-index">01</span><span>Gestione delle finanze</span></a>
                 <a href="#wealth-section"><span className="workspace-nav-index">02</span><span>Wealth management</span></a>
@@ -2468,7 +2522,7 @@
                       </div>
                       <div className="actions">
                         <button className="secondary" disabled={banking.busy || !banking.data?.configured} onClick={() => bankingControl("verify")}>Verifica collegamento</button>
-                        <button className="secondary" disabled={banking.busy || banking.data?.authorizationRequired} onClick={() => bankingControl("sync")}>{banking.busy || banking.data?.syncing ? "Aggiornamento..." : "Aggiorna movimenti"}</button>
+                        <button className="secondary" disabled={banking.busy || banking.data?.authorizationRequired || banking.data?.selectionRequired || banking.data?.retryAfterSeconds > 0} onClick={() => bankingControl("sync")}>{banking.data?.retryAfterSeconds > 0 ? `Riprova tra ${Math.ceil(banking.data.retryAfterSeconds / 60)} min` : banking.busy || banking.data?.syncing ? "Aggiornamento..." : "Aggiorna movimenti"}</button>
                       </div>
                     </div>
                     <div className="bank-sync-status"><div className="bank-connections">
@@ -2497,18 +2551,26 @@
                         <div className="field full-field"><label>Chiave privata PEM</label><input ref={bankKeyFile} type="file" accept=".pem,.key,text/plain" /></div>
                       </div>
                       <div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy} onClick={configureBanking}>Salva e verifica configurazione</button><a className="pill" href="https://enablebanking.com/" target="_blank" rel="noreferrer">Apri Enable Banking</a></div>
-                      <div className="bank-privacy-note">La configurazione viene consegnata soltanto al servizio locale della Dashboard e salvata con permessi privati nella cartella dati della beta. Il file PEM non lascia questo computer e non viene incluso nel pacchetto condiviso.</div>
+                      <div className="bank-privacy-note">La configurazione personale Restricted non è un servizio pubblico multiutente: ogni utente deve avere la propria configurazione approvata. Non condividere mai la tua chiave PEM. Nell’app Mac installata chiave e archivi sono cifrati usando il Portachiavi.</div>
                     </div> : <div className={banking.data?.authorizationPending ? "decision-box warn" : "decision-box"}>
                       <strong>{banking.data?.authorizationPending ? "Completa l’accesso nella banca" : "Collega o rinnova un conto"}</strong>
+                      {!banking.data?.authorizationPending && banking.data?.connections?.length > 0 && <div className="actions" style={{ marginTop: 10 }}>{banking.data.connections.map(connection => <button className="secondary" key={`${connection.bank}-${connection.country}`} disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: connection.bank, country: connection.country, validDays: 180 })}>Rinnova {connection.bank}{connection.validUntil ? ` · scadenza ${new Date(connection.validUntil).toLocaleDateString("it-IT")}` : ""}</button>)}</div>}
                       <div className="small" style={{ marginTop: 6 }}>{banking.data?.authorizationPending ? "La pagina della banca è aperta nel browser. Al termine tornerai automaticamente alla dashboard: non devi copiare alcun indirizzo." : "Scegli il Paese e la banca. L’accesso avviene esclusivamente sul sito o nell’app della banca."}</div>
-                      <div className="small" style={{ marginTop: 6 }}>Ritorno automatico registrato: {banking.data?.redirectUrl}</div>
+                      <div className="small" style={{ marginTop: 6 }}>Se la banca supporta l’approvazione nell’app, riceverai la richiesta sul tuo dispositivo. Altrimenti seguirai la procedura della banca. Seleziona soltanto i conti da condividere; non servono credenziali bancarie nella Dashboard.</div>
+                      {banking.data?.authorizationPending && <button className="secondary" style={{ marginTop: 10 }} onClick={() => bankingControl("cancel")}>Annulla e scegli un’altra banca</button>}
                       {!banking.data?.authorizationPending && <React.Fragment><div className="bank-setup-fields">
                         <div className="field full-field"><label>Paese</label><select value={bankSetup.country} onChange={event => { const country = event.target.value; setBankSetup(current => ({ ...current, country, bank: "" })); setBankOptions([]); loadBankOptions(country); }}><option value="IT">Italia</option><option value="DE">Germania</option><option value="ES">Spagna</option><option value="FR">Francia</option><option value="NL">Paesi Bassi</option><option value="PT">Portogallo</option></select></div>
                         <div className="field full-field"><label>Banca</label><select value={bankSetup.bank} onChange={event => setBankSetup(current => ({ ...current, bank: event.target.value }))}><option value="">Seleziona una banca</option>{bankOptions.map(bank => <option key={`${bank.country}-${bank.name}`} value={bank.name}>{bank.name}</option>)}</select></div>
                       </div><div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy || !bankSetup.bank} onClick={() => bankingControl("authorize", { bank: bankSetup.bank, country: bankSetup.country, validDays: bankSetup.validDays })}>Collega il conto</button><button className="secondary" disabled={banking.busy} onClick={() => loadBankOptions(bankSetup.country)}>Aggiorna elenco banche</button></div></React.Fragment>}
                       {bankSetupMessage && <div className="small" style={{ marginTop: 10 }}>{bankSetupMessage}</div>}
-                      <details style={{ marginTop: 12 }}><summary>Privacy e gestione dati bancari</summary><div className="small" style={{ marginTop: 8 }}>Saldi, movimenti e riferimenti alle sessioni sono conservati soltanto nella cartella dati locale. La Dashboard non può disporre pagamenti.</div><button className="secondary" style={{ marginTop: 10 }} onClick={() => { if (window.confirm("Cancellare sessioni, conti e movimenti bancari salvati localmente? I mesi già salvati non saranno eliminati.")) bankingControl("forget"); }}>Dimentica dati bancari locali</button></details>
+                      <details style={{ marginTop: 12 }}><summary>Privacy e gestione dati bancari</summary><div className="small" style={{ marginTop: 8 }}>Saldi, movimenti e sessioni sono conservati nella cartella dati locale; nell’app Mac installata gli archivi sono cifrati con una chiave del Portachiavi. La Dashboard non può disporre pagamenti. Dimenticare i dati locali non revoca il consenso: revocalo nell’app della banca o tramite il provider. I mesi salvati restano disponibili.</div><button className="secondary" style={{ marginTop: 10 }} onClick={() => { if (window.confirm("Cancellare sessioni, conti e movimenti bancari salvati localmente? I mesi già salvati non saranno eliminati. Il consenso va revocato anche presso la banca o il provider.")) bankingControl("forget"); }}>Dimentica dati bancari locali</button></details>
                     </div>}
+                    {banking.data?.accounts?.length > 0 && <details className="decision-box" open={banking.data?.selectionRequired || undefined}><summary>Scegli i conti da leggere</summary>
+                      <div className="small" style={{ marginTop: 8 }}>Conferma quali conti aggiornare nella Dashboard. Le autorizzazioni alla banca si gestiscono anche dalla sua app. Deselezionare un conto ferma nuovi aggiornamenti, non elimina i movimenti già salvati.</div>
+                      {banking.data.accounts.map(account => <label key={account.id} style={{ display: "block", marginTop: 8 }}><input type="checkbox" checked={selectedBankAccounts.includes(account.id)} onChange={event => setSelectedBankAccounts(current => event.target.checked ? [...current, account.id] : current.filter(id => id !== account.id))} /> {account.bank} · {account.currency} · {account.identifierMasked}</label>)}
+                      <button style={{ marginTop: 10 }} disabled={banking.busy || !selectedBankAccounts.length} onClick={() => bankingControl("select_accounts", { accountIds: selectedBankAccounts })}>Conferma conti e aggiorna</button>
+                    </details>}
+                    <div className="small"><a href={`${ibkrBridgeBaseUrl}/privacy`} target="_blank" rel="noreferrer">Informativa privacy</a> · <a href={`${ibkrBridgeBaseUrl}/terms`} target="_blank" rel="noreferrer">Condizioni e limiti del servizio</a></div>
                     {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}
                     {banking.data?.warning && <div className="decision-box warn"><strong>Collegamento attivo · aggiornamento rinviato</strong><div className="small" style={{ marginTop: 6 }}>{banking.data.warning}</div></div>}
                     {banking.error && <div className="decision-box bad"><strong>Collegamento non riuscito</strong><div className="small" style={{ marginTop: 6 }}>{banking.error}</div></div>}
