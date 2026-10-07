@@ -10,10 +10,15 @@
   "node_polling": {
     "passed": 4
   },
-  "node_frontend": {"passed": 74},
+  "node_frontend": {"passed": 76},
   "ruff": "passed E9/F",
   "mypy": "passed 9 configured modules check_untyped_defs, not strict",
-  "macos_build": "1.14.0 build97; embedded Python3.12.14; official IBKR10.50.2 API source unchanged; protobuf5.29.6 security patch; signed ad hoc; arm64 macOS13+",
+  "macos_build": "1.14.0 build102; embedded Python3.12.14; official IBKR10.50.2 API source unchanged; protobuf5.29.6 security patch; signed ad hoc; arm64 macOS13+",
+  "legal_links_build102": "Presentation-only: privacy and terms footer links use black (#000), including visited links, as explicitly requested.76 frontend tests passed; navigation and legal content unchanged.",
+  "backup_icons_build101": "Presentation-only: remove backup-specific icon size/color/opacity overrides; reuse the standard22px blue InfoTip style shown in the user reference. Single button borders and concise labels retained.76 frontend tests passed; backup behavior unchanged.",
+  "backup_style_build100": "Presentation-only: one outer border per backup action, shorter labels,18px transparent color-matched info icons, explicit specificity fix for secondary action background/border, retained visible keyboard focus.76 frontend tests passed; handlers unchanged.",
+  "backup_info_build99": "UI-only: export/import instructions moved into existing adaptive InfoTip controls visually grouped with their action buttons; no nested buttons. Requested scope sentence and standalone instructions removed. Replacement/password warning retained.75 frontend tests passed; backup handlers unchanged.",
+  "backup_instructions_build98": "UI-only: distinct concise export/import steps, explicit import replacement warning, irrecoverable password notice, short backup scope and accessible password field label.75 frontend tests passed. Backup encryption, export/import handlers and stored data format unchanged.",
   "button_order_build97": "UI-only: Rinomina immediately follows Dividi in the shared expense/income bank movement action row.74 frontend tests passed including order regression. Split and backend behavior unchanged.",
   "bank_splits_build96": "12 focused frontend and9 Python tests plus1 HTTP test passed: independent names/categories, cent-exact cap, residual after removal, atomic rebalance, ordinary button residual/double-click safety, salary/extra, same-category different names, immutable original metadata, legacy compatibility, stale editor, wrong month/IDs/currency and serialization. Isolated browser fixture verified200fixed+800variable, blocked210+800, removing200 returns residual200 with800 preserved,700salary+300extra, save month and reload. Native installed editor opened/cancelled without saving real classifications. Frozen installed runtime passed split cap/save/reload/encrypted backup roundtrip. Data fingerprints unchanged for2 months,27 notes,drafts,bank archive,key; original app Info.plist unchanged; main/origin-main unchanged. No push in this turn.",
   "six_decimals_build95": "Presentation-only: closing price and IBKR quantity use six fixed decimals.61 frontend tests pass;90.58->90,580000;0.0013->0,001300;0.12345678->0,123457. Other precise() call sites and backend numeric calculations unchanged.",

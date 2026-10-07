@@ -78,6 +78,26 @@ test('banking has one main refresh action and compact setup with bank-independen
   assert.match(source, /Salva conti e carica movimenti/);
 });
 
+test('backup instructions distinguish export password from import password and warn about replacement', () => {
+  assert.match(source, /scegli una password → premi Esporta → salva il file/);
+  assert.match(source, /inserisci la password del file → premi Importa → seleziona il file → conferma/);
+  assert.match(source, /L’importazione sostituisce i dati attuali/);
+  assert.match(source, /La password non è recuperabile/);
+  assert.match(source, /htmlFor="backup-password"/);
+  assert.match(source, /id="backup-password" type="password"/);
+  assert.match(source, /<InfoTip label="esportare il backup">scegli una password → premi Esporta → salva il file\.<\/InfoTip>/);
+  assert.match(source, /<InfoTip label="importare il backup">inserisci la password del file → premi Importa → seleziona il file → conferma\.<\/InfoTip>/);
+  assert.doesNotMatch(source, /Include mesi, bozze e voci classificate\. Non trasferisce i collegamenti bancari\./);
+  assert.doesNotMatch(source, /<strong>Esportare:<\/strong>|<strong>Importare:<\/strong>/);
+});
+
+test('backup buttons have one border and reuse standard blue info controls', () => {
+  assert.match(source, /\.backup-action>button,\.backup-action>button\.secondary\{border:0;background:transparent/);
+  assert.doesNotMatch(source, /\.backup-action(?:\.secondary)? button\.info-tip-button\{/);
+  assert.match(source, />Esporta backup<\/button>/);
+  assert.match(source, />Importa backup<\/button>/);
+});
+
 test('legal links appear once in the app footer outside collapsible sections', () => {
   const footer = source.match(/<footer className="small" aria-label="Informazioni legali"[^>]*>([\s\S]*?)<\/footer>/);
   assert.ok(footer);
@@ -86,6 +106,7 @@ test('legal links appear once in the app footer outside collapsible sections', (
   assert.equal((source.match(/>Informativa privacy<\/a>/g) || []).length, 1);
   assert.equal((source.match(/>Condizioni e limiti del servizio<\/a>/g) || []).length, 1);
   assert.ok(footer.index > source.lastIndexOf('</section>'));
+  assert.match(source, /footer\[aria-label="Informazioni legali"\] a,footer\[aria-label="Informazioni legali"\] a:visited\{color:#000\}/);
 });
 
 test('beta exposes only the two authorized collapsible sections', () => {

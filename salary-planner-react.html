@@ -111,6 +111,12 @@
       .delta.bad{color:var(--bad)}
       .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
       .title-with-info{display:flex;align-items:center;gap:8px}
+      footer[aria-label="Informazioni legali"] a,footer[aria-label="Informazioni legali"] a:visited{color:#000}
+      .backup-action{display:inline-flex;align-items:center;gap:0;min-height:36px;border:1px solid #c0a25e;border-radius:4px;background:linear-gradient(180deg,#e2c67f,#b99448)}
+      .backup-action>button,.backup-action>button.secondary{border:0;background:transparent;border-radius:0;box-shadow:none}
+      .backup-action.secondary{background:#101722;border-color:#344155}
+      .backup-action .info-tip{margin-right:10px}
+      .backup-action button.info-tip-button:focus-visible{outline:2px solid var(--accent-2);outline-offset:3px}
       .title{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
       .info-tip{position:relative;display:inline-flex;flex:0 0 auto}
       button.info-tip-button{
@@ -2578,10 +2584,13 @@
               </header>
 
               <details className="decision-box" style={{ marginBottom: 14 }}><summary>Backup e trasferimento dati</summary>
-                <div className="small" style={{ marginTop: 8 }}>Il backup protetto include mesi, bozze e movimenti classificati. Non include chiavi private, sessioni o collegamenti bancari. Sul nuovo Mac ogni utente autorizza i propri conti. La password non è recuperabile.</div>
-                <div className="field" style={{ marginTop: 10 }}><label>Password del backup (almeno 12 caratteri)</label><input type="password" autoComplete="new-password" value={backupPassword} onChange={event => setBackupPassword(event.target.value)} /></div>
+                <div className="field" style={{ marginTop: 10 }}><label htmlFor="backup-password">Password del backup (almeno 12 caratteri)</label><input id="backup-password" type="password" autoComplete="new-password" value={backupPassword} onChange={event => setBackupPassword(event.target.value)} /></div>
                 <input ref={backupFile} type="file" accept=".dfbackup" style={{ display: "none" }} onChange={event => { const file = event.target.files?.[0]; if (file) transferBackup(file); }} />
-                <div className="actions" style={{ marginTop: 10 }}><button disabled={backupBusy || persistenceStatus === "loading"} onClick={() => transferBackup()}>Esporta backup protetto</button><button className="secondary" disabled={backupBusy || persistenceStatus === "loading"} onClick={() => backupFile.current?.click()}>Importa backup protetto</button></div>
+                <div className="actions" style={{ marginTop: 10 }}>
+                  <div className="backup-action"><button disabled={backupBusy || persistenceStatus === "loading"} onClick={() => transferBackup()}>Esporta backup</button><InfoTip label="esportare il backup">scegli una password → premi Esporta → salva il file.</InfoTip></div>
+                  <div className="backup-action secondary"><button className="secondary" disabled={backupBusy || persistenceStatus === "loading"} onClick={() => backupFile.current?.click()}>Importa backup</button><InfoTip label="importare il backup">inserisci la password del file → premi Importa → seleziona il file → conferma.</InfoTip></div>
+                </div>
+                <div className="small" style={{ marginTop: 8 }}><strong>L’importazione sostituisce i dati attuali.</strong> La password non è recuperabile.</div>
                 {backupMessage && <div className="small" role="status" style={{ marginTop: 8 }}>{backupMessage}</div>}
               </details>
 
