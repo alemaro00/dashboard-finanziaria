@@ -148,6 +148,7 @@ test('navigation toggles the same section state as the arrows and keeps section 
 });
 
 test('beta preserves the original complete-dashboard color system', () => {
+  assert.doesNotMatch(source, /Liquidita' disponibile contabilizzata|InfoTip label="formula della liquidità disponibile"/);
   assert.match(source, /\.workspace-nav,\.backup-panel,\.macro-section-card,\.macro-section-shell\{background:var\(--panel-3\)!important\}/);
   assert.match(source, /--accent:#d7b46a/);
   assert.match(source, /\.macro-finance\{--macro-accent:#d7b46a/);
