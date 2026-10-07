@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_DIR="${0:A:h:h}"
 INSTALL_DIR="/Applications/Beta Dashboard Finanziaria.app"
 APP_VERSION="1.14.0"
-APP_BUILD="102"
+APP_BUILD="106"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 if [[ "${PUBLIC_RELEASE:-0}" == "1" && ( "$SIGN_IDENTITY" == "-" || -z "${NOTARY_PROFILE:-}" ) ]]; then
   print -u2 "Release pubblica bloccata: servono SIGN_IDENTITY Developer ID Application e NOTARY_PROFILE."

@@ -34,8 +34,15 @@
         color:var(--text);
         background:var(--selected-surface);
       }
-      .app{min-height:100vh;padding:18px}
-      .shell{max-width:1580px;margin:0 auto}
+      .app{min-height:100vh;padding:18px;display:flex;flex-direction:column}
+      .shell{max-width:1580px;margin:0 auto;width:100%;flex:1;display:flex;flex-direction:column}
+      footer[aria-label="Informazioni legali"]{margin-top:auto;padding-top:16px;flex-shrink:0}
+      .backup-panel{padding:8px 16px;border:1px solid #64707d;border-top:3px solid #b7c1cd;border-radius:12px;background:var(--panel-3);margin-bottom:0;scroll-margin-top:92px}
+      .backup-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+      .backup-heading h2{margin:0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+      .backup-heading button.toggle{width:32px;height:32px;min-width:32px}
+      .backup-heading .macro-number{color:#e8edf5;background:#252c35;width:28px;height:28px}
+      .backup-content{margin-top:12px}
       .hero{
         display:flex;justify-content:space-between;gap:20px;align-items:flex-end;
         padding:20px 22px;border:1px solid var(--line);border-radius:8px;
@@ -46,7 +53,7 @@
       .dashboard-title h1{margin:0;font-size:28px;display:flex;align-items:center;gap:10px}
       .beta-badge{padding:5px 8px;border:1px solid #4b8aa8;border-radius:999px;background:#102b3a;color:#bcecff;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
       .workspace-nav{
-        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
+        position:sticky;top:10px;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
         margin:12px 0;padding:7px;border:1px solid #2a3545;border-radius:12px;
         background:rgba(9,13,19,.9);box-shadow:0 14px 34px rgba(0,0,0,.28);backdrop-filter:blur(16px);
       }
@@ -60,8 +67,9 @@
         display:grid;place-items:center;width:28px;height:28px;flex:0 0 auto;border-radius:7px;
         font-size:10px;font-weight:850;background:#202b39;border:1px solid #3a485c;color:#dce7f5;
       }
-      .workspace-nav a:nth-child(1) .workspace-nav-index{color:#f4d98d;border-color:#745f30;background:#2b2414}
-      .workspace-nav a:nth-child(2) .workspace-nav-index{color:#d9c7ff;border-color:#67548e;background:#251d3a}
+      .workspace-nav a[href="#backup-section"] .workspace-nav-index{color:#e8edf5;border-color:#64707d;background:#252c35}
+      .workspace-nav a[href="#finance-section"] .workspace-nav-index{color:#f4d98d;border-color:#745f30;background:#2b2414}
+      .workspace-nav a[href="#wealth-section"] .workspace-nav-index{color:#d9c7ff;border-color:#67548e;background:#251d3a}
       .macro-title-line{display:flex;align-items:center;gap:11px;min-width:0}
       .macro-number{
         display:grid;place-items:center;width:34px;height:34px;flex:0 0 auto;border-radius:9px;
@@ -77,16 +85,18 @@
       .macro-wealth{--macro-accent:#a482ef;--macro-glow:rgba(164,130,239,.48);border-color:rgba(164,130,239,.38)}
       .macro-wealth .macro-number{color:#dfd0ff;background:rgba(92,61,151,.22)}
       .macro-section-shell{
-        grid-column:span 12;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;padding:14px;border:1px solid rgba(164,130,239,.38);
+        grid-column:span 12;display:flex;flex-direction:column;gap:12px;min-width:0;width:100%;padding:16px;border:1px solid rgba(164,130,239,.38);
         border-radius:12px;background:linear-gradient(145deg,rgba(31,24,47,.62),rgba(11,16,24,.94) 32%);
         box-shadow:0 20px 52px rgba(0,0,0,.28);
       }
       .macro-section-shell > *{min-width:0;width:100%}
-      .macro-shell-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 5px 8px}
-      .macro-shell-heading h2{margin:0;font-size:21px;letter-spacing:.01em}
+      .macro-shell-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0}
+      .macro-shell-heading h2{margin:0;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+      .finance-management-head.section-head{align-items:center;margin-bottom:0;padding-bottom:0;border-bottom:0}
+      .finance-management-head.section-head.is-open{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
       .macro-shell-controls{
-        display:grid;grid-template-columns:22px 40px;align-items:center;justify-content:end;gap:10px;
-        flex:0 0 72px;min-width:72px;
+        display:flex;align-items:center;justify-content:end;
+        flex:0 0 40px;min-width:40px;
       }
       h1{margin:8px 0 10px;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:0}
       .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
@@ -1752,6 +1762,7 @@
         };
 
         const [backupPassword, setBackupPassword] = useState("");
+        const [isBackupOpen, setIsBackupOpen] = useState(false);
         const [backupMessage, setBackupMessage] = useState("");
         const [backupBusy, setBackupBusy] = useState(false);
         const backupFile = useRef(null);
@@ -2583,7 +2594,15 @@
                 </span>
               </header>
 
-              <details className="decision-box" style={{ marginBottom: 14 }}><summary>Backup e trasferimento dati</summary>
+              <nav className="workspace-nav" aria-label="Sezioni principali">
+                <a href="#backup-section" aria-controls="backup-section" aria-expanded={isBackupOpen} onClick={() => setIsBackupOpen(open => !open)}><span className="workspace-nav-index">00</span><span>Backup e trasferimento dati</span></a>
+                <a href="#finance-section" aria-controls="finance-section" aria-expanded={isFinanceSectionOpen} onClick={() => setIsFinanceSectionOpen(open => !open)}><span className="workspace-nav-index">01</span><span>Gestione delle finanze</span></a>
+                <a href="#wealth-section" aria-controls="wealth-section" aria-expanded={isWealthSectionOpen} onClick={() => setIsWealthSectionOpen(open => !open)}><span className="workspace-nav-index">02</span><span>Wealth management</span></a>
+              </nav>
+
+              <section id="backup-section" className="backup-panel" aria-labelledby="backup-title">
+                <div className="backup-heading"><div className="macro-title-line"><span className="macro-number">00</span><h2 id="backup-title">Backup e trasferimento dati</h2></div><SectionToggle isOpen={isBackupOpen} onToggle={() => setIsBackupOpen(open => !open)} label="backup e trasferimento dati" /></div>
+                {isBackupOpen && <div className="backup-content">
                 <div className="field" style={{ marginTop: 10 }}><label htmlFor="backup-password">Password del backup (almeno 12 caratteri)</label><input id="backup-password" type="password" autoComplete="new-password" value={backupPassword} onChange={event => setBackupPassword(event.target.value)} /></div>
                 <input ref={backupFile} type="file" accept=".dfbackup" style={{ display: "none" }} onChange={event => { const file = event.target.files?.[0]; if (file) transferBackup(file); }} />
                 <div className="actions" style={{ marginTop: 10 }}>
@@ -2592,16 +2611,12 @@
                 </div>
                 <div className="small" style={{ marginTop: 8 }}><strong>L’importazione sostituisce i dati attuali.</strong> La password non è recuperabile.</div>
                 {backupMessage && <div className="small" role="status" style={{ marginTop: 8 }}>{backupMessage}</div>}
-              </details>
-
-              <nav className="workspace-nav" aria-label="Sezioni principali">
-                <a href="#finance-section"><span className="workspace-nav-index">01</span><span>Gestione delle finanze</span></a>
-                <a href="#wealth-section"><span className="workspace-nav-index">02</span><span>Wealth management</span></a>
-              </nav>
+                </div>}
+              </section>
 
               <section className="grid">
                 <div className="card full finance-management-card section-surface macro-section-card macro-finance" id="finance-section">
-                  <div className="section-head finance-management-head">
+                  <div className={`section-head finance-management-head${isFinanceSectionOpen ? " is-open" : ""}`}>
                     <div className="macro-title-line">
                       <span className="macro-number">01</span>
                       <div className="title">Gestione delle finanze</div>
@@ -3198,9 +3213,6 @@
                       <h2>Wealth management</h2>
                     </div>
                     <div className="macro-shell-controls">
-                      <InfoTip label="formula del patrimonio complessivo">
-                        Patrimonio complessivo = Net Liquidation IBKR Live + valore degli investimenti illiquidi + fondo emergenza + flexible cash dei mesi salvati.
-                      </InfoTip>
                       <SectionToggle
                         isOpen={isWealthSectionOpen}
                         onToggle={() => setIsWealthSectionOpen((open) => !open)}
@@ -3562,7 +3574,7 @@
                 )}
                 </section>
               </section>
-              <footer className="small" aria-label="Informazioni legali" style={{ marginTop: 16 }}>
+              <footer className="small" aria-label="Informazioni legali">
                 <a href={`${ibkrBridgeBaseUrl}/privacy`} target="_blank" rel="noreferrer">Informativa privacy</a> · <a href={`${ibkrBridgeBaseUrl}/terms`} target="_blank" rel="noreferrer">Condizioni e limiti del servizio</a>
               </footer>
             </div>

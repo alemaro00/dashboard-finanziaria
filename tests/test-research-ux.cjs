@@ -106,15 +106,45 @@ test('legal links appear once in the app footer outside collapsible sections', (
   assert.equal((source.match(/>Informativa privacy<\/a>/g) || []).length, 1);
   assert.equal((source.match(/>Condizioni e limiti del servizio<\/a>/g) || []).length, 1);
   assert.ok(footer.index > source.lastIndexOf('</section>'));
+  assert.match(source, /footer\[aria-label="Informazioni legali"\]\{margin-top:auto;padding-top:16px;flex-shrink:0\}/);
+  assert.match(source, /\.shell\{[^}]*display:flex;flex-direction:column/);
+  assert.match(source, /\.backup-panel\{[^}]*border-radius:12px/);
+  assert.match(source, /backup-heading"><div className="macro-title-line"><span className="macro-number">00/);
+  assert.ok(source.indexOf('<nav className="workspace-nav"') < source.indexOf('<section id="backup-section"'));
+  assert.doesNotMatch(source, /InfoTip label="formula del patrimonio complessivo"/);
+  assert.match(source, /<SectionToggle isOpen=\{isBackupOpen\}[^\n]*label="backup e trasferimento dati"/);
   assert.match(source, /footer\[aria-label="Informazioni legali"\] a,footer\[aria-label="Informazioni legali"\] a:visited\{color:#000\}/);
 });
 
-test('beta exposes only the two authorized collapsible sections', () => {
+test('beta exposes backup and the two authorized collapsible sections', () => {
+  assert.match(source, /href="#backup-section"[^\n]*?>00<[^\n]*?Backup e trasferimento dati/);
   assert.match(source, /href="#finance-section"[\s\S]*?>01<[\s\S]*?Gestione delle finanze/);
   assert.match(source, /href="#wealth-section"[\s\S]*?>02<[\s\S]*?Wealth management/);
   assert.match(source, /Dashboard finanziaria <span className="beta-badge">Beta<\/span>/);
   assert.doesNotMatch(source, /salary-section|Stima stipendio netto da RAL/);
   assert.doesNotMatch(source, /research-section|Laboratorio strategie/);
+});
+
+test('navigation toggles the same section state as the arrows and keeps section colors', () => {
+  for (const [id, setter] of [['backup', 'setIsBackupOpen'], ['finance', 'setIsFinanceSectionOpen'], ['wealth', 'setIsWealthSectionOpen']]) {
+    const link = source.match(new RegExp(`<a href="#${id}-section"[^\\n]*?<\\/a>`))[0];
+    assert.match(link, new RegExp(`aria-controls="${id}-section"`));
+    assert.match(link, /aria-expanded=\{/);
+    const callback = link.match(/onClick=\{\(\) => (.*?)\}/)[1];
+    let open = false;
+    const click = new Function(setter, `return () => ${callback}`)(update => { open = update(open); });
+    click(); assert.equal(open, true);
+    click(); assert.equal(open, false);
+  }
+  assert.match(source, /\.backup-panel\{padding:8px 16px/);
+  assert.match(source, /\.backup-panel\{[^}]*margin-bottom:0/);
+  assert.match(source, /\.backup-heading h2\{[^}]*font-size:13px[^}]*text-transform:uppercase;letter-spacing:\.08em/);
+  assert.match(source, /\.macro-shell-heading h2\{[^}]*font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:\.08em/);
+  assert.match(source, /\.finance-management-head.section-head\{align-items:center;margin-bottom:0;padding-bottom:0;border-bottom:0\}/);
+  assert.match(source, /\.workspace-nav\{[^}]*grid-template-columns:repeat\(3,1fr\)/);
+  assert.match(source, /a\[href="#backup-section"\] .workspace-nav-index\{color:#e8edf5/);
+  assert.match(source, /a\[href="#finance-section"\] .workspace-nav-index\{color:#f4d98d/);
+  assert.match(source, /a\[href="#wealth-section"\] .workspace-nav-index\{color:#d9c7ff/);
 });
 
 test('beta preserves the original complete-dashboard color system', () => {
