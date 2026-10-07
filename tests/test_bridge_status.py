@@ -126,6 +126,19 @@ class DataStatusTests(unittest.TestCase):
         self.synchronize()
         self.assertEqual(bridge.wait_for_snapshot(self.client, 1)['dataStatus'], 'current')
 
+    def test_modern_api_error_timestamp_preserves_connection_error_semantics(self):
+        self.synchronize()
+        self.client.connected = True
+        self.client.error(-1, 1791342000000, 1100, 'Connection lost', '')
+        self.assertFalse(self.client.connected)
+        self.assertFalse(self.client.ready.is_set())
+
+    def test_modern_delayed_history_notice_is_informational(self):
+        self.synchronize()
+        self.client.error(2000000, 1791342000000, 2188, 'Delayed history follows', '')
+        self.assertTrue(self.client.ready.is_set())
+        self.assertEqual(self.client.recent_messages[-1]['level'], 'info')
+
     def test_cash_balances_are_exposed_per_currency_in_base_value(self):
         self.synchronize()
         self.client.accountSummary(9101, 'TEST', 'Currency', 'EUR', 'EUR')

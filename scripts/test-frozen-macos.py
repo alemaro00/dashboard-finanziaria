@@ -49,6 +49,16 @@ with tempfile.TemporaryDirectory(prefix="dashboard-frozen-test-") as directory:
             raw = (Path(directory) / "dashboard-state.json").read_bytes()
             assert raw.startswith(b"DFB1\n") and b"fixture-id" not in raw
             assert json.loads(request("GET", "/api/state")[1])["state"] == fixture["state"]
+            notes = [{"id": identifier, "bankTransactionId": "split-fixture", "bankOriginalAmount": 1000,
+                      "bankSplitVersion": 1, "bankRecordType": "income", "transactionDate": "2026-10-01",
+                      "originalBankDescription": "Fixture entrata", "label": identifier, "category": category, "amount": amount}
+                     for identifier, category, amount in [("salary-part", "Stipendio", 200), ("extra-part", "Entrate aggiuntive", 800)]]
+            fixture = {"state": {"monthName": "Ottobre", "year": 2026, "monthlyHistory": [], "notes": notes}, "entry": {}}
+            assert request("POST", "/api/state", fixture, token)[0] == 200
+            notes[0]["amount"] = 210
+            assert request("POST", "/api/state", fixture, token)[0] == 400
+            notes[0]["amount"] = 200
+            assert json.loads(request("GET", "/api/state")[1])["state"] == fixture["state"]
             password = "temporary test fixture password"
             code, archive = request("POST", "/api/backup/export", {"password": password}, token)
             assert code == 200 and b"fixture-id" not in archive
@@ -60,7 +70,7 @@ with tempfile.TemporaryDirectory(prefix="dashboard-frozen-test-") as directory:
             assert json.loads(request("GET", "/api/state")[1])["state"] == fixture["state"]
             assert request("GET", "/privacy")[0] == 200
             assert request("GET", "/terms")[0] == 200
-            print("Frozen runtime, Keychain encryption, backup roundtrip, wrong-password protection, legal pages: OK")
+            print("Frozen runtime, split cap/save/reload/backup, Keychain encryption, wrong-password protection, legal pages: OK")
         finally:
             process.terminate()
             process.wait(timeout=10)

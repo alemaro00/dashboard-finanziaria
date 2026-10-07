@@ -1,3 +1,4 @@
-ibapi==9.81.1.post1
+./vendor/ibapi-10.50.2-py3-none-any.whl
+protobuf==5.29.6
 cryptography==50.0.1
 certifi==2026.7.22

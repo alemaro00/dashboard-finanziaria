@@ -1,36 +1,47 @@
 {
-  "date": "2026-10-05",
+  "date": "2026-10-07",
   "baseline_commit": "3fa41a3",
   "unit_python": {
-    "passed": 109
+    "passed": 183
   },
   "http_integration": {
-    "passed": 7
+    "passed": 8
   },
   "node_polling": {
     "passed": 4
   },
-  "node_frontend": {"passed": 47},
+  "node_frontend": {"passed": 74},
   "ruff": "passed E9/F",
   "mypy": "passed 9 configured modules check_untyped_defs, not strict",
-  "macos_build": "1.14.0 build70; embedded Python3.12.14; signed ad hoc; arm64 macOS13+",
-  "browser_visual": "native interface verified on current Mac: renewal, account selection, backup controls and saved status",
+  "macos_build": "1.14.0 build97; embedded Python3.12.14; official IBKR10.50.2 API source unchanged; protobuf5.29.6 security patch; signed ad hoc; arm64 macOS13+",
+  "button_order_build97": "UI-only: Rinomina immediately follows Dividi in the shared expense/income bank movement action row.74 frontend tests passed including order regression. Split and backend behavior unchanged.",
+  "bank_splits_build96": "12 focused frontend and9 Python tests plus1 HTTP test passed: independent names/categories, cent-exact cap, residual after removal, atomic rebalance, ordinary button residual/double-click safety, salary/extra, same-category different names, immutable original metadata, legacy compatibility, stale editor, wrong month/IDs/currency and serialization. Isolated browser fixture verified200fixed+800variable, blocked210+800, removing200 returns residual200 with800 preserved,700salary+300extra, save month and reload. Native installed editor opened/cancelled without saving real classifications. Frozen installed runtime passed split cap/save/reload/encrypted backup roundtrip. Data fingerprints unchanged for2 months,27 notes,drafts,bank archive,key; original app Info.plist unchanged; main/origin-main unchanged. No push in this turn.",
+  "six_decimals_build95": "Presentation-only: closing price and IBKR quantity use six fixed decimals.61 frontend tests pass;90.58->90,580000;0.0013->0,001300;0.12345678->0,123457. Other precise() call sites and backend numeric calculations unchanged.",
+  "risk_format_build94": "Presentation-only change: VaR/ES use existing Italian EUR currency formatter, exactly two decimals and euro symbol.60 frontend tests pass, including0.062737->0,06€ and0.078719->0,08€. Backend risk model unchanged.",
+  "closing_date_label_build93": "Presentation-only change: remove Chiusura below closing price, retain dd/mm/yyyy date.12 focused frontend tests passed. Installed source and build93 verified; backend unchanged from verified build92.",
+  "browser_visual": "build92 native accessibility and screenshot verified closing price, session date and closing P/L; no BID/ASK or liquidation labels. Saved status visible. VaR/ES remain ready. Existing colors and adaptive InfoTips retained. Personal position amounts omitted from published verification.",
   "deployment": "beta installed locally; original 1.13.28 and main unchanged",
-  "frozen_runtime": "passed with disposable fixtures: embedded runtime, Keychain encryption, save/read, password-protected backup roundtrip, wrong password, legal pages",
-  "data_preservation": "local fingerprint comparisons passed; financial values not recorded in report",
-  "dependency_audit": "no known vulnerabilities in pinned runtime requirements and full freeze environment after updates; unknown vulnerabilities not excluded",
+  "frozen_runtime": "build96 passed with disposable fixtures: embedded runtime, Keychain encryption, split cap rejection without overwriting saved state, save/read, split-preserving password-protected backup roundtrip, wrong password, legal pages",
+  "data_preservation": "build92: before/after fingerprints unchanged for two saved months,27 classified notes, drafts, bank archive and private key; original application Info.plist SHA256 unchanged and main/origin-main remain bccef26746747de571a7ed6fe817469e38684e8f",
+  "closing_prices_build92": "16 focused closing tests passed: same close long/short, signed fractional P/L, no bid/ask/current-price fallback, exact SMART stock contract preserved, TRADES/RTH/one-shot daily request, incomplete/future-bar exclusion, exchange timezone, Rome-midnight handling,20minute publication buffer, split sessions, early close, weekend/holiday, fail-closed invalid data/permissions,2188 advisory, hourly success/error cache, reconnect generation and IBKR P/L separation. Diagnostic and installed runtime both ready; closing P/L checked against quantity and average cost. Personal position amounts omitted. No streaming quote monitor included in frozen runtime. No orders or subscriptions purchased.",
+  "quote_setup_build91": "New tests: exact conId/primaryExchange/currency preserved with SMART stock route, short delayed/frozen ASK, frozen timeout fail closed then late tick recovery. Long BID/short ASK and hourly sampling existing tests pass. Actual TWS10.52.0d internal diagnostics dialog observed, normal restart explicitly authorized and performed, no diagnostics uploaded by agent. After restart account current/risk ready; quote callbacks identify delayed mode but no positive BID/ASK received even after type4 fallback. Diagnostic historical BID/ASK requests denied162 ISLAND STK; IEX/NASDAQ realtime streaming denied10089. No subscription purchased, permissions expanded or order sent. Actual liquidation numeric result not verified this build; authorized BID/ASK feed still needed.",
+  "portfolio_var_es": "23 focused offline tests passed plus2 modern callback tests: existing math/coverage tests, SMART exact-contract preservation, IDEALPRO retention, 2188 advisory does not terminate before historicalDataEnd, errorTime API compatibility. NASDAQ direct denied162; SMART and IDEALPRO historical requests completed. Installed build88 ready with10years of daily returns. Personal portfolio risk amounts omitted. Current day excluded, foreign cash and FX included. No subscription purchased, no order sent, no external data provider. EUR-base STK/cash only; coverage safeguards unchanged.",
+  "hourly_sampling": "Two additional focused tests passed: ticks within one hour do not change price/receipt; subscriptions do not renew after a minute. Hourly resubscription, initial frozen fallback retained, invalid ticks still invalidate prices. Installed build81 Last Update time verified in native UI.",
+  "liquidation_quotes": "20 focused tests passed, including stale-stream re-subscription, old callback rejection, original receipt preservation, explicit last-known estimate, permission retry suppression and missing-tick delayed-frozen fallback with return to streaming. Installed build80 returned a delayed BID and calculated liquidation P/L verified against quantity/cost in API and visible native UI. Quote freshness cannot guarantee execution or exchange timestamp; receipt time explicitly labelled. No regulatory snapshots or orders.",
+  "dependency_audit": "full freeze environment pip-audit: no known vulnerabilities in audited packages after protobuf5.29.6 fixes CVE-2026-0994; official ibapi10.50.2 unavailable to PyPI audit, explicitly skipped (not certified vulnerability-free). Upstream archive and vendored wheel SHA256 verified, all API source entries identical; only dependency METADATA/RECORD changed. pip check passed. Unknown vulnerabilities not excluded",
   "public_release": "blocked: no valid Developer ID identity, no notarization; public AIS contractual/backend model and GDPR review still required",
   "other_macs": "not tested on separate hardware or Intel",
   "windows": "no end-user package built",
   "legal_compliance": "technical review and primary-source checklist only; no certification",
-  "historical_performance": "not calculated",
+  "historical_performance": "actual historical holdings performance not reconstructed; current-holdings parametric risk implemented separately",
   "python_dependencies": {
     "dependencies": [
       {
         "name": "ibapi",
-        "version": "9.81.1.post1",
-        "vulns": []
+        "version": "10.50.2",
+        "audit_status": "skipped: official distribution not available in PyPI audit database"
       },
+      {"name": "protobuf", "version": "5.29.6", "vulns": []},
       {"name": "cryptography", "version": "50.0.1", "vulns": []},
       {"name": "certifi", "version": "2026.7.22", "vulns": []
       }

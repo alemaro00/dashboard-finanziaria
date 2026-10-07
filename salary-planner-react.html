@@ -120,12 +120,11 @@
       }
       button.info-tip-button:hover,button.info-tip-button:focus-visible{color:#081018;background:#8ed7f4;border-color:#b9eaff}
       .info-tip-content{
-        position:absolute;z-index:20;left:50%;top:calc(100% + 9px);width:min(410px,70vw);padding:12px 14px;
+        position:fixed;z-index:10000;left:12px;top:12px;width:min(410px,calc(100vw - 24px));padding:12px 14px;overflow:auto;overscroll-behavior:contain;
         border-radius:7px;border:1px solid #49657c;background:#09111a;color:#dce8f5;
         box-shadow:0 18px 42px rgba(0,0,0,.48);font-size:12px;line-height:1.55;text-transform:none;
-        letter-spacing:0;font-weight:500;opacity:0;visibility:hidden;transform:translate(-50%,-4px);transition:.16s ease;
+        letter-spacing:0;font-weight:500;white-space:normal;text-align:left;
       }
-      .info-tip:hover .info-tip-content,.info-tip:focus-within .info-tip-content{opacity:1;visibility:visible;transform:translate(-50%,0)}
       .small{font-size:12px;color:var(--muted);line-height:1.45}
       .form{
         display:grid;grid-template-columns:repeat(12,1fr);gap:10px;
@@ -214,6 +213,12 @@
       .bank-movement-actions button.selected{border-color:#d7b46a;background:rgba(215,180,106,.2);color:#f4d98d}
       .bank-rename-form{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}
       .bank-rename-form input{min-width:260px;flex:1}
+      .bank-split-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}
+      .bank-split-dialog{width:min(850px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;box-shadow:var(--shadow)}
+      .bank-split-row{display:grid;grid-template-columns:minmax(120px,1.5fr) minmax(130px,1fr) minmax(100px,.7fr) auto;gap:8px;align-items:end;margin:12px 0}
+      .bank-split-row label{display:block}
+      .bank-split-row input,.bank-split-row select{width:100%}
+      @media(max-width:650px){.bank-split-row{grid-template-columns:1fr 1fr}}
       .muted{color:var(--muted)}
       .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
       .mini{
@@ -494,8 +499,6 @@
         .app{padding:16px}
         .workspace-nav{position:static;grid-template-columns:1fr}
         .workspace-nav a{padding:9px 11px}
-        .info-tip-content{left:0;transform:translate(0,-4px)}
-        .info-tip:hover .info-tip-content,.info-tip:focus-within .info-tip-content{transform:translate(0,0)}
         .entry-list-card{grid-template-columns:1fr}
         .entry-list-value{text-align:left}
         .entry-list-actions{justify-content:flex-start}
@@ -572,7 +575,7 @@
       }
     </script>
     <script type="text/babel">
-      const { useEffect, useMemo, useRef, useState } = React;
+      const { useEffect, useLayoutEffect, useMemo, useRef, useState } = React;
 
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
       const storageKey = "salary-planner-react-v1";
@@ -654,8 +657,8 @@
         }).format(value || 0) + "%";
       }
 
-      function precise(value, maximumFractionDigits = 4) {
-        return new Intl.NumberFormat("it-IT", { maximumFractionDigits }).format(Number(value) || 0);
+      function precise(value, maximumFractionDigits = 4, minimumFractionDigits = 0) {
+        return new Intl.NumberFormat("it-IT", { maximumFractionDigits, minimumFractionDigits }).format(Number(value) || 0);
       }
 
       function numberOrFallback(value, fallback = 0) {
@@ -869,8 +872,82 @@
       }
 
       function availableBankMovements(records, notes) {
-        const classifiedIds = new Set((notes || []).map(note => note.bankTransactionId).filter(Boolean));
-        return records.filter(record => !classifiedIds.has(record.id));
+        return records.flatMap(record => {
+          const allocation = bankMovementAllocation(record, notes);
+          // Legacy fixtures/archives without an amount keep the previous behaviour.
+          if (allocation.total == null) return (notes || []).some(note => note.bankTransactionId === record.id) ? [] : [record];
+          return allocation.remaining > 0 ? [{ ...record, originalAmount: allocation.total / 100,
+            allocatedAmount: allocation.assigned / 100, amount: allocation.remaining / 100 }] : [];
+        });
+      }
+
+      function bankAmountCents(value) {
+        if (typeof value !== "number" && typeof value !== "string") return null;
+        const text = String(value).trim().replace(",", ".");
+        if (!/^\d{1,9}(?:\.\d{1,2})?$/.test(text)) return null;
+        const [whole, decimals = ""] = text.split(".");
+        const cents = Number(whole) * 100 + Number(decimals.padEnd(2, "0"));
+        return Number.isSafeInteger(cents) ? cents : null;
+      }
+
+      function bankMovementAllocation(record, notes) {
+        const total = bankAmountCents(record.originalAmount ?? record.amount);
+        let assigned = 0;
+        for (const note of notes || []) {
+          if (note.bankTransactionId !== record.id) continue;
+          const cents = bankAmountCents(note.amount);
+          if (cents == null || cents <= 0) return { total, assigned: total || 0, remaining: 0 };
+          assigned += cents;
+        }
+        return { total, assigned, remaining: total == null ? 0 : Math.max(0, total - assigned) };
+      }
+
+      function bankAllocationSignature(notes, recordId) {
+        return JSON.stringify((notes || []).filter(note => note.bankTransactionId === recordId)
+          .map(note => [note.id, note.amount, note.category, note.label]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
+      }
+
+      function validateBankSplit(record, rows) {
+        const total = bankAmountCents(record.originalAmount ?? record.amount);
+        const allowed = record.recordType === "income" ? ["Stipendio", "Entrate aggiuntive", "Disinvestimento"] : record.recordType === "expense" ? ["Costo Fisso", "Costo Variabile", "Investimento"] : [];
+        if (record.currency !== "EUR" || !record.id || total == null || total <= 0 || !allowed.length) return { error: "Movimento non ripartibile.", remaining: 0 };
+        if (!Array.isArray(rows) || rows.length > 50) return { error: "Puoi inserire al massimo 50 quote.", remaining: total };
+        let assigned = 0;
+        const ids = new Set();
+        for (const row of rows) {
+          const amount = bankAmountCents(row.amount);
+          if (!row.id || ids.has(row.id)) return { error: "Quota duplicata: riapri la ripartizione.", remaining: 0 };
+          ids.add(row.id);
+          if (!String(row.label || "").trim() || String(row.label).trim().length > 120) return { error: "Dai a ogni quota un nome (massimo 120 caratteri).", remaining: total - assigned };
+          if (!allowed.includes(row.category)) return { error: "Categoria non compatibile con il movimento.", remaining: 0 };
+          if (amount == null || amount <= 0) return { error: "Ogni quota deve essere positiva, con al massimo due decimali.", remaining: total - assigned };
+          assigned += amount;
+        }
+        if (assigned > total) return { error: "Le quote superano l’importo originale. Riduci gli importi.", remaining: total - assigned };
+        return { error: "", remaining: total - assigned, assigned };
+      }
+
+      function applyBankSplit(current, record, rows, signature) {
+        const check = validateBankSplit(record, rows);
+        if (check.error) return { state: current, error: check.error };
+        if (!bankMovementMatchesPeriod(record, current)) return { state: current, error: "Il movimento appartiene a un altro mese." };
+        if (signature !== bankAllocationSignature(current.notes, record.id)) return { state: current, error: "Le quote sono cambiate. Riapri la ripartizione." };
+        const existing = (current.notes || []).filter(note => note.bankTransactionId === record.id);
+        const otherIds = new Set((current.notes || []).filter(note => note.bankTransactionId !== record.id).map(note => note.id));
+        if (rows.some(row => otherIds.has(row.id))) return { state: current, error: "Identificativo di quota già utilizzato." };
+        let next = removeDetailedEntriesFromState(current, note => note.bankTransactionId === record.id);
+        for (const row of rows) {
+          const original = existing.find(note => note.id === row.id);
+          const note = normalizeNote({ ...original, id: row.id, bankTransactionId: record.id,
+            bankOriginalAmount: (record.originalAmount ?? record.amount), bankSplitVersion: 1,
+            bank: record.bank, transactionDate: record.date, originalBankDescription: record.description,
+            bankRecordType: record.recordType, autoImported: false,
+            label: String(row.label).trim(), amount: bankAmountCents(row.amount) / 100, category: row.category });
+          next = upsertDetailedIncome(next, note);
+          if (note.category === "Costo Fisso") next.fixedCosts = roundMoney(Number(next.fixedCosts || 0) + note.amount).toFixed(2);
+          if (note.category === "Costo Variabile") next.variableCosts = roundMoney(Number(next.variableCosts || 0) + note.amount).toFixed(2);
+        }
+        return { state: next, error: "" };
       }
 
       function removeDetailedEntriesFromState(current, shouldRemove) {
@@ -1221,11 +1298,73 @@
         );
       }
 
+      function infoTipPlacement(anchor, contentHeight, viewportWidth, viewportHeight) {
+        const margin = Math.min(12, viewportWidth / 4, viewportHeight / 4);
+        const gap = 9;
+        const width = Math.min(410, viewportWidth - margin * 2);
+        const below = Math.max(0, viewportHeight - margin - anchor.bottom - gap);
+        const above = Math.max(0, anchor.top - gap - margin);
+        const useBelow = below >= contentHeight || below >= above;
+        const available = useBelow ? below : above;
+        // Extremely short windows use the whole viewport, with internal scrolling.
+        const maxHeight = available >= 60 ? available : viewportHeight - margin * 2;
+        const height = Math.min(contentHeight, maxHeight);
+        const desiredTop = useBelow ? anchor.bottom + gap : anchor.top - gap - height;
+        return {
+          width, maxHeight,
+          left: Math.max(margin, Math.min(anchor.left + anchor.width / 2 - width / 2, viewportWidth - margin - width)),
+          top: Math.max(margin, Math.min(desiredTop, viewportHeight - margin - height))
+        };
+      }
+
       function InfoTip({ label, children }) {
+        const [open, setOpen] = useState(false);
+        const [box, setBox] = useState(null);
+        const anchor = useRef(null);
+        const tip = useRef(null);
+        const closeTimer = useRef(null);
+        const id = React.useId();
+        const cancelClose = () => clearTimeout(closeTimer.current);
+        const show = () => { cancelClose(); setOpen(true); };
+        const scheduleClose = () => {
+          cancelClose();
+          closeTimer.current = setTimeout(() => {
+            if (!anchor.current?.contains(document.activeElement) && !tip.current?.contains(document.activeElement)) setOpen(false);
+          }, 150);
+        };
+        useEffect(() => () => clearTimeout(closeTimer.current), []);
+        useLayoutEffect(() => {
+          if (!open) { setBox(null); return; }
+          const place = () => {
+            if (!anchor.current || !tip.current) return;
+            setBox(infoTipPlacement(anchor.current.getBoundingClientRect(), tip.current.scrollHeight, window.innerWidth, window.innerHeight));
+          };
+          const outside = (event) => {
+            if (!anchor.current?.contains(event.target) && !tip.current?.contains(event.target)) setOpen(false);
+          };
+          const escape = (event) => { if (event.key === "Escape") setOpen(false); };
+          place();
+          const observer = new ResizeObserver(place);
+          observer.observe(tip.current);
+          window.addEventListener("resize", place);
+          window.addEventListener("scroll", place, true);
+          document.addEventListener("pointerdown", outside);
+          document.addEventListener("keydown", escape);
+          return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", place);
+            window.removeEventListener("scroll", place, true);
+            document.removeEventListener("pointerdown", outside);
+            document.removeEventListener("keydown", escape);
+          };
+        }, [open, children]);
         return (
-          <span className="info-tip">
-            <button type="button" className="info-tip-button" aria-label={`Informazioni: ${label}`}>i</button>
-            <span className="info-tip-content" role="tooltip">{children}</span>
+          <span className="info-tip" ref={anchor} onMouseEnter={show} onMouseLeave={scheduleClose}>
+            <button type="button" className="info-tip-button" aria-label={`Informazioni: ${label}`} aria-describedby={open ? id : undefined} aria-expanded={open} onFocus={show} onBlur={scheduleClose} onClick={show}>i</button>
+            {open && ReactDOM.createPortal(
+              <div ref={tip} id={id} className="info-tip-content" role="tooltip" tabIndex={0} style={{ ...box, visibility: box ? "visible" : "hidden" }} onMouseEnter={cancelClose} onMouseLeave={scheduleClose} onFocus={cancelClose} onBlur={scheduleClose}>{children}</div>,
+              document.body
+            )}
           </span>
         );
       }
@@ -1370,7 +1509,7 @@
                                 <div className="small">{position.description}{position.expiry ? ` | ${position.expiry}` : ""}</div>
                               </td>
                               <td>{position.securityTypeLabel}</td>
-                              <td className="numeric">{precise(position.quantity, 6)}</td>
+                              <td className="numeric">{precise(position.quantity, 6, 6)}</td>
                               <td className="numeric">{accountMoney(position.averageCost, position.currency || currency)}</td>
                               <td className="numeric">{accountMoney(position.marketPrice, position.currency || currency)}</td>
                               <td className="numeric">{accountMoney(position.marketValue, position.currency || currency)}</td>
@@ -1430,6 +1569,53 @@
         };
       }
 
+      function BankSplitDialog({ draft, onChange, onClose, onSave }) {
+        const dialog = useRef(null);
+        useEffect(() => {
+          const previous = document.activeElement;
+          const overflow = document.body.style.overflow;
+          document.body.style.overflow = "hidden";
+          dialog.current?.querySelector("input")?.focus();
+          return () => { document.body.style.overflow = overflow; previous?.focus?.(); };
+        }, []);
+        const record = draft.record;
+        const total = bankAmountCents(record.amount) || 0;
+        const assigned = draft.rows.reduce((sum, row) => sum + (bankAmountCents(row.amount) || 0), 0);
+        const remaining = total - assigned;
+        const check = validateBankSplit(record, draft.rows);
+        const categories = record.recordType === "income"
+          ? [["Stipendio", "Emolumenti"], ["Entrate aggiuntive", "Entrate extra"], ["Disinvestimento", "Disinvestimenti"]]
+          : [["Costo Fisso", "Costi fissi"], ["Costo Variabile", "Costi variabili"], ["Investimento", "Investimenti"]];
+        const update = (index, field, value) => onChange({ ...draft, error: "", rows: draft.rows.map((row, i) => i === index ? { ...row, [field]: value } : row) });
+        const trap = event => {
+          if (event.key === "Escape") { event.preventDefault(); onClose(); }
+          if (event.key !== "Tab") return;
+          const elements = [...dialog.current.querySelectorAll("input,select,button")].filter(element => !element.disabled);
+          const first = elements[0], last = elements[elements.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        };
+        return ReactDOM.createPortal(
+          <div className="bank-split-overlay">
+            <div className="bank-split-dialog" role="dialog" aria-modal="true" aria-labelledby="bank-split-title" ref={dialog} onKeyDown={trap}>
+              <h3 id="bank-split-title">Ripartisci il movimento</h3>
+              <div className="bank-original-name">Movimento originale: {record.description}</div>
+              <div className="bank-review-meta"><span>{record.bank}</span><span>{record.date?.split("-").reverse().join("/")}</span><strong>Totale {money(total / 100)}</strong></div>
+              {draft.rows.map((row, index) => <div className="bank-split-row" key={row.id}>
+                <label>Nome quota {index + 1}<input maxLength="120" value={row.label} onChange={event => update(index, "label", event.target.value)} /></label>
+                <label>Categoria quota {index + 1}<select value={row.category} onChange={event => update(index, "category", event.target.value)}>{categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                <label>Importo quota {index + 1} (€)<input type="number" min="0.01" max={record.amount} step="0.01" value={row.amount} onChange={event => update(index, "amount", event.target.value)} /></label>
+                <div className="actions"><button className="secondary" onClick={() => update(index, "amount", Math.max(0, total - assigned + (bankAmountCents(row.amount) || 0)) / 100)}>Usa residuo</button><button className="secondary" aria-label={`Togli quota ${index + 1}`} onClick={() => onChange({ ...draft, error: "", rows: draft.rows.filter((_, i) => i !== index) })}>Togli</button></div>
+              </div>)}
+              <button className="secondary" disabled={draft.rows.length >= 50} onClick={() => onChange({ ...draft, error: "", rows: [...draft.rows, { id: `bank-part-${crypto.randomUUID()}`, label: "", category: categories[0][0], amount: "" }] })}>Aggiungi quota</button>
+              <div className={`decision-box ${remaining < 0 ? "bad" : ""}`} style={{ marginTop: 12 }} aria-live="polite">Assegnato {money(assigned / 100)} · {remaining < 0 ? `Superato di ${money(-remaining / 100)}` : `Da assegnare ${money(remaining / 100)}`}</div>
+              <div className="small" style={{ marginTop: 8 }}>Il residuo resta nei movimenti. Togliere una quota restituisce solo il suo importo; l’originale non cambia. Le modifiche si applicano solo con “Salva quote”.</div>
+              {(draft.error || check.error) && <div className="small" role="status" style={{ marginTop: 8 }}>{draft.error || check.error}</div>}
+              <div className="actions" style={{ marginTop: 16 }}><button disabled={Boolean(check.error)} onClick={onSave}>Salva quote</button><button className="secondary" onClick={onClose}>Annulla</button></div>
+            </div>
+          </div>, document.body);
+      }
+
       function App() {
         const [state, setState] = useState(loadState);
         const [isFinanceSectionOpen, setIsFinanceSectionOpen] = useState(() => localStorage.getItem("finance-section-open") !== "false");
@@ -1458,6 +1644,7 @@
         const [bankSetupMessage, setBankSetupMessage] = useState("");
         const bankKeyFile = useRef(null);
         const [bankRename, setBankRename] = useState({ id: "", value: "" });
+        const [bankSplit, setBankSplit] = useState(null);
         useEffect(() => {
           // Financial data are persisted by the local service, not by WebKit.
           if (persistenceStatus === "saved") localStorage.removeItem(storageKey);
@@ -1854,6 +2041,7 @@
           setEditingMonthId(saved?.id || "");
           setEntry({ ...createEmptyEntry(), ...(state.monthDrafts?.[id]?.entry || {}) });
           setBankRename({ id: "", value: "" });
+          setBankSplit(null);
           setState(current => switchMonthlyPeriod(current, monthName, Number(year), entry));
         }
 
@@ -1882,32 +2070,35 @@
           if (expense.currency !== "EUR" || !allowed.includes(category) || !bankMovementMatchesPeriod(expense, state)) return;
           setEntry(current => ({ ...createEmptyEntry(), category }));
           setState(current => {
-            const bankNote = normalizeNote({
-              id: `bank-${expense.id}`,
-              bankTransactionId: expense.id,
-              bank: expense.bank,
-              transactionDate: expense.date,
-              originalBankDescription: expense.description,
-              bankRecordType: expense.recordType,
-              autoImported: false,
-              label: expense.customName || expense.description,
-              amount: expense.amount,
-              category
-            });
-            if (expense.recordType === "income" || category === "Investimento") return upsertDetailedIncome(current, bankNote);
-            let replaced = false;
-            const notes = (current.notes || []).map(note => {
-              if (note.bankTransactionId !== expense.id) return note;
-              replaced = true;
-              return bankNote;
-            });
-            if (!replaced) notes.push(bankNote);
-            const fixedCosts = notes.filter(note => normalizeCategory(note.category) === "Costo Fisso")
-              .reduce((sum, note) => roundMoney(sum + Math.max(0, Number(note.amount) || 0)), 0);
-            const variableCosts = notes.filter(note => normalizeCategory(note.category) === "Costo Variabile")
-              .reduce((sum, note) => roundMoney(sum + Math.max(0, Number(note.amount) || 0)), 0);
-            return { ...current, notes, fixedCosts: fixedCosts.toFixed(2), variableCosts: variableCosts.toFixed(2) };
+            const allocation = bankMovementAllocation(expense, current.notes);
+            if (!allocation.remaining) return current;
+            const rows = (current.notes || []).filter(note => note.bankTransactionId === expense.id).map(note => ({ ...note }));
+            rows.push({ id: rows.length ? `bank-part-${crypto.randomUUID()}` : `bank-${expense.id}`,
+              label: String(expense.customName || expense.description).slice(0, 120), amount: allocation.remaining / 100, category });
+            return applyBankSplit(current, expense, rows, bankAllocationSignature(current.notes, expense.id)).state;
           });
+        }
+
+        function openBankSplit(recordId) {
+          const record = (banking.data?.records || []).find(item => item.id === recordId);
+          if (!record || record.currency !== "EUR" || !bankMovementMatchesPeriod(record, state)) return;
+          const existing = (state.notes || []).filter(note => note.bankTransactionId === recordId);
+          const remaining = bankMovementAllocation(record, state.notes).remaining;
+          const defaultCategory = record.recordType === "income" ? "Stipendio" : "Costo Fisso";
+          const rows = existing.map(note => ({ id: note.id, label: note.label, amount: roundMoney(note.amount).toFixed(2), category: note.category }));
+          if (remaining > 0) rows.push({ id: `bank-part-${crypto.randomUUID()}`, label: String(record.customName || record.description).slice(0, 120),
+            amount: existing.length ? (remaining / 100).toFixed(2) : "", category: defaultCategory });
+          if (!existing.length && rows.length === 1) rows.push({ id: `bank-part-${crypto.randomUUID()}`, label: "", amount: "", category: record.recordType === "income" ? "Entrate aggiuntive" : "Costo Variabile" });
+          setBankSplit({ record, rows, signature: bankAllocationSignature(state.notes, recordId), error: "" });
+        }
+
+        function saveBankSplit() {
+          if (!bankSplit) return;
+          const result = applyBankSplit(state, bankSplit.record, bankSplit.rows, bankSplit.signature);
+          if (result.error) return setBankSplit({ ...bankSplit, error: result.error });
+          setState(current => applyBankSplit(current, bankSplit.record, bankSplit.rows, bankSplit.signature).state);
+          if (entry.bankTransactionId === bankSplit.record.id) setEntry(createEmptyEntry());
+          setBankSplit(null);
         }
 
         async function saveBankRename(record) {
@@ -1917,7 +2108,7 @@
           if (!saved) return;
           setState(current => ({
             ...current,
-            notes: (current.notes || []).map(note => note.bankTransactionId === record.id ? { ...note, label: customName } : note)
+            notes: (current.notes || []).map(note => note.bankTransactionId === record.id && !note.bankSplitVersion ? { ...note, label: customName } : note)
           }));
           setBankRename({ id: "", value: "" });
         }
@@ -1927,8 +2118,8 @@
           const isIbkrInvestment = isInvestment && entry.managementSource === "IBKR";
           if ((!isIbkrInvestment && !entry.label.trim()) || !entry.amount) return;
           if (entry.bankTransactionId) {
-            const renamed = await bankingControl("rename", { recordId: entry.bankTransactionId, customName: entry.label.trim() });
-            if (!renamed) return;
+            openBankSplit(entry.bankTransactionId);
+            return;
           }
           const isManualInvestment = isInvestment && entry.managementSource === "Manuale";
           const entryPrice = Number(entry.entryPrice) || 0;
@@ -2171,6 +2362,7 @@
           };
         }, [allInvestmentNotes]);
         const liveData = ibkrLive.data;
+        const portfolioRisk = liveData?.portfolioRisk;
         const liveMetrics = liveData?.metrics || {};
         const liveCurrency = liveData?.baseCurrency || "EUR";
         const liveConnected = ibkrDataStatus(ibkrLive) === "current";
@@ -2336,17 +2528,6 @@
           const yearAgoTotal = Number(yearAgoSnapshot?.wealthTotal) || 0;
           const yoyGrowthPct = yearAgoTotal > 0 ? ((total - yearAgoTotal) / yearAgoTotal) * 100 : null;
 
-          const wealthSeries = validSnapshots.map((month) => Number(month.wealthTotal)).filter((value) => value > 0);
-          if (total > 0 && wealthSeries[wealthSeries.length - 1] !== total) wealthSeries.push(total);
-          const monthlyReturns = wealthSeries.slice(1).map((value, index) => (value / wealthSeries[index]) - 1);
-          const meanReturn = monthlyReturns.length ? monthlyReturns.reduce((sum, value) => sum + value, 0) / monthlyReturns.length : 0;
-          const returnVariance = monthlyReturns.length > 1
-            ? monthlyReturns.reduce((sum, value) => sum + ((value - meanReturn) ** 2), 0) / (monthlyReturns.length - 1)
-            : 0;
-          const monthlyVolatility = Math.sqrt(returnVariance);
-          const hasVarData = monthlyReturns.length > 1;
-          const parametricVarAmount = hasVarData ? total * 2.32635 * monthlyVolatility : 0;
-          const parametricVarPct = hasVarData ? 2.32635 * monthlyVolatility * 100 : 0;
           const riskLabel = riskScore === null
             ? "Non calcolabile"
             : riskScore <= 25
@@ -2364,9 +2545,6 @@
             twelveMonthGrowthPct,
             yoyGrowthPct,
             yearAgoTotal,
-            hasVarData,
-            parametricVarAmount,
-            parametricVarPct,
             riskLabel,
             productEntries,
             productTotal: Object.values(combinedAssetClasses).reduce((sum, value) => sum + value, 0),
@@ -2515,16 +2693,16 @@
                   <section className="monthly-input-block bank-sync" aria-label="Conti bancari collegati in sola lettura">
                     <div className="section-head">
                       <div className="title-with-info">
-                        <div className="title">Conti bancari · Enable Banking</div>
+                        <div className="title">Conti e movimenti</div>
                         <InfoTip label="sicurezza del collegamento bancario">
                           Collegamento PSD2 in sola lettura. La Dashboard può leggere saldi e movimenti autorizzati, ma non può inviare bonifici, pagamenti o modifiche ai conti.
                         </InfoTip>
                       </div>
                       <div className="actions">
-                        <button className="secondary" disabled={banking.busy || !banking.data?.configured} onClick={() => bankingControl("verify")}>Verifica collegamento</button>
-                        <button className="secondary" disabled={banking.busy || banking.data?.authorizationRequired || banking.data?.selectionRequired || banking.data?.retryAfterSeconds > 0} onClick={() => bankingControl("sync")}>{banking.data?.retryAfterSeconds > 0 ? `Riprova tra ${Math.ceil(banking.data.retryAfterSeconds / 60)} min` : banking.busy || banking.data?.syncing ? "Aggiornamento..." : "Aggiorna movimenti"}</button>
+                        <button disabled={banking.busy || banking.data?.syncing || !banking.data?.configured || banking.data?.authorizationRequired || banking.data?.selectionRequired || banking.data?.retryAfterSeconds > 0} onClick={() => bankingControl("sync")}>{banking.data?.retryAfterSeconds > 0 ? `Riprova tra ${Math.ceil(banking.data.retryAfterSeconds / 60)} min` : banking.busy || banking.data?.syncing ? "Aggiornamento..." : "Aggiorna movimenti"}</button>
                       </div>
                     </div>
+                    <div className="small" style={{ marginBottom: 10 }}>Premi “Aggiorna movimenti” per caricare le nuove operazioni. Qui sotto trovi quelle del mese selezionato ancora da classificare.</div>
                     <div className="bank-sync-status"><div className="bank-connections">
                       <span className={`badge ${banking.data?.application?.active ? "allocation-ok" : ""}`}>{banking.data?.application?.active ? "Enable Banking attivo · sola lettura" : "Collegamento da completare"}</span>
                       <span className="badge">Cash · EUR · {money(cashBalance)}</span>
@@ -2533,7 +2711,7 @@
                     <details className="decision-box" style={{ marginBottom: 12 }}>
                       <summary>Gestisci conto Cash</summary>
                       <div className="field" style={{ marginTop: 12, maxWidth: 320 }}><label>Saldo iniziale contanti (€)</label><input type="number" min="0" max="999999999.99" step="0.01" value={state.cashOpeningBalance ?? 0} onChange={event => updateField("cashOpeningBalance", event.target.value)} onBlur={() => commitMoneyField("cashOpeningBalance")} /></div>
-                      <div className="small" style={{ marginTop: 8 }}>Imposta una sola volta il saldo prima delle voci cash registrate. Le nuove voci manuali aggiornano i contanti. Classifica i prelievi bancari con “Prelievo cash”: sono trasferimenti, non spese. Il saldo mostrato include i movimenti fino al mese selezionato.</div>
+                      <div className="small" style={{ marginTop: 8 }}>Imposta una sola volta il saldo prima delle voci cash registrate. Le nuove voci manuali aggiornano i contanti. Il saldo mostrato include i movimenti fino al mese selezionato.</div>
                       {cashBalance < 0 && <div className="bank-expense" style={{ marginTop: 8 }}>Saldo cash negativo: verifica saldo iniziale, prelievi e voci manuali.</div>}
                       {cashWithdrawals.map(note => <div className="bank-movement-row" key={note.id}><div><strong>{note.label}</strong><div className="small">{note.bank} → Cash · {note.transactionDate}</div></div><div className="actions"><strong className="bank-income">+{money(note.amount)}</strong><button className="secondary" onClick={() => setState(current => removeDetailedEntriesFromState(current, item => item.id === note.id))}>Rimuovi</button></div></div>)}
                     </details>
@@ -2552,25 +2730,21 @@
                       </div>
                       <div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy} onClick={configureBanking}>Salva e verifica configurazione</button><a className="pill" href="https://enablebanking.com/" target="_blank" rel="noreferrer">Apri Enable Banking</a></div>
                       <div className="bank-privacy-note">La configurazione personale Restricted non è un servizio pubblico multiutente: ogni utente deve avere la propria configurazione approvata. Non condividere mai la tua chiave PEM. Nell’app Mac installata chiave e archivi sono cifrati usando il Portachiavi.</div>
-                    </div> : <div className={banking.data?.authorizationPending ? "decision-box warn" : "decision-box"}>
-                      <strong>{banking.data?.authorizationPending ? "Completa l’accesso nella banca" : "Collega o rinnova un conto"}</strong>
-                      {!banking.data?.authorizationPending && banking.data?.connections?.length > 0 && <div className="actions" style={{ marginTop: 10 }}>{banking.data.connections.map(connection => <button className="secondary" key={`${connection.bank}-${connection.country}`} disabled={banking.busy} onClick={() => bankingControl("authorize", { bank: connection.bank, country: connection.country, validDays: 180 })}>Rinnova {connection.bank}{connection.validUntil ? ` · scadenza ${new Date(connection.validUntil).toLocaleDateString("it-IT")}` : ""}</button>)}</div>}
-                      <div className="small" style={{ marginTop: 6 }}>{banking.data?.authorizationPending ? "La pagina della banca è aperta nel browser. Al termine tornerai automaticamente alla dashboard: non devi copiare alcun indirizzo." : "Scegli il Paese e la banca. L’accesso avviene esclusivamente sul sito o nell’app della banca."}</div>
-                      <div className="small" style={{ marginTop: 6 }}>Se la banca supporta l’approvazione nell’app, riceverai la richiesta sul tuo dispositivo. Altrimenti seguirai la procedura della banca. Seleziona soltanto i conti da condividere; non servono credenziali bancarie nella Dashboard.</div>
+                    </div> : <details className={banking.data?.authorizationPending ? "decision-box warn" : "decision-box"} open={Boolean(banking.data?.authorizationPending || banking.data?.authorizationRequired || banking.data?.selectionRequired || !banking.data?.accounts?.length)}>
+                      <summary>Gestisci banche e conti</summary>
+                      {banking.data?.authorizationPending && <div className="small" role="status" style={{ marginTop: 6 }}>Completa l’accesso nella banca: tornerai automaticamente qui, non devi copiare alcun indirizzo.</div>}
                       {banking.data?.authorizationPending && <button className="secondary" style={{ marginTop: 10 }} onClick={() => bankingControl("cancel")}>Annulla e scegli un’altra banca</button>}
                       {!banking.data?.authorizationPending && <React.Fragment><div className="bank-setup-fields">
                         <div className="field full-field"><label>Paese</label><select value={bankSetup.country} onChange={event => { const country = event.target.value; setBankSetup(current => ({ ...current, country, bank: "" })); setBankOptions([]); loadBankOptions(country); }}><option value="IT">Italia</option><option value="DE">Germania</option><option value="ES">Spagna</option><option value="FR">Francia</option><option value="NL">Paesi Bassi</option><option value="PT">Portogallo</option></select></div>
                         <div className="field full-field"><label>Banca</label><select value={bankSetup.bank} onChange={event => setBankSetup(current => ({ ...current, bank: event.target.value }))}><option value="">Seleziona una banca</option>{bankOptions.map(bank => <option key={`${bank.country}-${bank.name}`} value={bank.name}>{bank.name}</option>)}</select></div>
-                      </div><div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy || !bankSetup.bank} onClick={() => bankingControl("authorize", { bank: bankSetup.bank, country: bankSetup.country, validDays: bankSetup.validDays })}>Collega il conto</button><button className="secondary" disabled={banking.busy} onClick={() => loadBankOptions(bankSetup.country)}>Aggiorna elenco banche</button></div></React.Fragment>}
+                      </div><div className="actions" style={{ marginTop: 12 }}><button disabled={banking.busy || !bankSetup.bank} onClick={() => bankingControl("authorize", { bank: bankSetup.bank, country: bankSetup.country, validDays: bankSetup.validDays })}>{banking.data?.connections?.some(connection => connection.bank === bankSetup.bank && connection.country === bankSetup.country) ? "Rinnova accesso" : "Collega banca"}</button><button className="secondary" disabled={banking.busy} title="Elimina da questo Mac collegamenti, saldi e movimenti importati. Conserva mesi salvati e voci classificate; non revoca il consenso bancario." onClick={() => { if (window.confirm("Eliminare da questo Mac i collegamenti bancari, i saldi e i movimenti importati? I mesi salvati e le voci già classificate restano. Per aggiornare dovrai collegare nuovamente le banche. Il consenso non viene revocato: gestiscilo nell’app della banca o presso il provider.")) bankingControl("forget"); }}>Rimuovi dati bancari dal Mac</button><button className="secondary" disabled={banking.busy} onClick={() => loadBankOptions(bankSetup.country)}>Aggiorna elenco banche</button></div></React.Fragment>}
                       {bankSetupMessage && <div className="small" style={{ marginTop: 10 }}>{bankSetupMessage}</div>}
-                      <details style={{ marginTop: 12 }}><summary>Privacy e gestione dati bancari</summary><div className="small" style={{ marginTop: 8 }}>Saldi, movimenti e sessioni sono conservati nella cartella dati locale; nell’app Mac installata gli archivi sono cifrati con una chiave del Portachiavi. La Dashboard non può disporre pagamenti. Dimenticare i dati locali non revoca il consenso: revocalo nell’app della banca o tramite il provider. I mesi salvati restano disponibili.</div><button className="secondary" style={{ marginTop: 10 }} onClick={() => { if (window.confirm("Cancellare sessioni, conti e movimenti bancari salvati localmente? I mesi già salvati non saranno eliminati. Il consenso va revocato anche presso la banca o il provider.")) bankingControl("forget"); }}>Dimentica dati bancari locali</button></details>
-                    </div>}
-                    {banking.data?.accounts?.length > 0 && <details className="decision-box" open={banking.data?.selectionRequired || undefined}><summary>Scegli i conti da leggere</summary>
-                      <div className="small" style={{ marginTop: 8 }}>Conferma quali conti aggiornare nella Dashboard. Le autorizzazioni alla banca si gestiscono anche dalla sua app. Deselezionare un conto ferma nuovi aggiornamenti, non elimina i movimenti già salvati.</div>
+                    {banking.data?.accounts?.length > 0 && <div style={{ marginTop: 12 }}>
+                      <div className="small">{banking.data?.selectionRequired ? "Conferma i conti da importare." : "Conti da aggiornare: togli la spunta per sospendere un conto senza eliminare lo storico."}</div>
                       {banking.data.accounts.map(account => <label key={account.id} style={{ display: "block", marginTop: 8 }}><input type="checkbox" checked={selectedBankAccounts.includes(account.id)} onChange={event => setSelectedBankAccounts(current => event.target.checked ? [...current, account.id] : current.filter(id => id !== account.id))} /> {account.bank} · {account.currency} · {account.identifierMasked}</label>)}
-                      <button style={{ marginTop: 10 }} disabled={banking.busy || !selectedBankAccounts.length} onClick={() => bankingControl("select_accounts", { accountIds: selectedBankAccounts })}>Conferma conti e aggiorna</button>
+                      <button style={{ marginTop: 10 }} disabled={banking.busy || !selectedBankAccounts.length} onClick={() => bankingControl("select_accounts", { accountIds: selectedBankAccounts })}>Salva conti e carica movimenti</button>
+                    </div>}
                     </details>}
-                    <div className="small"><a href={`${ibkrBridgeBaseUrl}/privacy`} target="_blank" rel="noreferrer">Informativa privacy</a> · <a href={`${ibkrBridgeBaseUrl}/terms`} target="_blank" rel="noreferrer">Condizioni e limiti del servizio</a></div>
                     {banking.data?.lastSync && <div className="small">Ultimo aggiornamento: {new Date(banking.data.lastSync).toLocaleString("it-IT")}.</div>}
                     {banking.data?.warning && <div className="decision-box warn"><strong>Collegamento attivo · aggiornamento rinviato</strong><div className="small" style={{ marginTop: 6 }}>{banking.data.warning}</div></div>}
                     {banking.error && <div className="decision-box bad"><strong>Collegamento non riuscito</strong><div className="small" style={{ marginTop: 6 }}>{banking.error}</div></div>}
@@ -2585,20 +2759,23 @@
                         <div className="bank-review-main">
                           <strong className="bank-movement-name">{record.customName || record.description}</strong>
                           {record.customName && record.customName !== record.description && <div className="bank-original-name">Movimento originale: {record.description}</div>}
+                          {record.allocatedAmount > 0 && <div className="small">Residuo da assegnare · originale {money(record.originalAmount)} · già assegnato {money(record.allocatedAmount)}</div>}
                           <div className="bank-review-meta"><span>{record.bank}</span><span>{record.accountName} · {record.currency}</span><span>{record.date.split("-").reverse().join("/")}</span><span>Sola lettura</span></div>
                           {isRenaming && <div className="bank-rename-form"><input maxLength="120" value={bankRename.value} onChange={event => setBankRename({ id: record.id, value: event.target.value })} placeholder="Nome personalizzato" /><button disabled={banking.busy || !bankRename.value.trim()} onClick={() => saveBankRename(record)}>Salva nome</button><button className="secondary" onClick={() => setBankRename({ id: "", value: "" })}>Annulla</button></div>}
                         </div>
                         <div className="bank-movement-side">
                           <strong className={record.recordType === "income" ? "bank-income" : "bank-expense"}>{record.recordType === "income" ? "+" : "−"}{accountMoney(record.amount, record.currency)}</strong>
                           <div className="bank-movement-actions">
-                            {record.recordType === "expense" && <React.Fragment><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Fisso")}>Fisso</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Variabile")}>Variabile</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Prelievo cash")}>Prelievo cash</button></React.Fragment>}
+                            {record.recordType === "expense" && <React.Fragment><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Fisso")}>Fisso</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Costo Variabile")}>Variabile</button></React.Fragment>}
                             {record.recordType === "income" && <React.Fragment><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Stipendio")}>Emolumenti</button><button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, "Entrate aggiuntive")}>Extra</button></React.Fragment>}
-                            {!isRenaming && <button className="secondary" onClick={() => setBankRename({ id: record.id, value: "" })}>Rinomina</button>}
                             <button className="secondary" disabled={record.currency !== "EUR"} onClick={() => classifyBankExpense(record, record.recordType === "income" ? "Disinvestimento" : "Investimento")}>{record.recordType === "income" ? "Disinvestimenti" : "Investimenti"}</button>
+                            <button className="secondary" disabled={record.currency !== "EUR"} onClick={() => openBankSplit(record.id)}>Dividi</button>
+                            {!isRenaming && <button className="secondary" onClick={() => setBankRename({ id: record.id, value: "" })}>Rinomina</button>}
                           </div>
                         </div>
                       </div>;
                     })}</div>}
+                    {bankSplit && <BankSplitDialog draft={bankSplit} onChange={setBankSplit} onClose={() => setBankSplit(null)} onSave={saveBankSplit} />}
                   </section>
 
                   <section className="monthly-input-block">
@@ -2665,7 +2842,7 @@
                       <div className="field quarter">
                         <label>{["Investimento", "Flexible Cash"].includes(entry.category) ? "Capitale allocato nel mese (€)" : "Importo mensile (€)"}</label>
                         <input type="number" min="0" max="999999999.99" step="0.01" value={entry.amount} readOnly={Boolean(entry.bankTransactionId)} onChange={(e) => setEntry((c) => ({ ...c, amount: e.target.value }))} />
-                        {entry.bankTransactionId && <div className="small" style={{ marginTop: 6 }}>Importo identico al movimento bancario.</div>}
+                        {entry.bankTransactionId && <div className="small" style={{ marginTop: 6 }}>Quota del movimento bancario. Usa “Ripartisci” per cambiare importo, nome o categoria.</div>}
                       </div>
                       <div className="field">
                         <div className={`detail-gap-preview ${detailGapTone(projectedDetailGap)}`}>
@@ -2801,7 +2978,7 @@
                               <strong>{item.label}</strong>
                               <span className="entry-kind">{item.category}</span>
                             </div>
-                            {item.bankTransactionId && item.originalBankDescription && item.label !== item.originalBankDescription && <div className="bank-original-name">Movimento originale: {item.originalBankDescription}</div>}
+                            {item.bankTransactionId && item.originalBankDescription && (item.bankSplitVersion || item.label !== item.originalBankDescription) && <div className="bank-original-name">Movimento originale: {item.originalBankDescription}{item.bankOriginalAmount != null ? ` · totale ${money(item.bankOriginalAmount)}` : ""}</div>}
                             <div className="entry-list-meta">
                               {item.accountId === "cash" && !item.bankTransactionId && <span>Cash</span>}
                               {item.bank && <span>{item.bank}</span>}
@@ -2826,6 +3003,7 @@
                             <strong className={item.bankRecordType === "income" ? "bank-income" : item.bankRecordType === "expense" ? "bank-expense" : ""}>{item.bankRecordType === "income" ? "+" : item.bankRecordType === "expense" ? "−" : ""}{money(item.amount)}</strong>
                             <div className="entry-list-actions">
                               {!item.bankTransactionId && <button className="secondary" onClick={() => editEntry(item)}>Modifica</button>}
+                              {item.bankTransactionId && item.category !== "Prelievo cash" && <button className="secondary" disabled={!(banking.data?.records || []).some(record => record.id === item.bankTransactionId)} onClick={() => openBankSplit(item.bankTransactionId)}>Ripartisci</button>}
                               <button className="secondary" onClick={() => removeEntry(index)}>Rimuovi</button>
                             </div>
                           </div>
@@ -3025,57 +3203,13 @@
 
                 {isWealthSectionOpen && (
                 <>
-                <div className="card full portfolio-panel-card section-surface">
-                  <div className="section-head">
-                    <div className="title-with-info">
-                      <div className="title">Portafoglio investimenti | IBKR Live + investimenti illiquidi</div>
-                      <InfoTip label="composizione del portafoglio">
-                        IBKR valorizza le posizioni Live. Gli investimenti illiquidi salvati usano il valore attuale stimato. Le quote mensili destinate a IBKR non vengono sommate una seconda volta.
-                      </InfoTip>
-                    </div>
-                    <div className="actions">
-                      <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : `Live: ${ibkrStatusLabel(ibkrLive)}`}</span>
-                      <button className="secondary" onClick={() => refreshIbkr("live", setIbkrLive)} disabled={ibkrLive.loading}>Aggiorna da IBKR</button>
-                      <SectionToggle
-                        isOpen={isPortfolioPanelOpen}
-                        onToggle={() => setIsPortfolioPanelOpen((open) => !open)}
-                        label="portafoglio investimenti"
-                        tone="blue"
-                      />
-                    </div>
-                  </div>
-                  {isPortfolioPanelOpen && (
-                  <>
+                <section className="wealth-section section-surface">
                   {liveConnected && livePortfolio.positions.length > 0 && !liveContractMetadataReady && (
                     <div className="decision-box warn" style={{ marginBottom: 14 }}>
                       <strong>Riavvio del bridge necessario</strong>
                       <div className="muted" style={{ marginTop: 8 }}>Chiudi e riapri lo script della dashboard una sola volta per attivare security type, Paese emittente e sottostante nei grafici.</div>
                     </div>
                   )}
-                  <div className="rows" style={{ marginBottom: 14 }}>
-                      <div className="title">Allocazione investimenti per asset class</div>
-                      {Object.keys(historicalInvestmentTotals).length === 0 && (
-                        <div className="decision-box">
-                          <strong>Nessun investimento contabilizzato</strong>
-                          <div className="muted" style={{ marginTop: 8 }}>Non risultano posizioni IBKR né investimenti illiquidi nei mesi salvati.</div>
-                        </div>
-                      )}
-                      {Object.entries(historicalInvestmentTotals).map(([type, amount]) => (
-                        <div className="mini" key={type}>
-                          <div>
-                            <strong>{type}</strong>
-                            <div className="small">{plainPct(historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0)} del valore attuale</div>
-                            <div className="bar"><div className="fill" style={{ width: `${historicalInvestmentTotal ? (amount / historicalInvestmentTotal) * 100 : 0}%` }} /></div>
-                          </div>
-                          <strong>{money(amount)}</strong>
-                        </div>
-                      ))}
-                  </div>
-                  </>
-                  )}
-                </div>
-
-                <section className="wealth-section section-surface">
                   <div className="ibkr-status-card wealth-ibkr-status">
                     <div className="ibkr-status-heading">
                       <div className="ibkr-status-title">Stato account IBKR</div>
@@ -3084,13 +3218,14 @@
                     <IbkrStatusItem mode="live" connection={ibkrLive} />
                     <button
                       className="secondary"
+                      title="Rilegge stato, saldi e posizioni Live/Paper già ricevuti da TWS. La chiusura dell’ultima seduta completata viene verificata ogni ora."
                       onClick={() => {
-                        refreshIbkr("paper", setIbkrPaper);
-                        refreshIbkr("live", setIbkrLive);
+                        refreshIbkr("paper");
+                        refreshIbkr("live");
                       }}
                       disabled={ibkrPaper.loading || ibkrLive.loading}
                     >
-                      Aggiorna
+                      Aggiorna IBKR
                     </button>
                   </div>
 
@@ -3118,7 +3253,7 @@
                       ))}
                     </div>
                     <div className="performance-card">
-                      <div className="label">P/L non realizzato</div>
+                      <div className="label">P/L non realizzato attuale (IBKR)</div>
                       <div className={`value ${livePortfolio.unrealizedPnl > 0 ? "positive" : livePortfolio.unrealizedPnl < 0 ? "negative" : "neutral"}`}>{accountMoney(livePortfolio.unrealizedPnl, liveCurrency)}</div>
                       <div className={`delta ${livePortfolio.unrealizedPnl < 0 ? "bad" : ""}`}>{pct(livePortfolio.unrealizedPct)} sul costo stimato</div>
                     </div>
@@ -3129,7 +3264,12 @@
                   </div>
 
                   <div className="table-wrap wealth-positions-table">
-                    <div className="title" style={{ marginBottom: 10 }}>Posizioni IBKR Live</div>
+                    <div className="section-head">
+                      <div className="title-with-info">
+                        <div className="title">Posizioni IBKR Live</div>
+                        <span className="badge status-line"><span className={`dot ${liveConnected ? "good" : "bad"}`}></span>{liveConnected ? `${livePortfolio.positions.length} posizioni Live` : `Live: ${ibkrStatusLabel(ibkrLive)}`}</span>
+                      </div>
+                    </div>
                     <table>
                       <thead>
                         <tr>
@@ -3138,10 +3278,10 @@
                           <th>Continente emittente</th>
                           <th>Paese emittente</th>
                           <th className="numeric">Quantita'</th>
-                          <th className="numeric">Costo medio</th>
-                          <th className="numeric">Prezzo mercato</th>
-                          <th className="numeric">Esposizione {liveCurrency}</th>
-                          <th className="numeric">P/L latente</th>
+                          <th className="numeric">Costo medio unitario</th>
+                          <th className="numeric">Prezzo di chiusura</th>
+                          <th className="numeric">Esposizione attuale {liveCurrency}</th>
+                          <th className="numeric">P/L non realizzato a chiusura <InfoTip label="P/L a chiusura">Quantità con segno × (prezzo di chiusura − costo medio unitario). Valutazione dell’ultima seduta completata, non un prezzo di liquidazione attuale; escluse commissioni di uscita.</InfoTip></th>
                           <th>Mercato</th>
                         </tr>
                       </thead>
@@ -3149,23 +3289,26 @@
                         {livePortfolio.positions.map((position) => (
                           <tr key={`${position.account}-${position.conId}`}>
                             <td>
-                              <strong>{position.symbol}</strong>
-                              <div className="small">{position.description}{position.investmentDetail ? ` | ${position.investmentDetail}` : ""}</div>
+                              <span className="asset-info" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                <strong>{position.symbol}</strong>
+                                <InfoTip label={position.symbol}>{position.description}{position.investmentDetail ? ` | ${position.investmentDetail}` : ` | ${position.investmentType}`}</InfoTip>
+                              </span>
                             </td>
                             <td>{position.investmentType}</td>
                             <td>{position.continent}</td>
                             <td>{position.country}</td>
-                            <td className="numeric">{precise(position.quantity, 6)}</td>
-                            <td className="numeric">{accountMoney(position.averageCost, position.currency || liveCurrency)}</td>
-                            <td className="numeric">{accountMoney(position.marketPrice, position.currency || liveCurrency)}</td>
+                            <td className="numeric">{precise(position.quantity, 6, 6)}</td>
+                            <td className="numeric">{position.averageEntryPrice == null ? "Non disponibile" : `${precise(position.averageEntryPrice, 6)} ${position.currency || liveCurrency}`}</td>
+                            <td className="numeric">
+                              {position.closingPrice == null ? (position.closingReason === "permissions" ? "Storico non abilitato in IBKR" : position.closingStatus === "pending" ? "Caricamento chiusura…" : "Non disponibile") : <React.Fragment>{precise(position.closingPrice, 6, 6)} {position.currency || liveCurrency}</React.Fragment>}
+                              {position.closingDate && <div className="small">{position.closingDate.split("-").reverse().join("/")}</div>}
+                            </td>
                             <td className="numeric">{accountMoney(position.baseMarketValue, liveCurrency)}</td>
-                            <td className={`numeric ${position.unrealizedPnl > 0 ? "positive" : position.unrealizedPnl < 0 ? "negative" : ""}`}>
-                              <strong>{accountMoney(position.unrealizedPnl, position.currency || liveCurrency)}</strong>
+                            <td className={`numeric ${position.closingPnl > 0 ? "positive" : position.closingPnl < 0 ? "negative" : ""}`}>
+                              <strong>{position.closingPnl == null ? "Non disponibile" : `${precise(position.closingPnl, 6)} ${position.currency || liveCurrency}`}</strong>
                             </td>
                             <td>
                               <strong>{position.exchange || "SMART"}</strong>
-                              <div className="small">{position.currency || liveCurrency} | {position.classificationSource}</div>
-                              <div className="small">Geografia: {position.geographySource}</div>
                             </td>
                           </tr>
                         ))}
@@ -3369,6 +3512,7 @@
                             <div className="title-with-info">
                               <strong>Profilo di rischio</strong>
                               <InfoTip label="calcolo del profilo di rischio">
+                                Indicatore orientativo con pesi convenzionali della Dashboard, non una misura statistica del rischio né una valutazione MiFID.
                                 Punteggio = somma di ogni esposizione × relativo peso, divisa per le esposizioni complessive. Pesi su 100: fondo emergenza 0; liquidità 5; liquidità positiva IBKR e flexible cash 8; titoli di Stato 12; obbligazioni corporate/altre 30; Real Estate/REIT 45; fondi 50; ETF 55; indici e categorie non classificate 60; commodities 65; azioni, equity e passion assets 70; Forex 75; crypto 95; opzioni e derivati 100. Soglie: Prudente 0–25, Moderato oltre 25 e fino a 60, Dinamico oltre 60.
                               </InfoTip>
                             </div>
@@ -3385,18 +3529,22 @@
                             </div>
                           </div>
                         </div>
-                        <div className="indicator-row">
-                          <div className="title-with-info">
-                            <strong>Rischio storico del portafoglio</strong>
-                            <InfoTip label="calcolo del Value at Risk">
-                              Calcolo sospeso: le variazioni del patrimonio includono entrate e prelievi. Servono rendimenti depurati dai flussi e una storia adeguata prima di stimare il rischio del portafoglio.
-                            </InfoTip>
+                        {[{ key: "var95", label: "Value at Risk", formula: "VaR₉₅ = 1,644854 × σ − μ", meaning: "Soglia di perdita superata nel 5% dei casi del modello." }, { key: "es95", label: "Expected Shortfall", formula: "ES₉₅ = 2,062713 × σ − μ", meaning: "Perdita media nel 5% dei casi peggiori del modello." }].map(metric => (
+                          <div className="indicator-row" key={metric.key}>
+                            <div className="title-with-info">
+                              <strong>{metric.label} · 95% · 1 giorno</strong>
+                              <InfoTip label={`${metric.label}: metodo e limiti`}>
+                                <strong>{metric.formula}</strong><br />
+                                μ = media e σ = deviazione standard del P/L giornaliero in euro: P/L = Σ(valore attuale dell’esposizione × rendimento giornaliero in EUR). {metric.meaning}<br />
+                                95% · 1 giorno · ipotesi normale · storico 10 anni, altrimenti 5. Posizioni attuali e liquidità estera, incluse correlazioni e cambi; esclusi illiquidi. Importo già in euro, non da moltiplicare nuovamente. La normalità può sottostimare perdite estreme; non è una garanzia.
+                              </InfoTip>
+                            </div>
+                            <div className="indicator-value">{liveConnected && portfolioRisk?.status === "ready" && Number.isFinite(portfolioRisk[metric.key]) ? money(portfolioRisk[metric.key]) : "Non disponibile"}</div>
+                            <div className="indicator-status">
+                              {!liveConnected ? "Collega TWS per caricare lo storico." : portfolioRisk?.status === "ready" ? (portfolioRisk.years ? `Normale · ${portfolioRisk.years} anni · ${portfolioRisk.observations} giornate · ultimo dato ${portfolioRisk.endDate}` : portfolioRisk.message) : portfolioRisk?.message || "In attesa dello storico IBKR."}
+                            </div>
                           </div>
-                          <div className="indicator-value negative">Non calcolato</div>
-                          <div className="indicator-status">
-                            Servono rendimenti depurati dai flussi
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -3405,6 +3553,9 @@
                 )}
                 </section>
               </section>
+              <footer className="small" aria-label="Informazioni legali" style={{ marginTop: 16 }}>
+                <a href={`${ibkrBridgeBaseUrl}/privacy`} target="_blank" rel="noreferrer">Informativa privacy</a> · <a href={`${ibkrBridgeBaseUrl}/terms`} target="_blank" rel="noreferrer">Condizioni e limiti del servizio</a>
+              </footer>
             </div>
           </div>
         );

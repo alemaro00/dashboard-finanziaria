@@ -5,9 +5,10 @@ const vm = require('node:vm');
 const source = fs.readFileSync('salary-planner-react.html', 'utf8');
 const start = source.indexOf('function upsertDetailedIncome');
 const end = source.indexOf('function mergeValueMaps', start);
-const {upsertDetailedIncome, availableBankMovements, detailedEntriesForCategory, removeDetailedEntriesFromState} = vm.runInNewContext(
-  `${source.slice(start, end)}\n({upsertDetailedIncome, availableBankMovements, detailedEntriesForCategory, removeDetailedEntriesFromState})`,
-  {roundMoney: value => Math.round(((Number(value) || 0) + Number.EPSILON) * 100) / 100}
+const {upsertDetailedIncome, availableBankMovements, detailedEntriesForCategory, removeDetailedEntriesFromState, bankMovementAllocation, bankAllocationSignature, applyBankSplit} = vm.runInNewContext(
+  `${source.slice(start, end)}\n({upsertDetailedIncome, availableBankMovements, detailedEntriesForCategory, removeDetailedEntriesFromState, bankMovementAllocation, bankAllocationSignature, applyBankSplit})`,
+  {roundMoney: value => Math.round(((Number(value) || 0) + Number.EPSILON) * 100) / 100,
+    normalizeNote: n => n, months: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre']}
 );
 
 test('salary and extra bank income move to details without duplication and return on removal', () => {
@@ -54,12 +55,12 @@ test('credit becomes disinvestment and debit investment without changing salary 
   const a = source.indexOf('function classifyBankExpense(');
   const b = source.indexOf('async function saveBankRename(', a);
   for (const recordType of ['income', 'expense']) {
-    let state = {income:'100.00',additionalIncome:'20.00',fixedCosts:'30.00',variableCosts:'40.00',notes:[]};
+    let state = {monthName:'Settembre',year:2026,income:'100.00',additionalIncome:'20.00',fixedCosts:'30.00',variableCosts:'40.00',notes:[]};
     let category;
     const expectedCategory = recordType === "income" ? "Disinvestimento" : "Investimento";
     const record = {id:'movement',date:'2026-09-01',recordType,currency:'EUR',amount:123.45,description:'Original',customName:'Alias'};
     const context = {state:{monthName:"Settembre",year:2026}, bankMovementMatchesPeriod:(record,period) => record.date === "2026-09-01" && period.monthName === "Settembre", setEntry: fn => { category = fn({}).category; }, createEmptyEntry:()=>({}),
-      setState: fn => {state = fn(state);}, normalizeNote: n=>n, upsertDetailedIncome};
+      setState: fn => {state = fn(state);}, normalizeNote: n=>n, upsertDetailedIncome, bankMovementAllocation, bankAllocationSignature, applyBankSplit};
     vm.runInNewContext(`${source.slice(a,b)}\nclassifyBankExpense(${JSON.stringify(record)}, ${JSON.stringify(expectedCategory)})`,context);
     assert.equal(category,expectedCategory);
     assert.equal(state.notes[0].category,expectedCategory);

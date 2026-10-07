@@ -20,6 +20,9 @@ from urllib.parse import urlparse
 
 from local_security import RequestGuard, validate_json_tree, verify_csrf
 from secure_storage import atomic_write, read_bytes, export_backup, import_backup
+from closing_prices import ClosingPriceMonitor, valuation
+from portfolio_risk import PortfolioRiskMonitor
+from bank_allocations import validate_bank_allocations
 
 from ibapi.client import EClient
 from ibapi.contract import Contract
@@ -68,6 +71,7 @@ INFORMATION_CODES = {
     2107,
     2108,
     2158,
+    2188,  # Delayed historical bars follow; not a subscription purchase.
 }
 SECURITY_TYPES = {
     "STK": "Azioni",
@@ -155,6 +159,9 @@ def save_dashboard_state(payload: dict[str, object]) -> dict[str, object]:
     state = payload.get("state")
     if not isinstance(state, dict) or not isinstance(state.get("monthlyHistory", []), list):
         raise ValueError("Stato dashboard non valido")
+    bank_archive = APP_DATA_DIR / "enable-banking" / "bank-transactions.json"
+    bank_records = json.loads(read_bytes(bank_archive)).get("records", []) if bank_archive.exists() else []
+    validate_bank_allocations(state, bank_records)
     document = {
         "format": "dashboard-auto-state",
         "formatVersion": 1,
@@ -351,10 +358,15 @@ class IbkrAccountClient(EWrapper, EClient):
         self._metadata_thread: threading.Thread | None = None
         self._subscribed_account = ""
 
+        self.closing_prices = ClosingPriceMonitor(self)
+        self.portfolio_risk = PortfolioRiskMonitor(self)
+
     def start(self) -> None:
         if self._monitor_thread and self._monitor_thread.is_alive():
             return
         self.stop_event.clear()
+        self.closing_prices.start()
+        self.portfolio_risk.start()
         self._monitor_thread = threading.Thread(
             target=self._connection_monitor,
             name=f"ibkr-{self.environment.lower()}-monitor",
@@ -395,6 +407,8 @@ class IbkrAccountClient(EWrapper, EClient):
                 self.account_summary.clear()
                 self.account_values.clear()
                 self.positions.clear()
+                self.closing_prices.reset()
+                self.portfolio_risk.reset()
                 self.last_data_update = ""
                 self._last_data_monotonic = None
                 self.last_account_time = ""
@@ -415,6 +429,8 @@ class IbkrAccountClient(EWrapper, EClient):
 
     def stop(self) -> None:
         self.stop_event.set()
+        self.closing_prices.reset()
+        self.portfolio_risk.reset()
         try:
             if self._subscribed_account and self.isConnected():
                 self.reqAccountUpdates(False, self._subscribed_account)
@@ -539,6 +555,10 @@ class IbkrAccountClient(EWrapper, EClient):
             "underlyingConId": underlying_con_id,
             "underlyingSymbol": getattr(contract_details, "underSymbol", "") or contract.symbol or "",
             "underlyingSecurityType": getattr(contract_details, "underSecType", "") or "",
+            "timeZoneId": getattr(contract_details, "timeZoneId", "") or "",
+            "liquidHours": getattr(contract_details, "liquidHours", "") or "",
+            "exchange": contract.exchange or contract.primaryExchange or "",
+            "multiplier": contract.multiplier or "",
             "updatedAt": utc_now(),
         }
         with self.lock:
@@ -657,6 +677,8 @@ class IbkrAccountClient(EWrapper, EClient):
             self._touch_data(accountName)
         if float(position) != 0:
             self._queue_contract_details(contract)
+            self.closing_prices.track(contract)
+            self.portfolio_risk.track(contract)
 
     def position(self, account: str, contract: Contract, position: float, avgCost: float):
         position_key = f"{account}:{contract.conId}"
@@ -687,15 +709,27 @@ class IbkrAccountClient(EWrapper, EClient):
                     "realizedPnl": 0.0,
                     "updatedAt": utc_now(),
                 }
+            else:
+                self.positions[position_key].update({"quantity": as_number(position), "averageCost": as_number(avgCost), "updatedAt": utc_now()})
             self._touch()
         if float(position) != 0:
             self._queue_contract_details(contract)
+            self.closing_prices.track(contract)
+            self.portfolio_risk.track(contract)
 
     def updateAccountTime(self, timeStamp: str):
         with self.lock:
             self.last_account_time = timeStamp
             self._touch()
             self._touch_data(self.active_account)
+
+    def historicalData(self, reqId, bar):
+        self.portfolio_risk.bar(reqId, bar)
+        self.closing_prices.bar(reqId, bar)
+
+    def historicalDataEnd(self, reqId, start, end):
+        self.portfolio_risk.end(reqId)
+        self.closing_prices.end(reqId)
 
     def accountDownloadEnd(self, accountName: str):
         with self.lock:
@@ -715,8 +749,14 @@ class IbkrAccountClient(EWrapper, EClient):
         self.account_summary_complete.clear()
 
     def error(self, reqId: int, errorCode: int, errorString: str, *args):
+        # API 10.50 adds errorTime before code; keep legacy fixture compatibility.
+        if isinstance(errorString, int) and args:
+            errorCode, errorString = errorString, str(args[0])
         level = "info" if errorCode in INFORMATION_CODES else "error"
         self._add_message(level, errorCode, errorString)
+        if errorCode not in INFORMATION_CODES:
+            self.portfolio_risk.failed(reqId, errorCode, errorString)
+            self.closing_prices.failed(reqId, errorCode, errorString)
         with self.lock:
             con_id = self.contract_detail_requests.pop(reqId, 0)
             if con_id and errorCode not in INFORMATION_CODES:
@@ -812,6 +852,7 @@ class IbkrAccountClient(EWrapper, EClient):
                 security_type = str(metadata.get("securityType") or position.get("securityType") or "")
                 enriched_position = {
                     **position,
+                    **valuation(position, self.closing_prices.quote(position)),
                     "description": metadata.get("description") or position.get("description"),
                     "securityType": security_type,
                     "securityTypeLabel": metadata.get("securityTypeLabel") or SECURITY_TYPES.get(security_type, security_type or "Altro"),
@@ -870,6 +911,7 @@ class IbkrAccountClient(EWrapper, EClient):
                 "account": account,
                 "accounts": list(self.accounts),
                 "baseCurrency": base_currency,
+                "portfolioRisk": self.portfolio_risk.snapshot(),
                 "metrics": metrics,
                 "cashBalances": cash_balances,
                 "positions": positions,

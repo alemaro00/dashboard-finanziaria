@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_DIR="${0:A:h:h}"
 INSTALL_DIR="/Applications/Beta Dashboard Finanziaria.app"
 APP_VERSION="1.14.0"
-APP_BUILD="70"
+APP_BUILD="97"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 if [[ "${PUBLIC_RELEASE:-0}" == "1" && ( "$SIGN_IDENTITY" == "-" || -z "${NOTARY_PROFILE:-}" ) ]]; then
   print -u2 "Release pubblica bloccata: servono SIGN_IDENTITY Developer ID Application e NOTARY_PROFILE."
@@ -25,7 +25,9 @@ fi
 VENV_DIR="$PROJECT_DIR/.build/freeze-env"
 export PYINSTALLER_CONFIG_DIR="$PROJECT_DIR/.build/pyinstaller-cache"
 "${NODE_BIN:-node}" "$PROJECT_DIR/scripts/build-web.cjs"
-APP_DIR="$PROJECT_DIR/dist/Beta Dashboard Finanziaria.app"
+# Keep the loose build out of Spotlight/app discovery; only the installed beta
+# should appear in the macOS app launcher. Distributable ZIPs still live in dist.
+APP_DIR="$PROJECT_DIR/.build/macos-app.noindex/Beta Dashboard Finanziaria.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"

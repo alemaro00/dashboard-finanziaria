@@ -131,4 +131,21 @@ class HttpTests(unittest.TestCase):
         finally:
             self.handler.enable_banking_service=None
 
+    def test_split_save_reload_rejects_excess_without_overwriting_saved_data(self):
+        headers = {'Content-Type': 'application/json', 'X-CSRF-Token': self.handler.csrf_token}
+        notes = [{'id': identifier, 'bankTransactionId': 'split-fixture', 'bankOriginalAmount': 1000,
+                  'bankSplitVersion': 1, 'bankRecordType': 'expense', 'transactionDate': '2026-10-01',
+                  'originalBankDescription': 'Fixture bonifico', 'label': label, 'category': category, 'amount': amount}
+                 for identifier, label, category, amount in [('a', 'Affitto', 'Costo Fisso', 200), ('b', 'Spesa', 'Costo Variabile', 800)]]
+        fixture = {'state': {'monthName': 'Ottobre', 'year': 2026, 'monthlyHistory': [], 'notes': notes}, 'entry': {}}
+        self.assertEqual(self.request('POST', '/api/state', json.dumps(fixture), headers)[0], 200)
+        notes[0]['amount'] = 210
+        self.assertEqual(self.request('POST', '/api/state', json.dumps(fixture), headers)[0], 400)
+        stored = json.loads(self.request('GET', '/api/state')[2])['state']
+        self.assertEqual([note['amount'] for note in stored['notes']], [200, 800])
+        notes[1]['amount'] = 790
+        self.assertEqual(self.request('POST', '/api/state', json.dumps(fixture), headers)[0], 200)
+        stored = json.loads(self.request('GET', '/api/state')[2])['state']
+        self.assertEqual([note['amount'] for note in stored['notes']], [210, 790])
+
 if __name__=='__main__':unittest.main()
